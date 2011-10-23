@@ -1,0 +1,2 @@
+PyPISMTools is a small set of classes and functions to evaluate PISM
+parameter studies. Currently, binning and histogram functions are provided.
