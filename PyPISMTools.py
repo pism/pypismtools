@@ -1,6 +1,15 @@
 '''
 PyPISMTools: Tools to evaluate PISM parameter studies
 
+PyPISMTools is a module to facilitate evaluation of PISM parameter
+studies. It mainly comprises two classes, Observation and Experiment,
+which act as containers for observational data and PISM model
+simulations, along with helper functions. The experiment class
+determines information about an experiment from the netcdf file
+directly, especially from the 'pism_overrides' flag. Such information
+can then be used for labeling, plotting, evaluation, etc. The indend
+is to provide a robust tool to evaluate data, and to avoid common mistakes
+such as mis-labeling plots.
 '''
 __author__ = "Andy Aschwanden"
 
@@ -17,20 +26,77 @@ except:
 ## FIXME: how to provide DEBUG flag to module
 DEBUG=None
 
-def norm_infinity(var, dx = 1, dy = 1):
-    """Computes the infinity norm of a numpy array."""
+def norm_infinity(var):
+    '''
+    Computes the infinity norm of a numpy array.
+    
+    Paramters
+    ---------
+    var : array_like
+
+    Returns
+    -------
+    norm : scalar
+
+    Notes
+    -----
+    The infinity norm is the given by the absolute value of the
+    maximum of a given array.
+    '''
     return np.abs(var).max()
 
 def norm_Lp(var, p, dx = 1, dy = 1):
-    """Computes the L^p norm of a numpy array."""
+    '''
+    Computes the L^p norm of a numpy array.
+
+    Paramters
+    ---------
+    var : array_like
+
+    Returns
+    -------
+    norm : scalar
+
+    Notes
+    -----
+    The L^p norm is the given by sum(abs(var)**p).
+    '''
     return np.sum(np.abs(var)**p * dx * dy)**(1.0/p)
 
 def norm_2(var, dx = 1, dy = 1):
-    """Computes the L^2 norm of a numpy array."""
+    '''
+    Computes the L^2 norm of a numpy array.
+
+    Paramters
+    ---------
+    var : array_like
+
+    Returns
+    -------
+    norm : scalar
+
+    Notes
+    -----
+    The L^2 norm is the given by sum(abs(var)**2).
+    '''
     return norm_Lp(var, 2, dx, dy)
 
 def norm_1(var, dx = 1, dy = 1):
-    """Computes the L^1 norm of a numpy array."""
+    '''
+    Computes the L^1 norm of a numpy array.
+
+    Paramters
+    ---------
+    var : array_like
+
+    Returns
+    -------
+    norm : scalar
+
+    Notes
+    -----
+    The L^1 norm is the given by sum(abs(var)).
+    '''
     return norm_Lp(var, 1, dx, dy)
 
 def get_rmse(a,b,N):
@@ -49,7 +115,7 @@ def get_rmse(a,b,N):
     Notes
     -----
     The average is the sum of elements of the difference (a - b)
-    divided by the number of elements N
+    divided by the number of elements N.
     '''
     return np.sqrt((norm_2(a - b, dx=1, dy=1))**2.0 / N)
     
@@ -86,7 +152,6 @@ def unit_converter(data,inunit,outunit):
 
     Example
     -------
-
     >>> import numpy as np
     >>> c = Converter("kg","Gt")
     >>> out = c(np.array([1,2])*1e12)
@@ -111,7 +176,21 @@ def unit_converter(data,inunit,outunit):
     return outdata
 
 def permute(variable, output_order = ('time', 'z', 'zb', 'y', 'x')):
-    """Permute dimensions of a NetCDF variable to match the output storage order."""
+    '''
+    Permute dimensions of a NetCDF variable to match the output
+    storage order.
+
+    Parameters
+    ----------
+    variable : a netcdf variable
+               e.g. thk = nc.variables['thk']
+    output_order: dimension tuple (optional)
+                  default ordering is ('time', 'z', 'zb', 'y', 'x')
+
+    Returns
+    -------
+    var_perm : array_like
+    '''
     input_dimensions = variable.dimensions
 
     # filter out irrelevant dimensions
@@ -272,7 +351,7 @@ class DataObject(object):
         self.nc.close()
 
     def _make_histogram(self):
-        '''Calculate no of grid cells n in bins bin.'''
+        '''Calculate number of grid cells n in bins bin.'''
         # np.histogram ignores masked array, so we have to exclude
         # masked values by applying the inverted mask
         n,Bins = np.histogram(self.values[~self.mask],bins=self.bins)
@@ -310,12 +389,12 @@ class DataObject(object):
         return nx*ny
 
     def _set_valid_cells(self):
-        ## Determine number of valid cells by summing up non-masked cells
+        '''Determine number of valid cells by summing up non-masked cells.'''
         value = np.sum(-self.mask)
         self.valid_cells = value
 
     def _set_grid_spacing(self):
-        '''Tries to determine grid spacing in km, set None if it fails.'''
+        '''Tries to determine grid spacing in km, sets None if it fails.'''
         try:
             x_dim = self.nc.variables["x"]
             in_units = self.nc.variables["x"].units
@@ -329,6 +408,14 @@ class DataObject(object):
         if DEBUG:
             print("grid spacing is %3.1f %s" %(self.grid_spacing,self.grid_spacing_units))
 
+    def get_grid_spacing(self):
+        '''Return grid spacing.'''
+        if self.grid_spacing is not None:
+            print("grid spacing is %3.1f %s" %(self.grid_spacing,self.grid_spacing_units))
+            return self.grid_spacing
+        else:
+            return self.grid_spacing
+        
     def get_valid_cells(self):
         '''Return number of valid cells.'''
         return self.valid_cells
@@ -356,6 +443,7 @@ class Experiment(DataObject):
           be ignored.
     parameter_list : list of parameters being used for evaluation
     abbr_dict : a dictionary with abbrevations for parameters
+                e.g. dict(zip(['enhancement_factor','pseudo_plastic_q'],['e','q']))
     
     '''
     
