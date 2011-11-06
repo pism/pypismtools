@@ -10,12 +10,12 @@ directly, especially from the 'pism_overrides' flag. Such information
 can then be used for labeling, plotting, evaluation, etc. The indend
 is to provide a robust tool to evaluate data, and to avoid common mistakes
 such as mis-labeling plots. Additional functions include routines to
-permute (netcdf) dimension, convert units using udunits, and to import
-GMT colormaps.
+permute (netcdf) dimension, convert units using udunits, to estimate
+trends, and to import GMT colormaps.
 '''
 __author__ = "Andy Aschwanden"
 
-__all__ = ['gmtColormap','smooth','norm_infinity','norm_Lp','norm_2','norm_1','get_rmse','get_avg','unit_converter','permute','plot_mapview','plot_histogram','plot_histogram2','print_info','print_overall_statistics','Observation','Experiment']
+__all__ = ['trend_estimator','colorList','gmtColormap','smooth','norm_infinity','norm_Lp','norm_2','norm_1','get_rmse','get_avg','unit_converter','permute','plot_mapview','plot_histogram','plot_histogram2','print_info','print_overall_statistics','Observation','Experiment']
 
 import numpy as np
 import pylab as plt
@@ -27,6 +27,58 @@ except:
 
 ## FIXME: how to provide DEBUG flag to module
 DEBUG=None
+
+def trend_estimator(x,y):
+
+    '''
+    Trend estimator
+    
+    Simultaneous estimation of bias, trend, annual, semi-annual and
+    161-day sinusoid (alias period S2 tide errors).
+
+    Parameters
+    ----------
+    x, y : array_like
+
+    Returns
+    -------
+
+
+    Notes
+    -----
+    Code snipplet provided by Anthony Arendt, March 13, 2011.
+    '''
+
+    try:
+        from scipy import optimize
+    except:
+        print("scipy.optimized not found. Please install.")
+        exit(1)
+            
+    fitfunc = lambda p, x: p[0] + p[1]*x + p[2]*np.cos(2.0*np.pi*(x-p[3])/1.0)  + p[4]*np.cos(2.0*np.pi*(x-p[5])/0.5) + p[6]*np.cos(2.0*np.pi*(x-p[7])/0.440794)
+    errfunc = lambda p, x, y:fitfunc(p,x) - y
+    p0 = [0.0, -80.0, 40.0, 0.0, 10.0, 0.0,1.0,0.0]
+
+    return optimize.leastsq(errfunc,p0[:],args=(x,y),full_output=1)
+
+
+def colorList():
+    '''
+    Returns a list with colors, e.g for line plots. etc.
+    '''
+    colors = ['#E41A1C', # red
+              '#377EB8', # light blue
+              '#4DAF4A', # green 
+              '#984EA3', # violet
+              '#FF7F00', # orange
+              '#084594', # dark blue
+              '#FB9A99', # light red
+              '#FB9A99', # light orange
+              '#CAB2D6', # light violet
+              'brown',
+              'pink'] 
+
+    return colors
 
 def gmtColormap(fileName):
     '''
@@ -112,10 +164,9 @@ def gmtColormap(fileName):
         red.append([xNorm[i],r[i],r[i]])
         green.append([xNorm[i],g[i],g[i]])
         blue.append([xNorm[i],b[i],b[i]])
-    colorDict = {"red":red, "green":green, "blue":blue}
+    colorDict = {'red':red, 'green':green, 'blue':blue}
     return (colorDict)
 
-## from http://www.scipy.org/Cookbook/SignalSmooth
 def smooth(x,window_len=11,window='hanning'):
     '''
     Smooth the data using a window with requested size (running mean,
@@ -152,7 +203,9 @@ def smooth(x,window_len=11,window='hanning'):
     -----
     Downloaded from http://www.scipy.org/Cookbook/SignalSmooth.
  
-    TODO: the window parameter could be the window itself if an array instead of a string   
+    TODO
+    ----
+    the window parameter could be the window itself if an array instead of a string   
     '''
 
     if x.ndim != 1:
