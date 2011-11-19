@@ -6,7 +6,7 @@ studies. It mainly comprises two classes, Observation and Experiment,
 which act as containers for observational data and PISM model
 simulations, along with helper functions. The experiment class
 determines information about an experiment from the netcdf file
-directly, especially from the 'pism_overrides' flag. Such information
+directly, especially from the "pism_overrides" flag. Such information
 can then be used for labeling, plotting, evaluation, etc. The indend
 is to provide a robust tool to evaluate data, and to avoid common mistakes
 such as mis-labeling plots. Additional functions include routines to
@@ -29,7 +29,6 @@ except:
 DEBUG=None
 
 def trend_estimator(x,y):
-
     '''
     Trend estimator
     
@@ -38,21 +37,56 @@ def trend_estimator(x,y):
 
     Parameters
     ----------
-    x, y : array_like
+    x, y : array_like, x must have units "years"
 
     Returns
     -------
+    x : ndarray
+    The solution (or the result of the last iteration for an unsuccessful
+    call).
+    cov_x : ndarray
+    Uses the fjac and ipvt optional outputs to construct an
+    estimate of the jacobian around the solution.  ``None`` if a
+    singular matrix encountered (indicates very flat curvature in
+    some direction).  This matrix must be multiplied by the
+    residual standard deviation to get the covariance of the
+    parameter estimates -- see curve_fit.
+    infodict : dict
+    a dictionary of optional outputs with the key s::
 
+        - 'nfev' : the number of function calls
+        - 'fvec' : the function evaluated at the output
+        - 'fjac' : A permutation of the R matrix of a QR
+                 factorization of the final approximate
+                 Jacobian matrix, stored column wise.
+                 Together with ipvt, the covariance of the
+                 estimate can be approximated.
+        - 'ipvt' : an integer array of length N which defines
+                 a permutation matrix, p, such that
+                 fjac*p = q*r, where r is upper triangular
+                 with diagonal elements of nonincreasing
+                 magnitude. Column j of p is column ipvt(j)
+                 of the identity matrix.
+        - 'qtf'  : the vector (transpose(q) * fvec).
+
+    mesg : str
+    A string message giving information about the cause of failure.
+    ier : int
+    An integer flag.  If it is equal to 1, 2, 3 or 4, the solution was
+    found.  Otherwise, the solution was not found. In either case, the
+    optional output variable 'mesg' gives more information.
 
     Notes
     -----
     Code snipplet provided by Anthony Arendt, March 13, 2011.
+    Uses scipy.optimize.leastsq, see documentation of
+    scipy.optimize.leastsq for details.
     '''
 
     try:
         from scipy import optimize
     except:
-        print("scipy.optimized not found. Please install.")
+        print("scipy.optimize not found. Please install.")
         exit(1)
             
     fitfunc = lambda p, x: p[0] + p[1]*x + p[2]*np.cos(2.0*np.pi*(x-p[3])/1.0)  + p[4]*np.cos(2.0*np.pi*(x-p[5])/0.5) + p[6]*np.cos(2.0*np.pi*(x-p[7])/0.440794)
@@ -90,8 +124,8 @@ def gmtColormap(fileName):
     
     Example
     -------
-    >>> cdict = gmtColormap('mycolormap.cpt')
-    >>> gmt_colormap = colors.LinearSegmentedColormap('my_colormap',cdict)
+    >>> cdict = gmtColormap("mycolormap.cpt")
+    >>> gmt_colormap = colors.LinearSegmentedColormap("my_colormap",cdict)
 
     Notes
     -----
@@ -181,8 +215,8 @@ def smooth(x,window_len=11,window='hanning'):
     ----------
     x : array_like, the input signal 
     window_len : the dimension of the smoothing window; should be an odd integer
-    window : the type of window from 'flat', 'hanning', 'hamming',
-    'bartlett', 'blackman' flat window will produce a moving average smoothing.
+    window : the type of window from "flat", "hanning", "hamming",
+    "bartlett", "blackman" flat window will produce a moving average smoothing.
 
     Returns
     -------
