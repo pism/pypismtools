@@ -100,18 +100,17 @@ def colorList():
     '''
     Returns a list with colors, e.g for line plots. etc.
     '''
-    colors = ['#E41A1C', # red
-              '#377EB8', # light blue
-              '#4DAF4A', # green 
-              '#984EA3', # violet
+    colors = ['#084594', # dark blue
               '#FF7F00', # orange
-              '#084594', # dark blue
+              '#377EB8', # light blue
+              '#984EA3', # violet
+              '#E41A1C', # red
+              '#4DAF4A', # green              
               '#FB9A99', # light red
               '#FB9A99', # light orange
               '#CAB2D6', # light violet
               'brown',
               'pink'] 
-
     return colors
 
 def gmtColormap(fileName):
