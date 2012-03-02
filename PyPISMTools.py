@@ -28,10 +28,11 @@ except:
 ## FIXME: how to provide DEBUG flag to module
 DEBUG=None
 
+
 def trend_estimator(x,y):
     '''
     Trend estimator
-    
+
     Simultaneous estimation of bias, trend, annual, semi-annual and
     161-day sinusoid (alias period S2 tide errors).
 
@@ -89,7 +90,10 @@ def trend_estimator(x,y):
         print("scipy.optimize not found. Please install.")
         exit(1)
             
-    fitfunc = lambda p, x: p[0] + p[1]*x + p[2]*np.cos(2.0*np.pi*(x-p[3])/1.0)  + p[4]*np.cos(2.0*np.pi*(x-p[5])/0.5) + p[6]*np.cos(2.0*np.pi*(x-p[7])/0.440794)
+    fitfunc = lambda p, x: (p[0] + p[1]*x +
+                            p[2]*np.cos(2.0*np.pi*(x-p[3])/1.0)  +
+                            p[4]*np.cos(2.0*np.pi*(x-p[5])/0.5) +
+                            p[6]*np.cos(2.0*np.pi*(x-p[7])/0.440794))
     errfunc = lambda p, x, y:fitfunc(p,x) - y
     p0 = [0.0, -80.0, 40.0, 0.0, 10.0, 0.0,1.0,0.0]
 
@@ -171,7 +175,6 @@ def gmtColormap(fileName):
     g.append(gtemp)
     b.append(btemp)
 
-    nTable = len(r)
     x = np.array( x , np.float32)
     r = np.array( r , np.float32)
     g = np.array( g , np.float32)
@@ -441,11 +444,11 @@ def permute(variable, output_order = ('time', 'z', 'zb', 'y', 'x')):
     if mapping:
         return np.transpose(variable[:], mapping)
     else:
-        return variable[:]              # so that it does not break processing "mapping"
+        return variable[:] # so that it does not break processing "mapping"
+
 
 def plot_mapview(var,**kwargs):
     '''Plot map view of variable var'''
-    import pylab as plt
     from matplotlib import colors
     kwargsdict = {}
     expected_args = ["log","show","title"]
@@ -471,6 +474,7 @@ def plot_mapview(var,**kwargs):
     plt.imshow(var,origin='lower',norm=norm)
     plt.colorbar()
     plt.title(title)
+
 
 def plot_histogram(data,**kwargs):
     '''Plot a simple histogram with one variable'''
@@ -522,7 +526,8 @@ def plot_histogram2(data,obs,**kwargs):
     ticks = map(lambda(x): "%3d" % x, bins)
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    n,bin,patches = ax.hist([data.values[data.values>vmin],obs.values[obs.values>vmin]],
+    n,bin,patches = ax.hist([data.values[data.values>vmin],
+                            obs.values[obs.values>vmin]],
                             bins = bins,
                             log = log,
                             histtype='bar',
@@ -532,6 +537,7 @@ def plot_histogram2(data,obs,**kwargs):
     ax.set_xlim(vmin,vmax)
     plt.title(data.title)
     ax.legend()
+
 
 def print_info(experiment):
     '''Prints parameters and values of an experiment'''
@@ -565,6 +571,7 @@ def print_overall_statistics(experiments):
     print_info(rmse_max[0])
     print("\n")
 
+
 class DataObject(object):
     '''
     A base class for experiments and observations.
@@ -597,10 +604,11 @@ class DataObject(object):
         self.cells_in_histogram = np.sum(self.n)
         self.coverage = np.float(self.cells_in_histogram) / self.valid_cells * 100
         if DEBUG:
-            print("    - no of cells in histogram = %i (%3.2f %%)" % (self.cells_in_histogram,self.coverage))
-            print("    - no of cells above %3.2f %s = %i" % (self.bin_bounds[1],self.units,self.no_above_histmax))
+            print("    - no of cells in histogram = %i (%3.2f %%)"
+                  % (self.cells_in_histogram,self.coverage))
+            print("    - no of cells above %3.2f %s = %i"
+                  % (self.bin_bounds[1],self.units,self.no_above_histmax))
             print("    - no of cells in bins =\n   %s" % str(self.n))
-
 
     def add_mask(self,mask):
         '''
@@ -639,16 +647,19 @@ class DataObject(object):
             x_dim = self.nc.variables["x1"]
             in_units = self.nc.variables["x1"].units
         out_units = "km"
-        grid_spacing = unit_converter(np.abs(x_dim[1]-x_dim[0]),in_units,out_units)
+        grid_spacing = unit_converter(np.abs(x_dim[1] - x_dim[0]),
+                                      in_units, out_units)
         self.grid_spacing = grid_spacing
         self.grid_spacing_units = out_units
         if DEBUG:
-            print("grid spacing is %3.1f %s" %(self.grid_spacing,self.grid_spacing_units))
+            print("grid spacing is %3.1f %s"
+                  % (self.grid_spacing, self.grid_spacing_units))
 
     def get_grid_spacing(self):
         '''Return grid spacing.'''
         if self.grid_spacing is not None:
-            print("grid spacing is %3.1f %s" %(self.grid_spacing,self.grid_spacing_units))
+            print("grid spacing is %3.1f %s"
+                  % (self.grid_spacing, self.grid_spacing_units))
             return self.grid_spacing
         else:
             return self.grid_spacing
@@ -664,6 +675,7 @@ class DataObject(object):
     def set_avg(self,avg):
         '''Set average (avg).'''
         self.avg = avg
+
 
 class Experiment(DataObject):
     '''
@@ -683,8 +695,9 @@ class Experiment(DataObject):
                 e.g. dict(zip(['enhancement_factor','pseudo_plastic_q'],['e','q']))
     
     '''
-    
-    def __init__(self,obs,outlier,parameter_list,abbr_dict,*args, **kwargs):
+
+    def __init__(self, obs, outlier, parameter_list, abbr_dict,
+                 *args, **kwargs):
         super(Experiment, self).__init__(*args, **kwargs)
 
         self.valid_cells = None
@@ -699,17 +712,18 @@ class Experiment(DataObject):
             '''Print infos about experiment'''
             print("  - Parameters and values for this experiment:")
             for key,val in self.parameter_dict.iteritems():
-                if isinstance(val,basestring):
-                    print("    * %s = %s" %(key,val))
+                if isinstance(val, basestring):
+                    print("    * %s = %s" %(key, val))
                 else:
-                    print("    * %s = %3.3f" %(key,val))
+                    print("    * %s = %3.3f" %(key, val))
 
             
         # Open netcdf file
         try:
-            self.nc = CDF(self.file_name,'r')
+            self.nc = CDF(self.file_name, 'r')
         except IOError as e:
-            print("File %s does not exist or is not a valid NetCDF file" % self.file_name)
+            print("File %s does not exist or is not a valid NetCDF file"
+                  % self.file_name)
         print("\nInitializing experiement from file %s" % self.file_name)
         print("  - reading variable %s" % self.variable_name)
         # Determine units from 'units' attribute, set to None if not found
@@ -754,26 +768,27 @@ class Experiment(DataObject):
         self.parameter_short_dict = dict([(abbr_dict[param], self.pism_overrides.getncattr(param) ) for param in parameter_list])
         _print_info()
 
-        self.title = ', '.join(["%s = %s" % (key,str(val)) for key,val in self.parameter_short_dict.iteritems()])
+        self.title = ', '.join(["%s = %s"
+                                % (key,str(val))
+                                for key, val in self.parameter_short_dict.iteritems()])
         self._make_histogram()
         if DEBUG:
-            plot_mapview(self.values,log=True,title='before no obs')
+            plot_mapview(self.values, log=True, title='before no obs')
         print("\n  * Applying mask where no observations, updating histogram")
         self.add_mask(obs.mask)
         if DEBUG:
-            plot_mapview(self.values,log=True,title='after obs')
-        print("\n  * Applying mask where abs(%s - %s) > %3.2f %s, updating histogram" %(self.variable_name,
-                                                                                       obs.variable_name,outlier,self.units))
+            plot_mapview(self.values, log=True, title='after obs')
+        print("\n  * Applying mask where abs(%s - %s) > %3.2f %s, updating histogram"
+              % (self.variable_name, obs.variable_name,outlier,self.units))
         outliers = (np.abs(self.values - obs.values) > outlier)
         self.add_mask(outliers)
         if DEBUG:
-            plot_mapview(self.values,log=True,title='after outliers')
+            plot_mapview(self.values, log=True, title='after outliers')
 
         print("    - no of cells in histogram = %i (%3.2f %%)" % (self.cells_in_histogram,self.coverage))
         print("    - no of cells above %3.2f %s = %i" % (self.bin_bounds[1],self.units,self.no_above_histmax))
         print("    - no of cells in bins =\n   %s" % str(self.n))
 
- 
     def get_values(self):
         '''Return values'''
         return self.values
