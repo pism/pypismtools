@@ -17,10 +17,10 @@ trends, and to import GMT colormaps.
 __author__ = "Andy Aschwanden"
 
 __all__ = ['golden_mean', 'set_mode', 'trend_estimator', 'colorList',
-           'gmtColormap', 'smooth', 'norm_infinity', 'norm_Lp', 'norm_2',
-           'norm_1', 'get_rmse', 'get_avg', 'unit_converter', 'permute',
-           'plot_mapview', 'plot_histogram', 'plot_histogram2', 'print_info',
-           'print_overall_statistics', 'Observation', 'Experiment']
+           'gmtColormap', 'smooth', 'get_rmse', 'get_avg', 'unit_converter',
+           'permute', 'plot_mapview', 'plot_histogram', 'plot_histogram2',
+           'print_info', 'print_overall_statistics', 'Observation',
+           'Experiment']
 
 import numpy as np
 import pylab as plt
@@ -427,83 +427,6 @@ def smooth(x, window_len=11, window='hanning'):
     return y[window_len - 1:-window_len + 1]
 
 
-def norm_infinity(var):
-    '''
-    Computes the infinity norm of a numpy array.
-
-    Paramters
-    ---------
-    var : array_like
-
-    Returns
-    -------
-    norm : scalar
-
-    Notes
-    -----
-    The infinity norm is the given by the absolute value of the
-    maximum of a given array.
-    '''
-    return np.abs(var).max()
-
-
-def norm_Lp(var, p, dx=1, dy=1):
-    '''
-    Computes the L^p norm of a numpy array.
-
-    Paramters
-    ---------
-    var : array_like
-
-    Returns
-    -------
-    norm : scalar
-
-    Notes
-    -----
-    The L^p norm is the given by sum(abs(var)**p).
-    '''
-    return np.sum(np.abs(var) ** p * dx * dy) ** (1.0 / p)
-
-
-def norm_2(var, dx=1, dy=1):
-    '''
-    Computes the L^2 norm of a numpy array.
-
-    Paramters
-    ---------
-    var : array_like
-
-    Returns
-    -------
-    norm : scalar
-
-    Notes
-    -----
-    The L^2 norm is the given by sum(abs(var)**2).
-    '''
-    return norm_Lp(var, 2, dx, dy)
-
-
-def norm_1(var, dx=1, dy=1):
-    '''
-    Computes the L^1 norm of a numpy array.
-
-    Paramters
-    ---------
-    var : array_like
-
-    Returns
-    -------
-    norm : scalar
-
-    Notes
-    -----
-    The L^1 norm is the given by sum(abs(var)).
-    '''
-    return norm_Lp(var, 1, dx, dy)
-
-
 def get_rmse(a, b, N):
     '''
     Returns the root mean square error of differences between a and b.
@@ -522,7 +445,7 @@ def get_rmse(a, b, N):
     The average is the sum of elements of the difference (a - b)
     divided by the number of elements N.
     '''
-    return np.sqrt((norm_2(a - b, dx=1, dy=1)) ** 2.0 / N)
+    return np.sqrt(np.linalg.norm(a.flatten() - b.flatten(), 2) ** 2.0 / N)
 
 
 def get_avg(a, b, N):
@@ -538,7 +461,7 @@ def get_avg(a, b, N):
     -------
     avg : scalar
     '''
-    return norm_1(a - b, dx=1, dy=1) / N
+    return np.linalg.norm(a.flatten() - b.flatten(), 1) / N
 
 
 def unit_converter(data, inunit, outunit):
@@ -952,7 +875,7 @@ class Experiment(DataObject):
         if DEBUG:
             plot_mapview(self.values, log=True, title='after obs')
         print("\n  * Applying mask where abs(%s - %s) > %3.2f %s, updating histogram"
-              % (self.variable_name, obs.variable_name,outlier, self.units))
+              % (self.variable_name, obs.variable_name, outlier, self.units))
         outliers = (np.abs(self.values - obs.values) > outlier)
         self.add_mask(outliers)
         if DEBUG:
