@@ -16,11 +16,11 @@ trends, and to import GMT colormaps.
 
 __author__ = "Andy Aschwanden"
 
-__all__ = ['golden_mean', 'set_mode', 'trend_estimator', 'colorList',
-           'gmtColormap', 'smooth', 'get_rmse', 'get_avg', 'unit_converter',
-           'permute', 'plot_mapview', 'plot_histogram', 'plot_histogram2',
-           'print_info', 'print_overall_statistics', 'Observation',
-           'Experiment']
+__all__ = ['add_inner_title', 'golden_mean', 'set_mode', 'trend_estimator',
+           'colorList', 'gmtColormap', 'smooth', 'get_rmse', 'get_avg',
+           'unit_converter', 'permute', 'plot_mapview', 'plot_histogram',
+           'plot_histogram2', 'print_info', 'print_overall_statistics',
+           'Observation', 'Experiment']
 
 import numpy as np
 import pylab as plt
@@ -33,6 +33,21 @@ except:
 ## FIXME: how to provide DEBUG flag to module
 DEBUG=None
 
+def add_inner_title(ax, title, loc, size=None, **kwargs):
+    '''
+    Adds an inner title to a given axis, with location loc.
+
+    from http://matplotlib.sourceforge.net/examples/axes_grid/demo_axes_grid2.html
+    '''
+    from matplotlib.offsetbox import AnchoredText
+    from matplotlib.patheffects import withStroke
+    if size is None:
+        size = dict(size=plt.rcParams['legend.fontsize'])
+    at = AnchoredText(title, loc=loc, prop=size,
+                      pad=0., borderpad=0.5,
+                      frameon=False, **kwargs)
+    ax.add_artist(at)
+    return at
 
 def get_golden_mean():
     '''
@@ -90,7 +105,7 @@ def set_mode(mode):
         fontsize = 8
         markersize = 3
         lw = 1.5
-        fig_width = 3.32  # inch
+        fig_width = 4.8  # inch
         fig_height = golden_mean * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
