@@ -454,15 +454,13 @@ def get_rmse(a, b, N):
     Returns
     -------
     rmse : scalar
-
-    Notes
-    -----
-    The average is the sum of elements of the difference (a - b)
-    divided by the number of elements N.
     '''
-    return np.sqrt(np.linalg.norm(a.flatten() - b.flatten(), 2) ** 2.0 / N)
-
-
+    c = a.ravel() - b.ravel()
+    if isinstance(c,np.ma.MaskedArray):
+        return np.sqrt(np.linalg.norm(np.ma.compressed(c), 2) ** 2.0 / N)
+    else:
+        return np.sqrt(np.linalg.norm(c, 2) ** 2.0 / N)
+    
 def get_avg(a, b, N):
     '''
     Returns the average difference between a and b.
@@ -475,10 +473,18 @@ def get_avg(a, b, N):
     Returns
     -------
     avg : scalar
+
+    Notes
+    -----
+    The average is the sum of elements of the difference (a - b)
+    divided by the number of elements N.
     '''
-    return np.linalg.norm(a.flatten() - b.flatten(), 1) / N
-
-
+    c = a.ravel() - b.ravel()
+    if isinstance(c,np.ma.MaskedArray):
+        return np.linalg.norm(np.ma.compressed(c), 1) / N
+    else:
+        return np.linalg.norm(c, 1) / N
+     
 def unit_converter(data, inunit, outunit):
     '''
     Unit converter. Takes an (numpy) array, valid udunits inunits and outunits
