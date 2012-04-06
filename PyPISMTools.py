@@ -442,7 +442,7 @@ def smooth(x, window_len=11, window='hanning'):
     return y[window_len - 1:-window_len + 1]
 
 
-def get_rmse(a, b, N):
+def get_rmse(a, b, N, relative=False):
     '''
     Returns the root mean square error of differences between a and b.
 
@@ -455,13 +455,16 @@ def get_rmse(a, b, N):
     -------
     rmse : scalar
     '''
-    c = a.ravel() - b.ravel()
+    if relative is False:
+        c = a.ravel() - b.ravel()
+    else:
+        c = (a.ravel() - b.ravel() / b.ravel())
     if isinstance(c,np.ma.MaskedArray):
         return np.sqrt(np.linalg.norm(np.ma.compressed(c), 2) ** 2.0 / N)
     else:
         return np.sqrt(np.linalg.norm(c, 2) ** 2.0 / N)
     
-def get_avg(a, b, N):
+def get_avg(a, b, N, relative=False):
     '''
     Returns the average difference between a and b.
 
@@ -479,7 +482,10 @@ def get_avg(a, b, N):
     The average is the sum of elements of the difference (a - b)
     divided by the number of elements N.
     '''
-    c = a.ravel() - b.ravel()
+    if relative is False:
+        c = a.ravel() - b.ravel()
+    else:
+        c = (a.ravel() - b.ravel() / b.ravel())
     if isinstance(c,np.ma.MaskedArray):
         return np.linalg.norm(np.ma.compressed(c), 1) / N
     else:
@@ -789,6 +795,14 @@ class DataObject(object):
     def set_avg(self, avg):
         '''Set average (avg).'''
         self.avg = avg
+
+    def set_rmse_relative(self, rmse):
+        '''Set root mean square error (RMSE).'''
+        self.rmse_relative = rmse
+
+    def set_avg_relative(self, avg):
+        '''Set average (avg).'''
+        self.avg_relative = avg
 
 
 class Experiment(DataObject):
