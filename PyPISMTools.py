@@ -521,11 +521,16 @@ def unit_converter(data, inunit, outunit):
 
     if not (inunit == outunit):
         try:
-            from udunits import Converter
-            c = Converter(inunit, outunit)
+            try:
+                from udunits import Converter
+                c = Converter(inunit, outunit)
+            except:
+                from udunits2 import Converter, System, Unit
+                sys = System()
+                c = Converter((Unit(sys, inunit), Unit(sys, outunit)))
             outdata = c(data)
         except:
-            print("No udunits module found, you're on your own.\n  -> I am assuming input unit is m, and will convert to km.\n  -> Installation of Constantine's awesome python wrapper for udunits is highly recommended.\n  -> Download it from https://code.google.com/p/python-udunits/.")
+            print("No udunits module found, you're on your own.\n  -> I am assuming input unit is m, and will convert to km.\n  -> Installation of Constantine's awesome python wrapper for udunits is highly recommended.\n  -> Download it from https://github.com/ckhroulev/py_udunits2.")
             c = 1. / 1e3
             outdata = c * data
     else:
