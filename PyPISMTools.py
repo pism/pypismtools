@@ -16,7 +16,7 @@ trends, and to import GMT colormaps.
 
 __author__ = "Andy Aschwanden"
 
-__all__ = ['add_inner_title', 'golden_mean', 'set_mode', 'trend_estimator',
+__all__ = ['add_inner_title', 'get_golden_mean', 'set_mode', 'trend_estimator',
            'colorList', 'gmtColormap', 'smooth', 'get_rmse', 'get_avg',
            'unit_converter', 'permute', 'plot_mapview', 'plot_histogram',
            'plot_histogram2', 'print_info', 'print_overall_statistics',
@@ -56,7 +56,7 @@ def get_golden_mean():
     return (np.sqrt(5) - 1.0) / 2.0
 
 
-def set_mode(mode):
+def set_mode(mode, aspect_ratio=0.95):
     '''
     Set the print mode, i.e. document and font size. Options are:
     - onecol: width=85mm, font size=8pt. Appropriate for 1-column figures
@@ -67,7 +67,6 @@ def set_mode(mode):
     '''
 
     linestyle = '-'
-    golden_mean = get_golden_mean()
 
     def set_onecol():
         '''
@@ -78,7 +77,7 @@ def set_mode(mode):
         lw = 1.
         markersize = 2
         fig_width = 3.32  # inch
-        fig_height = golden_mean * fig_width  # inch
+        fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
         params = {'backend': 'eps',
@@ -106,7 +105,7 @@ def set_mode(mode):
         markersize = 3
         lw = 1.5
         fig_width = 4.8  # inch
-        fig_height = golden_mean * fig_width  # inch
+        fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
         params = {'backend': 'eps',
@@ -135,7 +134,7 @@ def set_mode(mode):
         lw = 1.5
         markersize = 3
         fig_width = 6.64  # inch
-        fig_height = golden_mean * fig_width  # inch
+        fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
         params = {'backend': 'eps',
@@ -163,7 +162,7 @@ def set_mode(mode):
         lw = 1.25
         markersize = 3
         fig_width = 6.   # inch
-        fig_height = golden_mean * fig_width  # inch
+        fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
         params = {'backend': 'eps',
