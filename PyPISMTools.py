@@ -94,7 +94,7 @@ def set_mode(mode, aspect_ratio=0.95):
 
         plt.rcParams.update(params)
 
-        return lw, 0.1
+        return lw, 0.2
 
     def set_medium():
         '''
@@ -122,7 +122,7 @@ def set_mode(mode, aspect_ratio=0.95):
 
         plt.rcParams.update(params)
 
-        return lw, 0.1
+        return lw, 0.2
 
     def set_presentation():
         '''
@@ -151,7 +151,7 @@ def set_mode(mode, aspect_ratio=0.95):
 
         plt.rcParams.update(params)
 
-        return lw, 0.1
+        return lw, 0.2
 
     def set_twocol():
         '''
@@ -179,7 +179,7 @@ def set_mode(mode, aspect_ratio=0.95):
 
         plt.rcParams.update(params)
 
-        return lw, 0.1
+        return lw, 0.30
 
     if (mode == "onecol"):
         return set_onecol()
