@@ -19,10 +19,7 @@ __author__ = "Andy Aschwanden"
 import numpy as np
 import pylab as plt
 
-try:
-    from netCDF3 import Dataset as CDF
-except:
-    from netCDF4 import Dataset as CDF
+from netCDF4 import Dataset as CDF
 
 ## FIXME: how to provide DEBUG flag to module
 DEBUG=None
