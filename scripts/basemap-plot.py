@@ -22,8 +22,7 @@ try:
 except:
     from netCDF3 import Dataset as NC
 
-from PyPISMTools import permute, gmtColormap, unit_converter
-from PyPISMTools import add_inner_title, set_mode
+from PyPISMTools import PyPISMTools as ppt
 
 class Variable(object):
     '''
@@ -122,7 +121,7 @@ parser.add_option("-m", "--same_mask", dest="samemask", action="store_true",
 parser.add_option("--map_resolution", dest="map_res",
                   help="Resolution of boundary database (see Basemap), default = 'l' (low)", default='l')
 parser.add_option("-o", "--output_filename", dest="out_file",
-                  help="Name of the output file. Suffix defines output format",default='modis_insar_pism.png')
+                  help="Name of the output file. Suffix defines output format",default='foo.png')
 parser.add_option("--geotiff_file", dest="geotiff_filename",
                   help="GeoTIFF filename", default=None)
 parser.add_option("--out_unit", dest="outunit",
@@ -169,7 +168,7 @@ varname = options.varname
 cmap = None
 if colormap is not None:
     # import and convert colormap
-    cdict = gmtColormap(colormap)
+    cdict = ppt.gmtColormap(colormap)
     cmap = colors.LinearSegmentedColormap('my_colormap', cdict)
 
 # check output format
@@ -179,11 +178,7 @@ if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
           % suffix)
     exit(1)
 
-basename = 'basemap-plot.py'
-
 # set constants and other stuff
-
-
 meridian_spacing = 10
 parallels_spacing = 5
 
@@ -191,8 +186,9 @@ if varname in ('csurf', 'cbase', 'cbar', 'magnitude'):
 
     if cmap is None:
         try:
-            basedir =  __file__.split(basename)
-            cdict = gmtColormap(basedir[0] + 'Full_saturation_spectrum_CCW.cpt')
+            basedir =  ppt.__file__.split(ppt.__package__)
+            cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
+                                    '/colormaps/Full_saturation_spectrum_CCW.cpt')
             cmap = colors.LinearSegmentedColormap('my_colormap',
         cdict)
         except:
@@ -205,7 +201,7 @@ if varname in ('csurf', 'cbase', 'cbar', 'magnitude'):
     attr_keys = ('ticks', 'cmap', 'norm',
                  'vmin', 'vmax', 'extend')
     attr_vals = ([1, 3, 10, 30, 100, 300, 1000, 3000], cmap,
-                 vmin, vmax, norm, 'both')
+                 norm, vmin, vmax, 'both')
     var_dict = dict(zip(attr_keys, attr_vals))
     variable = Variable(varname, var_dict)
 
@@ -248,11 +244,11 @@ else:
     y = nc.variables['y'][:]
     width = 1.2 * (x.max() - x.min())
     height = 1.05 * (y.max() - y.min())
+    lat = np.squeeze(nc.variables['lat'][:])
+    lon = np.squeeze(nc.variables['lon'][:])
+    lat_0 = 72
+    lon_0 = -45
     nc.close()
-    # FIXME: don't hardcode, if we can remove this it should work
-    # for Antarctica too
-    lat_0 = 72.
-    lon_0 = -40.
 
 print "  creating Basemap ..."
 m = Basemap(width=width,
@@ -280,8 +276,8 @@ for k in range(0, nt):
               % filename)
         exit(1)
 
-    lats.append(permute(nc.variables['lat']))
-    lons.append(permute(nc.variables['lon']))
+    lats.append(ppt.permute(nc.variables['lat']))
+    lons.append(ppt.permute(nc.variables['lon']))
 
     if varname == 'csurf':
         if 'csurf' in nc.variables.keys():
@@ -292,7 +288,7 @@ for k in range(0, nt):
         var = varname
     print("    - reading variable %s from file %s" % (variable.var_name, filename))
     try:
-        data = np.squeeze(permute(nc.variables[variable.var_name]))
+        data = np.squeeze(ppt.permute(nc.variables[variable.var_name]))
     except:
         print("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
               % (variable.var_name, filename))
@@ -306,7 +302,7 @@ for k in range(0, nt):
         exit(2)
 
     if outunit is not None:
-              data = unit_converter(data, inunit, outunit)
+              data = ppt.unit_converter(data, inunit, outunit)
 
     if variable.var_name in ('thk'):
         mask = (data <= variable.vmin)
@@ -323,7 +319,7 @@ for k in range(0, nt):
 
 
 # set the print mode
-lw, pad_inches = set_mode(print_mode)
+lw, pad_inches = ppt.set_mode(print_mode)
 
 
 # make a separate colorbar (if requeste
@@ -409,7 +405,7 @@ for k in range(0,nt):
 
     im_titles = ['a)','b)','c)','d)','e)','f)']
     for ax in range(0,nt):
-        t = add_inner_title(fig.axes[ax], im_titles[ax], loc=2)
+        t = ppt.add_inner_title(fig.axes[ax], im_titles[ax], loc=2)
         t.patch.set_ec("none")
 
 ## ## Now this is a bit tricky. Without transparency (alpha) set,
