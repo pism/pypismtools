@@ -116,6 +116,8 @@ parser.add_option("--coastlines",dest="coastlines", action="store_true",
                   help="adds a coastlines", default=False)
 parser.add_option("-c", "--colorbar", dest="colorbar",action="store_true",
                   help="saves a colorbar seperately",default=False)
+parser.add_option("--etopo",dest="etopo", action='store_true',
+                  help="Draw etopo background", default=False)
 parser.add_option("--singlerow", dest="singlerow", action="store_true",
                   help="all plots on a single row", default=False)
 parser.add_option("-m", "--same_mask", dest="samemask", action="store_true",
@@ -160,6 +162,7 @@ bluemarble = options.bluemarble
 colormap = options.colormap
 coastlines = options.coastlines
 colorbar = options.colorbar
+etopo = options.etopo
 map_res = options.map_res
 geotiff_filename = options.geotiff_filename
 print_mode = options.print_mode
@@ -376,6 +379,8 @@ for k in range(0,nt):
 
     if bluemarble:
         m.bluemarble()
+    if etopo:
+        m.etopo()
     if shadedrelief:
         m.shadedrelief()
 
