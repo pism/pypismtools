@@ -107,7 +107,9 @@ parser = OptionParser()
 parser.usage = "%prog [options] FILE1 FILE2 ..."
 parser.description = "A script to plot a variable in a netCDF file over a GeoTiff. Uses GDAL python bindings, Proj4, and Basemap. Script is fine-tuned for whole Greenland plots, but can be adapted for other needs."
 parser.add_option("--alpha",dest="alpha",
-                  help="transparency of overlay",default=1.)
+                  help="transparency of overlay", default=1.)
+parser.add_option("--bluemarble",dest="bluemarble", action='store_true',
+                  help="Draw bluemarble background", default=False)
 parser.add_option("--colormap",dest="colormap",
                   help="path to a cpt colormap", default=None)
 parser.add_option("--coastlines",dest="coastlines", action="store_true",
@@ -117,11 +119,11 @@ parser.add_option("-c", "--colorbar", dest="colorbar",action="store_true",
 parser.add_option("--singlerow", dest="singlerow", action="store_true",
                   help="all plots on a single row", default=False)
 parser.add_option("-m", "--same_mask", dest="samemask", action="store_true",
-                  help="use mask from first plot for all plots",default=False)
+                  help="use mask from first plot for all plots", default=False)
 parser.add_option("--map_resolution", dest="map_res",
                   help="Resolution of boundary database (see Basemap), default = 'l' (low)", default='l')
 parser.add_option("-o", "--output_filename", dest="out_file",
-                  help="Name of the output file. Suffix defines output format",default='foo.png')
+                  help="Name of the output file. Suffix defines output format", default='foo.png')
 parser.add_option("--geotiff_file", dest="geotiff_filename",
                   help="GeoTIFF filename", default=None)
 parser.add_option("--out_unit", dest="outunit",
@@ -131,6 +133,8 @@ parser.add_option("-p", "--print_size", dest="print_mode",
               'onecol','medium','twocol','presentation'",default="twocol")
 parser.add_option("-r", "--output_resolution", dest="out_res",
                   help="Graphics resolution in dots per inch (DPI), default = 300",default=300)
+parser.add_option("--shadedrelief",dest="shadedrelief", action='store_true',
+                  help="Draw shaded relief background", default=False)
 parser.add_option("-v", "--variable", dest="varname",
                   help='''Variable to plot, default = 'csurf'.
                   Currently supported variables are: csurf''', default='csurf')
@@ -152,6 +156,7 @@ else:
     pass
 
 alpha = float(options.alpha)
+bluemarble = options.bluemarble
 colormap = options.colormap
 coastlines = options.coastlines
 colorbar = options.colorbar
@@ -162,6 +167,7 @@ samemask = options.samemask
 outunit = options.outunit
 out_res = int(options.out_res)
 out_file = options.out_file
+shadedrelief = options.shadedrelief
 singlerow = options.singlerow
 varname = options.varname
 
@@ -238,16 +244,18 @@ else:
     except:
         print("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
               % filename)
-        exit(1)
+        
     # x and y *from the dataset* are only used to determine the plotting domain
     x = nc.variables['x'][:]
     y = nc.variables['y'][:]
+    center_x = (x[0] + x[-1]) / 2
+    center_y = (y[0] + y[-1]) / 2
     width = 1.2 * (x.max() - x.min())
     height = 1.05 * (y.max() - y.min())
-    lat = np.squeeze(nc.variables['lat'][:])
-    lon = np.squeeze(nc.variables['lon'][:])
-    lat_0 = 72
-    lon_0 = -45
+
+    nc_projection = ppt.get_projection_from_file(nc)
+
+    lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
     nc.close()
 
 print "  creating Basemap ..."
@@ -350,8 +358,7 @@ if singlerow:
                     cbar_mode='single',
                     cbar_size=0.1,
                     cbar_location='right',
-                    share_all=True,
-                    )
+                    share_all=True)
 else:
     grid = ImageGrid(fig, 111, # similar to subplot(111)
                     nrows_ncols = (2, nt/2), # creates 2 x nt/2 grid of axes
@@ -359,14 +366,18 @@ else:
                     cbar_mode='single',
                     cbar_size=0.1,
                     cbar_location='top',
-                    share_all=True,
-                    )
+                    share_all=True)
 
 
 for k in range(0,nt):
     ax = grid[k]
     m.ax = ax
     xx, yy = m(lons[k], lats[k])
+
+    if bluemarble:
+        m.bluemarble()
+    if shadedrelief:
+        m.shadedrelief()
 
     if samemask and (k != 0):
         values[k].mask = values[0].mask

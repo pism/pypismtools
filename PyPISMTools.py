@@ -27,6 +27,52 @@ except:
 ## FIXME: how to provide DEBUG flag to module
 DEBUG=None
 
+## Get projection information from netCDF file
+def get_projection_from_file(nc):
+    '''
+    Gets a Proj projection instance from a pointer to a netCDF file
+
+    Parameters
+    ----------
+    nc : a netCDF object instance
+
+    Returns
+    -------
+    p : Proj4 projection instance
+    '''
+
+    from pyproj import Proj
+
+    ## First, check if we have a global attribute 'projection'
+    ## which contains a Proj4 string:
+    try:
+        p = Proj(str(nc.projection))
+        print('Found projection information in global attribute, using it')
+    except:
+        try:
+            ## go through variables and look for 'grid_mapping' attribute
+            for var in nc.variables.keys():
+                if hasattr(nc.variables[var],'grid_mapping'):
+                    mappingvarname = nc.variables[var].grid_mapping
+            print('Found projection information in variable %s, using it' % mappingvarname)
+            var_mapping = nc.variables[mappingvarname]
+            try:
+                p = Proj(var_mapping.proj4)
+            except:
+                p = Proj(proj   = "stere",
+                         ellps  = var_mapping.ellipsoid,
+                         datum  = var_mapping.ellipsoid,
+                         units = "m",
+                         lat_ts = var_mapping.standard_parallel,
+                         lat_0  = var_mapping.latitude_of_projection_origin,
+                         lon_0  = var_mapping.straight_vertical_longitude_from_pole,
+                         x_0    = var_mapping.false_easting,
+                         y_0    = var_mapping.false_northing)
+        except:
+            print('No mapping information found.')
+
+    return p
+
 def add_inner_title(ax, title, loc, size=None, **kwargs):
     '''
     Adds an inner title to a given axis, with location loc.
