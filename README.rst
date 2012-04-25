@@ -22,20 +22,30 @@ Installation
 
 To install for all users, run
 
-```$ sudo python setup.py ```
+``$ sudo python setup.py``
 
 To install for the current user, run
 
-```$ python setup.py install --user```
+``$ python setup.py install --user``
 
 
-Example for basemap-plot.py
+Examples for basemap-plot.py
 -------------------------
+
+basemap-plot.py is a script to plot a variety of ice sheet model relevant variables from a netCDF file from Greenland and Antarctica data sets. Projection information is retrieved from the first input file, and all subsquent plots are on-the-fly reprojected, which makes the script slow but flexible. 
 
 - Download a test data set, e.g. the SeaRISE master data set from
 
-```$ wget -nc http://websrv.cs.umt.edu/isis/images/a/a5/Greenland_5km_v1.1.nc```
+``$ wget -nc http://websrv.cs.umt.edu/isis/images/a/a5/Greenland_5km_v1.1.nc``
 
-- First, plot the magnitude of horizontal surface velocities 'surfvelmag' and save as 'foo.png'
+- First, plot the magnitude of horizontal surface velocities 'surfvelmag' and save as 'foo.png'.
 
-```$ basemap-plot.py --singlerow -v surfvelmag -o foo.png Greenland_5km_v1.1.nc```
+``$ basemap-plot.py --singlerow -v surfvelmag -o foo.png Greenland_5km_v1.1.nc``
+
+- Now, add coastlines (intermediate resolution 'i') and plot ice thickness 'thk' over an etopo background
+
+``$ basemap-plot.py --background etopo --coastlines --map_resolution i --singlerow -v thk -o foo.png Greenland_5km_v1.1.nc``
+
+- Use a geotiff file as background. In this case, projection information is taken from the geotiff:
+
+``$ basemap-plot.py --geotiff mygeotiff.tif --singlerow -v surfvelmag -o foo.png Greenland_5km_v1.1.nc``

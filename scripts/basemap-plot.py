@@ -60,6 +60,11 @@ class Variable(object):
 class GeoTIFF(object):
     '''
     A class to read a GeoTIFF
+
+    Parameters
+    ----------
+
+    filename: a valid geotiff file
     '''
 
     def __init__(self, file_name):
@@ -108,16 +113,16 @@ parser.usage = "%prog [options] FILE1 FILE2 ..."
 parser.description = "A script to plot a variable in a netCDF file over a GeoTiff. Uses GDAL python bindings, Proj4, and Basemap. Script is fine-tuned for whole Greenland plots, but can be adapted for other needs."
 parser.add_option("--alpha",dest="alpha",
                   help="transparency of overlay", default=1.)
-parser.add_option("--bluemarble",dest="bluemarble", action='store_true',
-                  help="Draw bluemarble background", default=False)
+parser.add_option("--background",dest="background", 
+                  help="Draw a background (bluemarble, etopo, shadedrelief", default=None)
 parser.add_option("--colormap",dest="colormap",
                   help="path to a cpt colormap", default=None)
 parser.add_option("--coastlines",dest="coastlines", action="store_true",
                   help="adds a coastlines", default=False)
 parser.add_option("-c", "--colorbar", dest="colorbar",action="store_true",
                   help="saves a colorbar seperately",default=False)
-parser.add_option("--etopo",dest="etopo", action='store_true',
-                  help="Draw etopo background", default=False)
+parser.add_option("--inner_title",dest="inner_title",action="store_true",
+                  help="add an inner title",default=False)
 parser.add_option("--singlerow", dest="singlerow", action="store_true",
                   help="all plots on a single row", default=False)
 parser.add_option("-m", "--same_mask", dest="samemask", action="store_true",
@@ -135,8 +140,6 @@ parser.add_option("-p", "--print_size", dest="print_mode",
               'onecol','medium','twocol','presentation'",default="twocol")
 parser.add_option("-r", "--output_resolution", dest="out_res",
                   help="Graphics resolution in dots per inch (DPI), default = 300",default=300)
-parser.add_option("--shadedrelief",dest="shadedrelief", action='store_true',
-                  help="Draw shaded relief background", default=False)
 parser.add_option("-v", "--variable", dest="varname",
                   help='''Variable to plot, default = 'csurf'.
                   Currently supported variables are: csurf''', default='csurf')
@@ -149,20 +152,22 @@ max_no_args = 6
 if (nt < required_no_args):
     print("received $i arguments, at least %i expected"
           % (nt, required_no_args))
-    exit(1)
+    import sys.exit
+    sys.exit
 elif (nt > max_no_args):
     print("received $i arguments, no more thant %i accepted"
           % (nt, max_no_args))
-    exit(1)
+    import sys.exit
+    sys.exit
 else:
     pass
 
 alpha = float(options.alpha)
-bluemarble = options.bluemarble
+background = options.background
 colormap = options.colormap
 coastlines = options.coastlines
 colorbar = options.colorbar
-etopo = options.etopo
+inner_title = options.inner_title
 map_res = options.map_res
 geotiff_filename = options.geotiff_filename
 print_mode = options.print_mode
@@ -170,7 +175,6 @@ samemask = options.samemask
 outunit = options.outunit
 out_res = int(options.out_res)
 out_file = options.out_file
-shadedrelief = options.shadedrelief
 singlerow = options.singlerow
 varname = options.varname
 
@@ -185,13 +189,15 @@ pre, suffix = out_file.split('.')
 if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
     print('Requested output format %s not supported, try png, pdf, svg, ps, eps'
           % suffix)
-    exit(1)
+    import sys.exit
+    sys.exit
 
 # set constants and other stuff
 meridian_spacing = 10
 parallels_spacing = 5
 
 vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag')
+vars_dem = ('thk', 'usurf', 'usrf')
 
 if varname in vars_speed:
 
@@ -216,7 +222,7 @@ if varname in vars_speed:
     var_dict = dict(zip(attr_keys, attr_vals))
     variable = Variable(varname, var_dict)
 
-elif varname in ('thk'):
+elif varname in vars_dem:
 
     if cmap is None:
         cmap = plt.cm.Blues
@@ -226,7 +232,7 @@ elif varname in ('thk'):
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend')
-    attr_vals = ([1000, 2000, 3000], cmap, norm, vmin, vmax, 'both')
+    attr_vals = ([1000, 2000, 3000], cmap, norm, vmin, vmax, 'max')
     var_dict = dict(zip(attr_keys, attr_vals))
     variable = Variable(varname, var_dict)
 
@@ -293,7 +299,6 @@ lats = []
 lons = []
 values = []
 var_order = ('time', 'z', ydim, xdim)
-print var_order
 
 for k in range(0, nt):
 
@@ -305,7 +310,8 @@ for k in range(0, nt):
     except:
         print("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
               % filename)
-        exit(1)
+        import sys.exit
+        sys.exit
 
     lats.append(np.squeeze(ppt.permute(nc.variables['lat'], var_order)))
     lons.append(np.squeeze(ppt.permute(nc.variables['lon'], var_order)))
@@ -335,7 +341,7 @@ for k in range(0, nt):
     if outunit is not None:
               data = ppt.unit_converter(data, inunit, outunit)
 
-    if variable.var_name in ('thk'):
+    if variable.var_name in vars_dem:
         mask = (data <= variable.vmin)
         values.append(np.ma.array(data, mask = mask))
     else:
@@ -397,12 +403,14 @@ for k in range(0,nt):
     m.ax = ax
     xx, yy = m(lons[k], lats[k])
 
-    if bluemarble:
+    if (background == 'bluemable'):
         m.bluemarble()
-    if etopo:
+    elif (background == 'etopo'):
         m.etopo()
-    if shadedrelief:
+    elif (background == 'shadedrelief'):
         m.shadedrelief()
+    else:
+        pass
 
     if samemask and (k != 0):
         values[k].mask = values[0].mask
@@ -442,9 +450,10 @@ for k in range(0,nt):
         m.drawcoastlines(linewidth=0.25)
 
     im_titles = ['a)','b)','c)','d)','e)','f)']
-    for ax in range(0,nt):
-        t = ppt.add_inner_title(fig.axes[ax], im_titles[ax], loc=2)
-        t.patch.set_ec("none")
+    if inner_title:
+        for ax in range(0,nt):
+            t = ppt.add_inner_title(fig.axes[ax], im_titles[ax], loc=2)
+            t.patch.set_ec("none")
 
 ## ## Now this is a bit tricky. Without transparency (alpha) set,
 ## ## we could just do:
