@@ -1,4 +1,4 @@
-from setuptools import setup
+from distutils.core import setup
 
 PKG_NAME = 'PyPISMTools'
 
@@ -18,7 +18,6 @@ setup(name=PKG_NAME,
         'Topic :: Scientific/Engineering',
         'Topic :: Utilities'
         ],
-      install_requires=['pyproj','udunits2', 'gdal', 'netCDF4'],
       scripts=['scripts/basemap-plot.py'],
       packages=[PKG_NAME],
       package_dir={PKG_NAME: '.'},

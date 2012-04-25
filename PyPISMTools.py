@@ -591,6 +591,7 @@ def permute(variable, output_order=('time', 'z', 'zb', 'y', 'x')):
     -------
     var_perm : array_like
     '''
+
     input_dimensions = variable.dimensions
 
     # filter out irrelevant dimensions

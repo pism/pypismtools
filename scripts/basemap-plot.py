@@ -191,7 +191,9 @@ if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
 meridian_spacing = 10
 parallels_spacing = 5
 
-if varname in ('csurf', 'cbase', 'cbar', 'magnitude'):
+vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag')
+
+if varname in vars_speed:
 
     if cmap is None:
         try:
@@ -218,7 +220,6 @@ elif varname in ('thk'):
 
     if cmap is None:
         cmap = plt.cm.Blues
-        ## cmap.set_under(color='g', alpha=0.35)
 
     vmin = 0.1
     vmax = 3e3
@@ -248,13 +249,29 @@ else:
         print("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
               % filename)
         
-    # x and y *from the dataset* are only used to determine the plotting domain
-    x = nc.variables['x'][:]
-    y = nc.variables['y'][:]
-    center_x = (x[0] + x[-1]) / 2
-    center_y = (y[0] + y[-1]) / 2
-    width = 1.2 * (x.max() - x.min())
-    height = 1.05 * (y.max() - y.min())
+    ## a list of possible x-dimensions names
+    xdims = ['x','x1']
+    ## a list of possible y-dimensions names
+    ydims = ['y','y1']
+
+    ## assign x dimension
+    for dim in xdims:
+        if dim in nc.dimensions.keys():
+            xdim = dim
+    ## assign y dimension
+    for dim in ydims:
+        if dim in nc.dimensions.keys():
+            ydim = dim
+
+    ## coordinate variable in x-direction
+    x_var = np.squeeze(nc.variables[xdim][:])
+    ## coordinate variable in y-direction
+    y_var = np.squeeze(nc.variables[ydim][:])
+
+    center_x = (x_var[0] + x_var[-1]) / 2
+    center_y = (y_var[0] + y_var[-1]) / 2
+    width = 1.2 * (np.max(x_var) - np.min(x_var))
+    height = 1.05 * (np.max(y_var) - np.min(y_var))
 
     nc_projection = ppt.get_projection_from_file(nc)
 
@@ -275,6 +292,9 @@ if geotiff_filename is not None:
 lats = []
 lons = []
 values = []
+var_order = ('time', 'z', ydim, xdim)
+print var_order
+
 for k in range(0, nt):
 
     filename = args[k]
@@ -287,8 +307,8 @@ for k in range(0, nt):
               % filename)
         exit(1)
 
-    lats.append(ppt.permute(nc.variables['lat']))
-    lons.append(ppt.permute(nc.variables['lon']))
+    lats.append(np.squeeze(ppt.permute(nc.variables['lat'], var_order)))
+    lons.append(np.squeeze(ppt.permute(nc.variables['lon'], var_order)))
 
     if varname == 'csurf':
         if 'csurf' in nc.variables.keys():
@@ -299,7 +319,7 @@ for k in range(0, nt):
         var = varname
     print("    - reading variable %s from file %s" % (variable.var_name, filename))
     try:
-        data = np.squeeze(ppt.permute(nc.variables[variable.var_name]))
+        data = np.squeeze(ppt.permute(nc.variables[variable.var_name], var_order))
     except:
         print("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
               % (variable.var_name, filename))
@@ -386,9 +406,11 @@ for k in range(0,nt):
 
     if samemask and (k != 0):
         values[k].mask = values[0].mask
+        
     if geotiff_filename is not None:
         m.pcolormesh(xx_gtiff, yy_gtiff, np.flipud(geotiff.RasterArray),
                      cmap=plt.cm.gray)
+        
     cs = m.pcolormesh(xx, yy, values[k], cmap=variable.cmap, alpha=alpha,
               norm=variable.norm)
     if singlerow:
