@@ -1,4 +1,6 @@
 from distutils.core import setup
+import os
+import sys
 
 PKG_NAME = 'PyPISMTools'
 print('\nInstalling %s' % PKG_NAME)
@@ -23,7 +25,6 @@ if not_installed:
     import sys
     sys.exit()
 
-
 setup(name=PKG_NAME,
       version='0.12',
       description='Python tools to evaluate PISM results',
@@ -44,3 +45,6 @@ setup(name=PKG_NAME,
       package_dir={PKG_NAME: '.'},
       package_data={PKG_NAME: ['colormaps/*.cpt']},
       )
+
+print('\nMake make sure you have %s in your search path!'
+      % os.path.join(sys.prefix, 'bin'))
