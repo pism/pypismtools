@@ -22,7 +22,10 @@ try:
 except:
     from netCDF3 import Dataset as NC
 
-from PyPISMTools import PyPISMTools as ppt
+try:
+    import PyPISMTools.PyPISMTools as ppt
+except:
+    import PyPISMTools as ppt
 
 class Variable(object):
     '''
