@@ -22,7 +22,7 @@ Installation
 
 To install for all users, run
 
-``$ sudo python setup.py``
+``$ sudo python setup.py install``
 
 To install for the current user, run
 
