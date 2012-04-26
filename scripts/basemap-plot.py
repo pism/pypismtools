@@ -301,7 +301,6 @@ if geotiff_filename is not None:
 lats = []
 lons = []
 values = []
-var_order = ('time', 'z', ydim, xdim)
 
 for k in range(0, nt):
 
@@ -315,6 +314,22 @@ for k in range(0, nt):
               % filename)
         import sys.exit
         sys.exit
+
+    ## a list of possible x-dimensions names
+    xdims = ['x','x1']
+    ## a list of possible y-dimensions names
+    ydims = ['y','y1']
+
+    ## assign x dimension
+    for dim in xdims:
+        if dim in nc.dimensions.keys():
+            xdim = dim
+    ## assign y dimension
+    for dim in ydims:
+        if dim in nc.dimensions.keys():
+            ydim = dim
+
+    var_order = ('time', 'z', ydim, xdim)
 
     lats.append(np.squeeze(ppt.permute(nc.variables['lat'], var_order)))
     lons.append(np.squeeze(ppt.permute(nc.variables['lon'], var_order)))
