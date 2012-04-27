@@ -118,8 +118,11 @@ parser.add_option("--alpha",dest="alpha",
                   help="transparency of overlay", default=1.)
 parser.add_option("--background",dest="background", 
                   help="Draw a background (bluemarble, etopo, shadedrelief", default=None)
+parser.add_option("--bounds", dest="bounds",
+                  help="lower and upper bound for colorbar, eg. -1,1", default=None)
 parser.add_option("--colormap",dest="colormap",
-                  help="path to a cpt colormap", default=None)
+                  help='''path to a cpt colormap, or a pylab colormap,
+                  e.g. Blues''', default=None)
 parser.add_option("--coastlines",dest="coastlines", action="store_true",
                   help="adds a coastlines", default=False)
 parser.add_option("-c", "--colorbar", dest="colorbar",action="store_true",
@@ -167,6 +170,8 @@ else:
 
 alpha = float(options.alpha)
 background = options.background
+bounds = options.bounds
+
 colormap = options.colormap
 coastlines = options.coastlines
 colorbar = options.colorbar
@@ -183,10 +188,13 @@ varname = options.varname
 
 cmap = None
 if colormap is not None:
-    # import and convert colormap
-    cdict = ppt.gmtColormap(colormap)
+    try:
+        cdict = plt.cm.datad[colormap]
+    except:
+        # import and convert colormap
+        cdict = ppt.gmtColormap(colormap)
     cmap = colors.LinearSegmentedColormap('my_colormap', cdict)
-
+            
 # check output format
 pre, suffix = out_file.split('.')
 if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
@@ -231,14 +239,35 @@ elif varname in vars_dem:
         cmap = plt.cm.Blues
 
     vmin = 0.1
-    vmax = 3e3
+    vmax = None
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend')
-    attr_vals = ([1000, 2000, 3000], cmap, norm, vmin, vmax, 'max')
+    attr_vals = (None, cmap, norm, vmin, vmax, 'max')
     var_dict = dict(zip(attr_keys, attr_vals))
     variable = Variable(varname, var_dict)
 
+else:
+
+    if cmap is None:
+        cmap = plt.cm.gist_ncar
+
+    vmin = None
+    vmax = None
+    norm = None
+
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend')
+    attr_vals = (None, cmap, norm, vmin, vmax, 'both')
+    var_dict = dict(zip(attr_keys, attr_vals))
+    variable = Variable(varname, var_dict)
+
+if bounds is not None:
+    bounds_min, bounds_max = bounds.split(',')
+    bounds_min = float(bounds_min)
+    bounds_max = float(bounds_max)
+    variable.vmin = bounds_min
+    variable.vmax = bounds_max
+    variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
 
 if geotiff_filename is not None:
     geotiff = GeoTIFF(geotiff_filename)
@@ -485,6 +514,12 @@ for k in range(0,nt):
 ## ## With transparency, the colorbar would inhert the transparency,
 ## ## which we don't want. So we do instead:
 
+if variable.var_name not in (vars_speed or vars_dem) and bounds is None:
+
+    variable.vmin = data.min()
+    variable.vmax = data.max()
+    variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
+
 if singlerow:
     plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
                                      cmap=variable.cmap,
@@ -492,8 +527,7 @@ if singlerow:
                                      extend=variable.extend,
                                      orientation='vertical',
                                      drawedges=False,
-                                     ticks=variable.ticks,
-                                     format="%d")
+                                     ticks=variable.ticks)
 else:
     plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
                                      cmap=variable.cmap,
@@ -501,8 +535,7 @@ else:
                                      extend=variable.extend,
                                      orientation='horizontal',
                                      drawedges=False,
-                                     ticks=variable.ticks,
-                                     format="%d")
+                                     ticks=variable.ticks)
 
 print "  writing image %s ..." % out_file
 fig.savefig(out_file,bbox_inches='tight', pad_inches=pad_inches, dpi=out_res)
