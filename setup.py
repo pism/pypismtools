@@ -15,7 +15,7 @@ for package in packages:
         __import__(package)
         print('  - % s package is installed' % package)
     except ImportError:
-        print('  - % s package not installed' % package)
+        print('  - % s package NOT installed' % package)
         not_installed.append(package)
 if not_installed:
     print('Please install the following packages:')
@@ -46,5 +46,7 @@ setup(name=PKG_NAME,
       package_data={PKG_NAME: ['colormaps/*.cpt']},
       )
 
-print('\nMake make sure you have %s in your search path!'
+print('\n*********************************************************************')
+print('Make make sure you have %s in your search path!'
       % os.path.join(sys.prefix, 'bin'))
+print('*********************************************************************')
