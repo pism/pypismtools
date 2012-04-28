@@ -127,6 +127,8 @@ parser.add_option("--coastlines",dest="coastlines", action="store_true",
                   help="adds a coastlines", default=False)
 parser.add_option("-c", "--colorbar", dest="colorbar",action="store_true",
                   help="saves a colorbar seperately",default=False)
+parser.add_option("--drawmapscale",dest="drawmapscale", action="store_true",
+                  help="draws a map scale in the lower left corner", default=False)
 parser.add_option("--inner_title",dest="inner_title",action="store_true",
                   help="add an inner title",default=False)
 parser.add_option("--singlerow", dest="singlerow", action="store_true",
@@ -175,6 +177,7 @@ bounds = options.bounds
 colormap = options.colormap
 coastlines = options.coastlines
 colorbar = options.colorbar
+drawmapscale = options.drawmapscale
 inner_title = options.inner_title
 map_res = options.map_res
 geotiff_filename = options.geotiff_filename
@@ -501,6 +504,10 @@ for k in range(0,nt):
         for ax in range(0,nt):
             t = ppt.add_inner_title(fig.axes[ax], im_titles[ax], loc=2)
             t.patch.set_ec("none")
+
+    if drawmapscale:
+        m.drawmapscale(lons[0][0, 0] + 1, lats[0][0, 0] + 1, lon_0, lat_0,
+                   500, fontsize=plt.rcParams['font.size'], barstyle='fancy')
 
 ## ## Now this is a bit tricky. Without transparency (alpha) set,
 ## ## we could just do:
