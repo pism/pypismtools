@@ -37,7 +37,8 @@ class Variable(object):
         self.var_name = varname
 
         kwargsdict = {}
-        expected_args = ['ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend']
+        expected_args = ['ticks', 'cmap', 'norm', 'vmin', 'vmax',
+                         'extend', 'format']
         for key in kwargs.keys():
             if key in expected_args:
                 kwargsdict[key] = kwargs[key]
@@ -59,6 +60,10 @@ class Variable(object):
             
         if 'extend' in kwargsdict:
             self.extend = kwargsdict['extend']
+
+        if 'format' in kwargsdict:
+            self.format = kwargsdict['format']
+
 
 class GeoTIFF(object):
     '''
@@ -230,9 +235,9 @@ if varname in vars_speed:
     norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm',
-                 'vmin', 'vmax', 'extend')
+                 'vmin', 'vmax', 'extend', 'format')
     attr_vals = ([1, 3, 10, 30, 100, 300, 1000, 3000], cmap,
-                 norm, vmin, vmax, 'both')
+                 norm, vmin, vmax, 'both', '%d')
     var_dict = dict(zip(attr_keys, attr_vals))
     variable = Variable(varname, var_dict)
 
@@ -245,8 +250,8 @@ elif varname in vars_dem:
     vmax = None
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
-    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend')
-    attr_vals = (None, cmap, norm, vmin, vmax, 'max')
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format')
+    attr_vals = (None, cmap, norm, vmin, vmax, 'max', '%d')
     var_dict = dict(zip(attr_keys, attr_vals))
     variable = Variable(varname, var_dict)
 
@@ -311,12 +316,26 @@ else:
 
     center_x = (x_var[0] + x_var[-1]) / 2
     center_y = (y_var[0] + y_var[-1]) / 2
-    width = 1.2 * (np.max(x_var) - np.min(x_var))
-    height = 1.05 * (np.max(y_var) - np.min(y_var))
-
+    width = 1. * (np.max(x_var) - np.min(x_var))
+    height = 1.0 * (np.max(y_var) - np.min(y_var))
     nc_projection = ppt.get_projection_from_file(nc)
-
     lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
+
+    # This works for Antarctica but not for Greenland:
+
+    ## nc_projection = ppt.get_projection_from_file(nc)
+    ## srs_list = nc_projection.srs.split('+')
+    ## srs_dict = {}
+    ## for x in range(0, len(srs_list)):
+    ##     mylist = srs_list[x].split('=')
+    ##     print mylist
+    ##     try:
+    ##         srs_dict[mylist[0]] = float(mylist[1])
+    ##     except:
+    ##         pass
+    ## lat_0 = srs_dict['lat_0']
+    ## lon_0 = srs_dict['lon_0']
+    
     nc.close()
 
 print "  creating Basemap ..."
@@ -421,7 +440,7 @@ if colorbar:
                                          extend=variable.extend,
                                          drawedges=False,
                                          ticks=variable.ticks,
-                                         format="%d")
+                                         format=variable.format)
 
     OUTNAME = var + "_colorbar." + suffix
     print("  writing colorbar %s ..." % OUTNAME)
@@ -506,7 +525,7 @@ for k in range(0,nt):
             t.patch.set_ec("none")
 
     if drawmapscale:
-        m.drawmapscale(lons[0][0, 0] + 1, lats[0][0, 0] + 1, lon_0, lat_0,
+        m.drawmapscale(lons[0][0, 0] + 4, lats[0][0, 0] + 1.75, lon_0, lat_0,
                    500, fontsize=plt.rcParams['font.size'], barstyle='fancy')
 
 ## ## Now this is a bit tricky. Without transparency (alpha) set,
@@ -526,23 +545,26 @@ if variable.var_name not in (vars_speed or vars_dem) and bounds is None:
     variable.vmin = data.min()
     variable.vmax = data.max()
     variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
+    variable.format = None
 
 if singlerow:
     plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
-                                     cmap=variable.cmap,
-                                     norm=variable.norm,
-                                     extend=variable.extend,
-                                     orientation='vertical',
-                                     drawedges=False,
-                                     ticks=variable.ticks)
+                                         cmap=variable.cmap,
+                                         norm=variable.norm,
+                                         extend=variable.extend,
+                                         orientation='vertical',
+                                         drawedges=False,
+                                         ticks=variable.ticks,
+                                         format=variable.format)
 else:
     plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
-                                     cmap=variable.cmap,
-                                     norm=variable.norm,
-                                     extend=variable.extend,
-                                     orientation='horizontal',
-                                     drawedges=False,
-                                     ticks=variable.ticks)
+                                         cmap=variable.cmap,
+                                         norm=variable.norm,
+                                         extend=variable.extend,
+                                         orientation='horizontal',
+                                         drawedges=False,
+                                         ticks=variable.ticks,
+                                         format=variable.format)
 
 print "  writing image %s ..." % out_file
 fig.savefig(out_file,bbox_inches='tight', pad_inches=pad_inches, dpi=out_res)

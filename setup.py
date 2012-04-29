@@ -20,7 +20,12 @@ for package in packages:
 if not_installed:
     print('Please install the following packages:')
     for package in not_installed:
-        print('  - %s' % package)
+        if package is 'osgeo':
+            print(' - GDAL python bindings')
+        elif package is 'udunits2':
+            print(' - py_udunits2 from https://github.com/ckhroulev/py_udunits2')
+        else:
+            print('  - %s' % package)
     print('Exiting')
     import sys
     sys.exit()
