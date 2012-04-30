@@ -24,7 +24,57 @@ from netCDF4 import Dataset as CDF
 ## FIXME: how to provide DEBUG flag to module
 DEBUG=None
 
-## Get projection information from netCDF file
+class GeoTIFF(object):
+    '''
+    A class to read a GeoTIFF
+
+    Parameters
+    ----------
+
+    filename: a valid geotiff file
+    '''
+
+    def __init__(self, file_name):
+
+        self.file_name = file_name
+
+        try:
+            print("\n  opening GeoTIFF file %s" % file_name)
+            self.gtiff = gdal.Open(file_name)
+        except:
+            print("could not open file %s" % file_name)
+
+
+        self.RasterArray = self.gtiff.ReadAsArray()
+        self.gtiff_projection = self.gtiff.GetProjection()
+
+        osr_gtiff = osr.SpatialReference()
+        osr_gtiff.ImportFromWkt(self.gtiff_projection)
+        self.proj4 = osr_gtiff.ExportToProj4()
+
+        geoT = self.gtiff.GetGeoTransform()
+        pxwidth = self.gtiff.RasterXSize
+        pxheight = self.gtiff.RasterYSize
+        ulx = geoT[0]
+        uly = geoT[3]
+        rezX = geoT[1]
+        rezY = geoT[5]
+        rx = ulx + pxwidth * rezX
+        ly = uly + pxheight * rezY
+        self.width = np.abs(pxwidth * rezX)
+        self.height = np.abs(pxheight * rezY)
+        self.center_x = ulx + pxwidth * rezX / 2
+        self.center_y = uly + pxheight * rezY / 2
+        self.easting = np.arange(ulx, rx + rezX, rezX)
+        self.northing = np.arange(ly, uly - rezY, -rezY)
+        self.X, self.Y = np.meshgrid(self.easting, self.northing)
+
+        p_osr_gtiff = Proj(self.proj4)
+        self.lon_0, self.lat_0 = p_osr_gtiff(self.center_x, self.center_y,
+                                             inverse=True)
+        self.lon, self.lat = p_osr_gtiff(self.X, self.Y, inverse=True)
+
+
 def get_projection_from_file(nc):
     '''
     Gets a Proj projection instance from a pointer to a netCDF file
