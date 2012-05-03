@@ -3,7 +3,7 @@ import os
 import sys
 
 PKG_NAME = 'PyPISMTools'
-print('\nInstalling %s' % PKG_NAME)
+print(('\nInstalling %s' % PKG_NAME))
 print('----------------------------')
 
 packages = ('numpy', 'osgeo', 'netCDF4', 'udunits2', 'pyproj',
@@ -13,9 +13,9 @@ not_installed = []
 for package in packages:
     try:
         __import__(package)
-        print('  - % s package is installed' % package)
+        print(('  - % s package is installed' % package))
     except ImportError:
-        print('  - % s package NOT installed' % package)
+        print(('  - % s package NOT installed' % package))
         not_installed.append(package)
 if not_installed:
     print('Please install the following packages:')
@@ -25,7 +25,7 @@ if not_installed:
         elif package is 'udunits2':
             print(' - py_udunits2 from https://github.com/ckhroulev/py_udunits2')
         else:
-            print('  - %s' % package)
+            print(('  - %s' % package))
     print('Exiting')
     import sys
     sys.exit()
@@ -52,6 +52,6 @@ setup(name=PKG_NAME,
       )
 
 print('\n*********************************************************************')
-print('Make make sure you have %s in your search path!'
-      % os.path.join(sys.prefix, 'bin'))
+print(('Make make sure you have %s in your search path!'
+      % os.path.join(sys.prefix, 'bin')))
 print('*********************************************************************')

@@ -14,8 +14,6 @@ from matplotlib import colors
 from optparse import OptionParser
 
 from pyproj import Proj
-from osgeo import gdal
-from osgeo import osr
 
 try:
     from netCDF4 import Dataset as NC
@@ -26,6 +24,36 @@ try:
     import PyPISMTools.PyPISMTools as ppt
 except:
     import PyPISMTools as ppt
+
+
+def get_dims(nc):
+    '''
+    Gets dimensions from netcdf instance
+
+    Parameters:
+    -----------
+    nc: netCDF instance
+
+    Returns:
+    --------
+    xdim, ydim: dimensions
+    '''
+        
+    ## a list of possible x-dimensions names
+    xdims = ['x','x1']
+    ## a list of possible y-dimensions names
+    ydims = ['y','y1']
+
+    ## assign x dimension
+    for dim in xdims:
+        if dim in list(nc.dimensions.keys()):
+            xdim = dim
+    ## assign y dimension
+    for dim in ydims:
+        if dim in list(nc.dimensions.keys()):
+            ydim = dim
+    return xdim, ydim
+
 
 class Variable(object):
     '''
@@ -39,7 +67,7 @@ class Variable(object):
         kwargsdict = {}
         expected_args = ['ticks', 'cmap', 'norm', 'vmin', 'vmax',
                          'extend', 'format']
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             if key in expected_args:
                 kwargsdict[key] = kwargs[key]
                 
@@ -88,6 +116,8 @@ parser.add_option("--inner_title",dest="inner_title",action="store_true",
                   help="add an inner title",default=False)
 parser.add_option("--singlerow", dest="singlerow", action="store_true",
                   help="all plots on a single row", default=False)
+parser.add_option("--singlecolumn", dest="singlecolumn", action="store_true",
+                  help="all plots on a single column", default=False)
 parser.add_option("-m", "--same_mask", dest="samemask", action="store_true",
                   help="use mask from first plot for all plots", default=False)
 parser.add_option("--map_resolution", dest="map_res",
@@ -113,13 +143,13 @@ nt = len(args)
 required_no_args = 1
 max_no_args = 6
 if (nt < required_no_args):
-    print("received $i arguments, at least %i expected"
-          % (nt, required_no_args))
+    print(("received $i arguments, at least %i expected"
+          % (nt, required_no_args)))
     import sys.exit
     sys.exit
 elif (nt > max_no_args):
-    print("received $i arguments, no more thant %i accepted"
-          % (nt, max_no_args))
+    print(("received $i arguments, no more thant %i accepted"
+          % (nt, max_no_args)))
     import sys.exit
     sys.exit
 else:
@@ -142,6 +172,7 @@ outunit = options.outunit
 out_res = int(options.out_res)
 out_file = options.out_file
 singlerow = options.singlerow
+singlecolumn = options.singlecolumn
 varname = options.varname
 
 cmap = None
@@ -156,8 +187,8 @@ if colormap is not None:
 # check output format
 pre, suffix = out_file.split('.')
 if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
-    print('Requested output format %s not supported, try png, pdf, svg, ps, eps'
-          % suffix)
+    print(('Requested output format %s not supported, try png, pdf, svg, ps, eps'
+          % suffix))
     import sys.exit
     sys.exit
 
@@ -188,7 +219,7 @@ if varname in vars_speed:
                  'vmin', 'vmax', 'extend', 'format')
     attr_vals = ([1, 3, 10, 30, 100, 300, 1000, 3000], cmap,
                  norm, vmin, vmax, 'both', '%d')
-    var_dict = dict(zip(attr_keys, attr_vals))
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
 elif varname in vars_dem:
@@ -202,7 +233,7 @@ elif varname in vars_dem:
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format')
     attr_vals = (None, cmap, norm, vmin, vmax, 'max', '%d')
-    var_dict = dict(zip(attr_keys, attr_vals))
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
 else:
@@ -216,7 +247,7 @@ else:
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend')
     attr_vals = (None, cmap, norm, vmin, vmax, 'both')
-    var_dict = dict(zip(attr_keys, attr_vals))
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
 if bounds is not None:
@@ -237,39 +268,31 @@ if geotiff_filename is not None:
     lon = geotiff.lon
 else:
     filename = args[0]
-    print "  opening NetCDF file %s ..." % filename
+    print("  opening NetCDF file %s ..." % filename)
     try:
         # open netCDF file in 'append' mode
         nc = NC(filename, 'r')
     except:
-        print("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
-              % filename)
+        print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
+              % filename))
+        import sys
+        sys.exit()
         
-    ## a list of possible x-dimensions names
-    xdims = ['x','x1']
-    ## a list of possible y-dimensions names
-    ydims = ['y','y1']
-
-    ## assign x dimension
-    for dim in xdims:
-        if dim in nc.dimensions.keys():
-            xdim = dim
-    ## assign y dimension
-    for dim in ydims:
-        if dim in nc.dimensions.keys():
-            ydim = dim
+    xdim, ydim = get_dims(nc)
 
     ## coordinate variable in x-direction
     x_var = np.squeeze(nc.variables[xdim][:])
     ## coordinate variable in y-direction
     y_var = np.squeeze(nc.variables[ydim][:])
 
+    # FIXME: We do Greenland-tuning:
     center_x = (x_var[0] + x_var[-1]) / 2
     center_y = (y_var[0] + y_var[-1]) / 2
-    width = 1. * (np.max(x_var) - np.min(x_var))
+    width = 1.15 * (np.max(x_var) - np.min(x_var))
     height = 1.0 * (np.max(y_var) - np.min(y_var))
     nc_projection = ppt.get_projection_from_file(nc)
     lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
+    lon_0 = -45.
 
     # This works for Antarctica but not for Greenland:
 
@@ -278,7 +301,6 @@ else:
     ## srs_dict = {}
     ## for x in range(0, len(srs_list)):
     ##     mylist = srs_list[x].split('=')
-    ##     print mylist
     ##     try:
     ##         srs_dict[mylist[0]] = float(mylist[1])
     ##     except:
@@ -288,7 +310,7 @@ else:
     
     nc.close()
 
-print "  creating Basemap ..."
+print("  creating Basemap ...")
 m = Basemap(width=width,
             height=height,
             resolution=map_res,
@@ -302,17 +324,18 @@ if geotiff_filename is not None:
 lats = []
 lons = []
 values = []
+ocean_mask = []
 
 for k in range(0, nt):
 
     filename = args[k]
-    print "  opening NetCDF file %s ..." % filename
+    print("  opening NetCDF file %s ..." % filename)
     try:
         # open netCDF file in 'append' mode
         nc = NC(filename, 'r')
     except:
-        print("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
-              % filename)
+        print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
+              % filename))
         import sys.exit
         sys.exit
 
@@ -323,11 +346,11 @@ for k in range(0, nt):
 
     ## assign x dimension
     for dim in xdims:
-        if dim in nc.dimensions.keys():
+        if dim in list(nc.dimensions.keys()):
             xdim = dim
     ## assign y dimension
     for dim in ydims:
-        if dim in nc.dimensions.keys():
+        if dim in list(nc.dimensions.keys()):
             ydim = dim
 
     var_order = ('time', 'z', ydim, xdim)
@@ -336,25 +359,25 @@ for k in range(0, nt):
     lons.append(np.squeeze(ppt.permute(nc.variables['lon'], var_order)))
 
     if varname == 'csurf':
-        if 'csurf' in nc.variables.keys():
+        if 'csurf' in list(nc.variables.keys()):
             var = 'csurf'
         else:
             var = 'magnitude'
     else:
         var = varname
-    print("    - reading variable %s from file %s" % (variable.var_name, filename))
+    print(("    - reading variable %s from file %s" % (var, filename)))
     try:
-        data = np.squeeze(ppt.permute(nc.variables[variable.var_name], var_order))
+        data = np.squeeze(ppt.permute(nc.variables[var], var_order))
     except:
-        print("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
-              % (variable.var_name, filename))
+        print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
+              % (variable.var_name, filename)))
         exit(2)
 
     try:
         inunit = str(nc.variables[var].units)
     except:
-        print("ERROR:  units not found in variable '%s' in file %s ... ending ..."
-              % (variable.var_name, filename))
+        print(("ERROR:  units not found in variable '%s' in file %s ... ending ..."
+              % (variable.var_name, filename)))
         exit(2)
 
     if outunit is not None:
@@ -371,6 +394,12 @@ for k in range(0, nt):
         except:
             values.append(data)
 
+    ocean_mask_varname = 'mask'
+    if ocean_mask_varname in nc.variables.keys():
+        ocean_mask.append(np.squeeze(ppt.permute(nc.variables['mask'])))
+    else:
+        ocean_mask.append(np.zeros_like(data))
+
     nc.close()
 
 
@@ -378,7 +407,7 @@ for k in range(0, nt):
 lw, pad_inches = ppt.set_mode(print_mode)
 
 
-# make a separate colorbar (if requeste
+# make a separate colorbar (if requested)
 if colorbar:
 
     fig = plt.figure()
@@ -393,7 +422,7 @@ if colorbar:
                                          format=variable.format)
 
     OUTNAME = var + "_colorbar." + suffix
-    print("  writing colorbar %s ..." % OUTNAME)
+    print(("  writing colorbar %s ..." % OUTNAME))
     plt.savefig(OUTNAME, bbox_inches='tight')
 
 
@@ -406,6 +435,14 @@ if singlerow:
                     cbar_mode='single',
                     cbar_size=0.1,
                     cbar_location='right',
+                    share_all=True)
+elif singlecolumn:
+    grid = ImageGrid(fig, 111, # similar to subplot(111)
+                    nrows_ncols = (nt, 1), # creates nt x 1 grid of axes
+                    axes_pad=0.05, # pad between axes in inch.
+                    cbar_mode='single',
+                    cbar_size=0.1,
+                    cbar_location='top',
                     share_all=True)
 else:
     grid = ImageGrid(fig, 111, # similar to subplot(111)
@@ -448,6 +485,15 @@ for k in range(0,nt):
                             labels = [1, 0, 0, 0], linewidth=0.5)
         else:
             m.drawparallels(np.arange(-90., 90., parallels_spacing),
+                            labels = [0, 0, 0, 0], linewidth=0.5)
+    elif singlecolumn:
+        m.drawparallels(np.arange(-90., 90., parallels_spacing),
+                        labels = [1, 0, 0, 0], linewidth=0.5)
+        if (k==nt-1):
+            m.drawmeridians(np.arange(-175., 175., meridian_spacing),
+                            labels = [0, 0, 0, 1], linewidth=0.5)
+        else:
+            m.drawmeridians(np.arange(-175., 175., meridian_spacing),
                             labels = [0, 0, 0, 0], linewidth=0.5)
     else:
         if (k==0) or (k==3):
@@ -506,6 +552,14 @@ if singlerow:
                                          drawedges=False,
                                          ticks=variable.ticks,
                                          format=variable.format)
+if singlecolumn:
+    plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
+                                         cmap=variable.cmap,
+                                         norm=variable.norm,
+                                         extend=variable.extend,
+                                         orientation='horizontal',
+                                         drawedges=False,
+                                         ticks=variable.ticks)
 else:
     plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
                                          cmap=variable.cmap,
@@ -516,5 +570,5 @@ else:
                                          ticks=variable.ticks,
                                          format=variable.format)
 
-print "  writing image %s ..." % out_file
+print("  writing image %s ..." % out_file)
 fig.savefig(out_file,bbox_inches='tight', pad_inches=pad_inches, dpi=out_res)

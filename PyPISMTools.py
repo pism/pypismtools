@@ -21,6 +21,11 @@ import pylab as plt
 
 from netCDF4 import Dataset as CDF
 
+from pyproj import Proj
+from osgeo import gdal
+from osgeo import osr
+
+
 ## FIXME: how to provide DEBUG flag to module
 DEBUG=None
 
