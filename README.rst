@@ -42,7 +42,7 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 
 ``$ basemap-plot.py --singlerow -v surfvelmag -o surfvelmag.png Greenland_5km_v1.1.nc``
 
-.. figure:: doc/surfvelmag.png
+.. figure:: surfvelmag.png
    :width: 300px
    :alt: Magnitude of surface velocities.
 
