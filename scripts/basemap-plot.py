@@ -103,6 +103,10 @@ parser.add_option("--background",dest="background",
                   help="Draw a background (bluemarble, etopo, shadedrelief", default=None)
 parser.add_option("--bounds", dest="bounds",
                   help="lower and upper bound for colorbar, eg. -1,1", default=None)
+parser.add_option("--obs_file",dest="obs_file",
+                  help='''
+                  file with observations for difference plot,
+experiment - observation. Must be on same grid as experiments. Default is None''', default=None)
 parser.add_option("--colormap",dest="colormap",
                   help='''path to a cpt colormap, or a pylab colormap,
                   e.g. Blues''', default=None)
@@ -132,7 +136,11 @@ parser.add_option("-p", "--print_size", dest="print_mode",
               help="sets figure size and font size, available options are: \
               'onecol','medium','twocol','presentation'",default="twocol")
 parser.add_option("-r", "--output_resolution", dest="out_res",
-                  help="Graphics resolution in dots per inch (DPI), default = 300",default=300)
+                  help='''
+                  Graphics resolution in dots per inch (DPI), default
+                  = 300''', default=300)
+parser.add_option("--relative", dest="relative", action="store_true",
+                  help="do relative differences.", default=False)
 parser.add_option("-v", "--variable", dest="varname",
                   help='''Variable to plot, default = 'csurf'.
                   Currently supported variables are: csurf''', default='csurf')
@@ -158,7 +166,6 @@ else:
 alpha = float(options.alpha)
 background = options.background
 bounds = options.bounds
-
 colormap = options.colormap
 coastlines = options.coastlines
 colorbar = options.colorbar
@@ -168,11 +175,13 @@ map_res = options.map_res
 geotiff_filename = options.geotiff_filename
 print_mode = options.print_mode
 samemask = options.samemask
+obs_file = options.obs_file
 outunit = options.outunit
 out_res = int(options.out_res)
 out_file = options.out_file
 singlerow = options.singlerow
 singlecolumn = options.singlecolumn
+relative = options.relative
 varname = options.varname
 
 cmap = None
@@ -258,6 +267,13 @@ if bounds is not None:
     variable.vmax = bounds_max
     variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
 
+if obs_file is not None:
+    variable.vmin = bounds_min
+    variable.vmax = bounds_max
+    variable.norm = colors.Normalize(vmin=variable.vmin,
+                                     vmax=variable.vmax)
+    variable.ticks = None
+
 if geotiff_filename is not None:
     geotiff = ppt.GeoTIFF(geotiff_filename)
     width = geotiff.width
@@ -310,6 +326,59 @@ else:
     
     nc.close()
 
+
+if obs_file is not None:
+    print("  opening NetCDF file %s ..." % obs_file)
+    try:
+        # open netCDF file in 'append' mode
+        nc = NC(obs_file, 'r')
+    except:
+        print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
+              % filename))
+        import sys
+        sys.exit()
+        
+    var_order = ('time', 'z', ydim, xdim)
+
+    if varname == 'csurf':
+        if 'csurf' in list(nc.variables.keys()):
+            var = 'csurf'
+        else:
+            var = 'magnitude'
+    else:
+        var = varname
+    print(("    - reading variable %s from file %s" % (var, filename)))
+    try:
+        data = np.squeeze(ppt.permute(nc.variables[var], var_order))
+    except:
+        print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
+              % (variable.var_name, filename)))
+        exit(2)
+
+    try:
+        inunit = str(nc.variables[var].units)
+    except:
+        print(("ERROR:  units not found in variable '%s' in file %s ... ending ..."
+              % (variable.var_name, filename)))
+        exit(2)
+
+    if outunit is not None:
+              data = ppt.unit_converter(data, inunit, outunit)
+
+    if variable.var_name in vars_dem:
+        mask = (data <= variable.vmin)
+        obs_values = np.ma.array(data, mask = mask)
+    else:
+        try:
+            fill  = nc.variables[var]._FillValue
+            mask = (data == fill)
+            obs_values = np.ma.array(data, mask = mask)
+        except:
+            obs_values = data
+    
+    nc.close()
+
+
 print("  creating Basemap ...")
 m = Basemap(width=width,
             height=height,
@@ -339,19 +408,7 @@ for k in range(0, nt):
         import sys.exit
         sys.exit
 
-    ## a list of possible x-dimensions names
-    xdims = ['x','x1']
-    ## a list of possible y-dimensions names
-    ydims = ['y','y1']
-
-    ## assign x dimension
-    for dim in xdims:
-        if dim in list(nc.dimensions.keys()):
-            xdim = dim
-    ## assign y dimension
-    for dim in ydims:
-        if dim in list(nc.dimensions.keys()):
-            ydim = dim
+    xdim, ydim = get_dims(nc)
 
     var_order = ('time', 'z', ydim, xdim)
 
@@ -467,7 +524,7 @@ for k in range(0,nt):
         m.shadedrelief()
     else:
         pass
-
+    
     if samemask and (k != 0):
         values[k].mask = values[0].mask
         
@@ -475,7 +532,16 @@ for k in range(0,nt):
         m.pcolormesh(xx_gtiff, yy_gtiff, np.flipud(geotiff.RasterArray),
                      cmap=plt.cm.gray)
         
-    cs = m.pcolormesh(xx, yy, values[k], cmap=variable.cmap, alpha=alpha,
+    if obs_file:
+        if relative:
+            cs = m.pcolormesh(xx, yy,
+                              ((obs_values - values[k]) / obs_values),
+                cmap=variable.cmap, alpha=alpha, norm=variable.norm)
+        else:
+            cs = m.pcolormesh(xx, yy, obs_values - values[k],
+                              cmap=variable.cmap, alpha=alpha, norm=variable.norm)
+    else:
+        cs = m.pcolormesh(xx, yy, values[k], cmap=variable.cmap, alpha=alpha,
               norm=variable.norm)
     if singlerow:
         m.drawmeridians(np.arange(-175., 175., meridian_spacing),

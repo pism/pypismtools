@@ -38,9 +38,16 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 
 ``$ wget -nc http://websrv.cs.umt.edu/isis/images/a/a5/Greenland_5km_v1.1.nc``
 
-- First, plot the magnitude of horizontal surface velocities 'surfvelmag' and save as 'foo.png'.
+- First, plot the magnitude of horizontal surface velocities 'surfvelmag' and save as 'surfvelmag.png'.
 
-``$ basemap-plot.py --singlerow -v surfvelmag -o foo.png Greenland_5km_v1.1.nc``
+``$ basemap-plot.py --singlerow -v surfvelmag -o surfvelmag.png Greenland_5km_v1.1.nc``
+
+.. figure:: doc/surfvelmag.png
+   :width: 300px
+   :alt: Magnitude of surface velocities.
+
+   Example 1: Magnitude of surface velocities.
+
 
 - Now, add coastlines (intermediate resolution 'i') and plot ice thickness 'thk' over an etopo background
 
