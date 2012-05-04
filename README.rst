@@ -42,7 +42,7 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 
 ``$ basemap-plot.py --singlerow -v surfvelmag -o surfvelmag.png Greenland_5km_v1.1.nc``
 
-.. figure:: https://github.com/pism/PyPISMTools/docs/surfvelmag.png
+.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/surfvelmag.png
    :width: 300px
    :alt: Magnitude of surface velocities.
 
@@ -53,7 +53,7 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 
 ``$ basemap-plot.py --background etopo --coastlines --map_resolution i --singlerow -v thk -o etopothk.png Greenland_5km_v1.1.nc``
 
-.. figure:: https://github.com/pism/PyPISMTools/docs/etopothk.png
+.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/etopothk.png
    :width: 300px
    :alt: Ice thickness with ETOPO background.
 
@@ -63,7 +63,7 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 
 ``$ basemap-plot.py --geotiff mygeotiff.tif --singlecolumn -v surfvelmag -o geotiff.png Greenland_5km_v1.1.nc``
 
-.. figure:: https://github.com/pism/PyPISMTools/docs/geotiff.png
+.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/geotiff.png
    :width: 300px
    :alt: Ice thickness with ETOPO background.
 
