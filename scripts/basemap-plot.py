@@ -590,18 +590,6 @@ for k in range(0,nt):
         m.drawmapscale(lons[0][0, 0] + 4, lats[0][0, 0] + 1.75, lon_0, lat_0,
                    500, fontsize=plt.rcParams['font.size'], barstyle='fancy')
 
-## ## Now this is a bit tricky. Without transparency (alpha) set,
-## ## we could just do:
-## fig.colorbar(cs,cax=grid.cbar_axes[0],
-##              orientation='horizontal',
-##              extend='variable.extend',
-##              drawedges=False,
-##              ticks=[1, 10, 100, 1000, 10000],
-##              format="%d")
-##
-## ## With transparency, the colorbar would inhert the transparency,
-## ## which we don't want. So we do instead:
-
 if variable.var_name not in (vars_speed or vars_dem) and bounds is None:
 
     variable.vmin = data.min()
@@ -618,7 +606,7 @@ if singlerow:
                                          drawedges=False,
                                          ticks=variable.ticks,
                                          format=variable.format)
-if singlecolumn:
+elif singlecolumn:
     plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
                                          cmap=variable.cmap,
                                          norm=variable.norm,

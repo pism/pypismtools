@@ -42,7 +42,7 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 
 ``$ basemap-plot.py --singlerow -v surfvelmag -o surfvelmag.png Greenland_5km_v1.1.nc``
 
-.. figure:: surfvelmag.png
+.. figure:: https://github.com/pism/PyPISMTools/docs/surfvelmag.png
    :width: 300px
    :alt: Magnitude of surface velocities.
 
@@ -51,8 +51,20 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 
 - Now, add coastlines (intermediate resolution 'i') and plot ice thickness 'thk' over an etopo background
 
-``$ basemap-plot.py --background etopo --coastlines --map_resolution i --singlerow -v thk -o foo.png Greenland_5km_v1.1.nc``
+``$ basemap-plot.py --background etopo --coastlines --map_resolution i --singlerow -v thk -o etopothk.png Greenland_5km_v1.1.nc``
 
-- Use a geotiff file as background. In this case, projection information is taken from the geotiff:
+.. figure:: https://github.com/pism/PyPISMTools/docs/etopothk.png
+   :width: 300px
+   :alt: Ice thickness with ETOPO background.
 
-``$ basemap-plot.py --geotiff mygeotiff.tif --singlerow -v surfvelmag -o foo.png Greenland_5km_v1.1.nc``
+   Example 2: Ice thickness with ETOPO background.
+
+- Use a geotiff file as background, plot the colorbar horizontally. In this case, projection information is taken from the geotiff:
+
+``$ basemap-plot.py --geotiff mygeotiff.tif --singlecolumn -v surfvelmag -o geotiff.png Greenland_5km_v1.1.nc``
+
+.. figure:: https://github.com/pism/PyPISMTools/docs/geotiff.png
+   :width: 300px
+   :alt: Ice thickness with ETOPO background.
+
+   Example 3: Magnitude of surface velocities over a MODIS mosaic of Greenland.
