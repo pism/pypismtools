@@ -259,6 +259,8 @@ else:
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
+bounds_min = -1
+bounds_max = 1
 if bounds is not None:
     bounds_min, bounds_max = bounds.split(',')
     bounds_min = float(bounds_min)
@@ -535,10 +537,10 @@ for k in range(0,nt):
     if obs_file:
         if relative:
             cs = m.pcolormesh(xx, yy,
-                              ((obs_values - values[k]) / obs_values),
+                              ((values[k] - obs_values) / obs_values),
                 cmap=variable.cmap, alpha=alpha, norm=variable.norm)
         else:
-            cs = m.pcolormesh(xx, yy, obs_values - values[k],
+            cs = m.pcolormesh(xx, yy, values[k] - obs_values,
                               cmap=variable.cmap, alpha=alpha, norm=variable.norm)
     else:
         cs = m.pcolormesh(xx, yy, values[k], cmap=variable.cmap, alpha=alpha,
