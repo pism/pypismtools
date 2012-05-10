@@ -207,6 +207,7 @@ parallels_spacing = 5
 
 vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag')
 vars_dem = ('thk', 'usurf', 'usrf')
+vars_topo = ('topg')
 
 if varname in vars_speed:
 
@@ -242,6 +243,20 @@ elif varname in vars_dem:
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format')
     attr_vals = (None, cmap, norm, vmin, vmax, 'max', '%d')
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
+elif varname in vars_topo:
+
+    if cmap is None:
+        cmap = plt.cm.Blues
+
+    vmin = -1000
+    vmax = 1000
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format')
+    attr_vals = (None, cmap, norm, vmin, vmax, 'both', '%d')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -592,8 +607,8 @@ for k in range(0,nt):
         m.drawmapscale(lons[0][0, 0] + 4, lats[0][0, 0] + 1.75, lon_0, lat_0,
                    500, fontsize=plt.rcParams['font.size'], barstyle='fancy')
 
-if variable.var_name not in (vars_speed or vars_dem) and bounds is None:
-
+if variable.var_name not in (vars_speed, vars_dem, vars_topo) and bounds is None:
+    print "hi"
     variable.vmin = data.min()
     variable.vmax = data.max()
     variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
