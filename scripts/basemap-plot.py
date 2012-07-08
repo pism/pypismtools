@@ -10,6 +10,7 @@ from mpl_toolkits.basemap import Basemap, cm
 from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
 import pylab as plt
+from pylab import *
 from matplotlib import colors
 from optparse import OptionParser
 
@@ -25,6 +26,58 @@ try:
 except:
     import PyPISMTools as ppt
 
+def set_shade(a,intensity=None,cmap=cm.jet,scale=10.0,azdeg=165.0,altdeg=45.0):
+    ''' sets shading for data array based on intensity layer
+    or the data's value itself.inputs:
+    a - a 2-d array or masked array
+    intensity - a 2-d array of same size as a (no chack on that)
+    representing the intensity layer. if none is given
+    the data itself is used after getting the hillshade values
+    see hillshade for more details.
+    cmap - a colormap (e.g matplotlib.colors.LinearSegmentedColormap
+    instance)
+    scale, azdeg, altdeg - parameters for hilshade function see there for
+    more details
+    output:
+    rgb - an rgb set of the Pegtop soft light composition of the data and 
+           intensity can be used as input for imshow()
+    based on ImageMagick's Pegtop_light:
+    http://www.imagemagick.org/Usage/compose/#pegtoplight'''
+
+    if intensity is None:
+        # hilshading the data
+        intensity = hillshade(a,scale=10.0,azdeg=165.0,altdeg=45.0)
+    else:
+        # or normalize the intensity
+        intensity = (intensity - intensity.min())/(intensity.max() - intensity.min())
+    # get rgb of normalized data based on cmap
+    rgb = cmap((a-a.min())/float(a.max()-a.min()))[:,:,:3]
+    # form an rgb eqvivalent of intensity
+    d = intensity.repeat(3).reshape(rgb.shape)
+    # simulate illumination based on pegtop algorithm.
+    rgb = 2 * d * rgb + (rgb ** 2) * (1 - 2 * d)
+    return rgb
+
+def hillshade(data, scale=10.0, azdeg=165.0, altdeg=45.0):
+    ''' convert data to hillshade based on matplotlib.colors.LightSource class.
+    input:
+         data - a 2-d array of data
+         scale - scaling value of the data. higher number = lower gradient
+         azdeg - where the light comes from: 0 south ; 90 east ; 180 north ;
+                      270 west
+         altdeg - where the light comes from: 0 horison ; 90 zenith
+    output: a 2-d array of normalized hilshade
+    '''
+    # convert alt, az to radians
+    az = azdeg*pi/180.0
+    alt = altdeg*pi/180.0
+    # gradient in x and y directions
+    dx, dy = gradient(data/float(scale))
+    slope = 0.5*pi - arctan(hypot(dx, dy))
+    aspect = arctan2(dx, dy)
+    intensity = sin(alt)*sin(slope) + cos(alt)*cos(slope)*cos(-az - aspect - 0.5*pi)
+    intensity = (intensity - intensity.min())/(intensity.max() - intensity.min())
+    return intensity
 
 def get_dims(nc):
     '''
@@ -43,6 +96,10 @@ def get_dims(nc):
     xdims = ['x','x1']
     ## a list of possible y-dimensions names
     ydims = ['y','y1']
+    ## a list of possible z-dimensions names
+    zdims= ['z', 'z1']
+    ## a list of possible time-dimensions names
+    tdims= ['t', 'time']
 
     ## assign x dimension
     for dim in xdims:
@@ -52,7 +109,19 @@ def get_dims(nc):
     for dim in ydims:
         if dim in list(nc.dimensions.keys()):
             ydim = dim
-    return xdim, ydim
+    ## assign y dimension
+    for dim in zdims:
+        if dim in list(nc.dimensions.keys()):
+            zdim = dim
+        else:
+            zdim = 'z'
+    ## assign y dimension
+    for dim in tdims:
+        if dim in list(nc.dimensions.keys()):
+            tdim = dim
+        else:
+            tdim = 'time'
+    return xdim, ydim, zdim, tdim
 
 
 class Variable(object):
@@ -311,7 +380,7 @@ else:
         import sys
         sys.exit()
         
-    xdim, ydim = get_dims(nc)
+    xdim, ydim, zdim, tdim = get_dims(nc)
 
     ## coordinate variable in x-direction
     x_var = np.squeeze(nc.variables[xdim][:])
@@ -355,7 +424,7 @@ if obs_file is not None:
         import sys
         sys.exit()
         
-    var_order = ('time', 'z', ydim, xdim)
+    var_order = (tdim, zdim, ydim, xdim)
 
     if varname == 'csurf':
         if 'csurf' in list(nc.variables.keys()):
@@ -425,9 +494,9 @@ for k in range(0, nt):
         import sys.exit
         sys.exit
 
-    xdim, ydim = get_dims(nc)
+    xdim, ydim, zdim, tdim = get_dims(nc)
 
-    var_order = ('time', 'z', ydim, xdim)
+    var_order = (tdim, zdim, ydim, xdim)
 
     lats.append(np.squeeze(ppt.permute(nc.variables['lat'], var_order)))
     lons.append(np.squeeze(ppt.permute(nc.variables['lon'], var_order)))
@@ -551,14 +620,17 @@ for k in range(0,nt):
         
     if obs_file:
         if relative:
+            data = (values[k] - obs_values) / obs_values
             cs = m.pcolormesh(xx, yy,
-                              ((values[k] - obs_values) / obs_values),
+                              (data),
                 cmap=variable.cmap, alpha=alpha, norm=variable.norm)
         else:
-            cs = m.pcolormesh(xx, yy, values[k] - obs_values,
+            data = values[k] - obs_values
+            cs = m.pcolormesh(xx, yy, data,
                               cmap=variable.cmap, alpha=alpha, norm=variable.norm)
     else:
-        cs = m.pcolormesh(xx, yy, values[k], cmap=variable.cmap, alpha=alpha,
+        data = values[k]
+        cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap, alpha=alpha,
               norm=variable.norm)
     if singlerow:
         m.drawmeridians(np.arange(-175., 175., meridian_spacing),
@@ -607,11 +679,10 @@ for k in range(0,nt):
         m.drawmapscale(lons[0][0, 0] + 4, lats[0][0, 0] + 1.75, lon_0, lat_0,
                    500, fontsize=plt.rcParams['font.size'], barstyle='fancy')
 
-if variable.var_name not in (vars_speed, vars_dem, vars_topo) and bounds is None:
-    print "hi"
+if variable.var_name not in (vars_speed, vars_dem, vars_topo) and (bounds is None):
     variable.vmin = data.min()
     variable.vmax = data.max()
-    variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
+    #variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
     variable.format = None
 
 if singlerow:
