@@ -72,16 +72,8 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 Examples for qgis-colorramp.py
 -------------------------
 
-qgis-colorramp-plot.py creates linear and log-scaled colorramps for QGIS_.
+qgis-colorramp-plot.py creates linear and log-scaled colorramps for QGIS_ from GMT_ colormaps.
 
 .. _QGIS: http://www.qgis.org/ 
+.. _GMT: http://gmt.soest.hawaii.edu/ 
 
-from GMT_.
-
-.. _Python: http://gmt.soest.hawaii.edu/ 
-
-colormaps.
-
-- Download a test data set, e.g. the SeaRISE master data set from
-
-``$ qgis-colorramp.py --vmin``
