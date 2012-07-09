@@ -74,9 +74,13 @@ Examples for qgis-colorramp.py
 
 qgis-colorramp-plot.py creates linear and log-scaled colorramps for QGIS_.
 
-.. _QGIS: http://www.qgis.org/ from GMT_.
+.. _QGIS: http://www.qgis.org/ 
 
-.. _Python: http://gmt.soest.hawaii.edu/ colormaps
+from GMT_.
+
+.. _Python: http://gmt.soest.hawaii.edu/ 
+
+colormaps.
 
 - Download a test data set, e.g. the SeaRISE master data set from
 
