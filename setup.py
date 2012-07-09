@@ -45,13 +45,13 @@ setup(name=PKG_NAME,
         'Topic :: Scientific/Engineering',
         'Topic :: Utilities'
         ],
-      scripts=['scripts/basemap-plot.py'],
+      scripts=['scripts/basemap-plot.py','scripts/qgis-colorramp.py'],
       packages=[PKG_NAME],
       package_dir={PKG_NAME: '.'},
       package_data={PKG_NAME: ['colormaps/*.cpt']},
       )
 
 print('\n*********************************************************************')
-print(('Make make sure you have %s in your search path!'
+print(('Make make sure you have\n %s\nin your search path!'
       % os.path.join(sys.prefix, 'bin')))
 print('*********************************************************************')

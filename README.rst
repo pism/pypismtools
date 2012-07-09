@@ -68,3 +68,16 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
    :alt: Ice thickness with ETOPO background.
 
    Example 3: Magnitude of surface velocities over a MODIS mosaic of Greenland.
+
+Examples for qgis-colorramp.py
+-------------------------
+
+qgis-colorramp-plot.py creates linear and log-scaled colorramps for QGIS_.
+
+.. _QGIS: http://www.qgis.org/ from GMT_.
+
+.. _Python: http://gmt.soest.hawaii.edu/ colormaps
+
+- Download a test data set, e.g. the SeaRISE master data set from
+
+``$ qgis-colorramp.py --vmin``
