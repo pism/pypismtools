@@ -82,15 +82,15 @@ you get a linear colorramp from -5000m to 1400m, and the last color
 will be extended to 3000m. The result should like like
 
 .. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/ibcao.png
-   :width: 260px
+   :width: 200px
    :alt: Linear DEM colormap IBCAO.
 
 For a nice log-scaled colormap to show speeds, try:
 
 ``qgis-colorramp.py --a 3 --log --extend 30000 Full_saturation_spectrum_CCW.cpt``
 
-.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/ibcao.png
-   :width: 260px
+.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/Full_saturation_spectrum_CCW.png
+   :width: 200px
    :alt: Log-scaled colorramp.
 
 To use the colorramp in QGIS, click on 'Layer Properties / Colormap'
