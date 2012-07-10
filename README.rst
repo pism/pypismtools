@@ -76,11 +76,27 @@ qgis-colorramp-plot.py creates linear and log-scaled colorramps for QGIS_ from G
 
 To show the bathymetry around Greenland, you can use the IBCAO colormap. By running the following command
 
-``qgis_colorramp.py --vmin -5000 --vmax 1400 --extend 3000 ibcao.cpt``
+``qgis-colorramp.py --vmin -5000 --vmax 1400 --extend 3000 ibcao.cpt``
 
-you get a linear colorramp from -5000m to 1400, and the last color will be extended to 3000m.
+you get a linear colorramp from -5000m to 1400m, and the last color
+will be extended to 3000m. The result should like like
 
-``qgis_colorramp.py --a 3 --log --extend 30000 Full_saturation_spectrum_CCW.cpt``
+.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/ibcao.png
+   :width: 260px
+   :alt: Linear DEM colormap IBCAO.
+
+For a nice log-scaled colormap to show speeds, try:
+
+``qgis-colorramp.py --a 3 --log --extend 30000 Full_saturation_spectrum_CCW.cpt``
+
+.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/ibcao.png
+   :width: 260px
+   :alt: Log-scaled colorramp.
+
+To use the colorramp in QGIS, click on 'Layer Properties / Colormap'
+and then click on 'Load color map from file'. Choose the txt
+file. Also the colorbar is saved as a png file, and can be added in
+the 'Print Composer'.
 
 .. _QGIS: http://www.qgis.org/ 
 .. _GMT: http://gmt.soest.hawaii.edu/ 
