@@ -54,7 +54,7 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 ``$ basemap-plot.py --background etopo --coastlines --map_resolution i --singlerow -v thk -o etopothk.png Greenland_5km_v1.1.nc``
 
 .. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/etopothk.png
-   :width: 300px
+   :width: 260px
    :alt: Ice thickness with ETOPO background.
 
    Example 2: Ice thickness with ETOPO background.
@@ -64,7 +64,7 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 ``$ basemap-plot.py --geotiff mygeotiff.tif --singlecolumn -v surfvelmag -o geotiff.png Greenland_5km_v1.1.nc``
 
 .. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/geotiff.png
-   :width: 300px
+   :width: 260px
    :alt: Ice thickness with ETOPO background.
 
    Example 3: Magnitude of surface velocities over a MODIS mosaic of Greenland.
@@ -72,7 +72,15 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 Examples for qgis-colorramp.py
 -------------------------
 
-qgis-colorramp-plot.py creates linear and log-scaled colorramps for QGIS_ from GMT_ colormaps.
+qgis-colorramp-plot.py creates linear and log-scaled colorramps for QGIS_ from GMT_ colormaps. Many great colormap can be downloaded from http://soliton.vm.bytemark.co.uk/pub/cpt-city/.
+
+To show the bathymetry around Greenland, you can use the IBCAO colormap. By running the following command
+
+``qgis_colorramp.py --vmin -5000 --vmax 1400 --extend 3000 ibcao.cpt``
+
+you get a linear colorramp from -5000m to 1400, and the last color will be extended to 3000m.
+
+``qgis_colorramp.py --a 3 --log --extend 30000 Full_saturation_spectrum_CCW.cpt``
 
 .. _QGIS: http://www.qgis.org/ 
 .. _GMT: http://gmt.soest.hawaii.edu/ 

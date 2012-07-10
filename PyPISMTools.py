@@ -375,7 +375,7 @@ def colorList():
     return colors
 
 
-def gmtColormap(fileName):
+def gmtColormap(fileName, log_color=None):
     '''
     Import a CPT colormap from GMT.
 
@@ -454,7 +454,13 @@ def gmtColormap(fileName):
         r = r / 255.
         g = g / 255.
         b = b / 255.
-    xNorm = (x - x[0]) / (x[-1] - x[0])
+        
+    if log_color:
+        xNorm = np.zeros((len(x), ))
+        xNorm[1::] = np.logspace(-1,0,len(x) - 1)
+        xNorm[1::-2] /= 4
+    else:
+        xNorm = (x - x[0]) / (x[-1] - x[0])
 
     red = []
     blue = []

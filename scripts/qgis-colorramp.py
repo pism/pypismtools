@@ -76,26 +76,36 @@ N = options.N
 vmin = options.vmin
 vmax = options.vmax
 
+# experimental
+log_color = False
+
 # read in CPT colormap
 cmap_file = args[0]
 prefix, suffix = cmap_file.split('.')
-cdict = gmtColormap(cmap_file)
-cmap = colors.LinearSegmentedColormap('my_colormap', cdict, N)
+cdict = gmtColormap(cmap_file, log_color=log_color)
 
-# either log scaling or linear scaling (default0
+
+# either log scaling or linear scaling (default)
 if log:
 	data_values = a * np.logspace(vmin, vmax, N)
 	norm = colors.LogNorm(vmin=a * (10 ** vmin), vmax = a * (10 ** vmax))
-	ticks = np.logspace(vmin, vmax, vmax - vmin + 1)
+	ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
 	format = '%i'
-	cb_extend = 'max'
-	
+	cb_extend = 'both'
+elif log_color:
+	data_values = a * np.logspace(vmin, vmax, N)
+	norm = colors.LogNorm(vmin= (10 ** vmin) - 0.01, vmax = a * (10 ** vmax))
+	ticks = [1, 10, 100, 1000, 3000]
+	format = '%i'
+	cb_extend = 'both'
 else:
 	data_values = a * np.linspace(vmin, vmax, N)
 	norm = colors.Normalize(vmin=vmin, vmax=vmax)
 	ticks = None
 	format = None
 	cb_extend = 'both'
+
+cmap = colors.LinearSegmentedColormap('my_colormap', cdict, N)
 
 # you could apply a function to the colormap, e.g. to desaturate the colormap:
 # cmap = cmap_map(lambda x: x/2+0.5, cmap)
@@ -110,6 +120,13 @@ cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
 				extend=cb_extend,
                                 spacing='proportional',
                                 orientation='horizontal')
+
+# save high-res colorbar as png
+out_file = '.'.join([prefix, 'png'])
+print("  writing colorbar %s ..." % out_file)
+fig.savefig(out_file, bbox_inches='tight', dpi=1200)
+
+
 # convert to RGBA array
 rgba = cb1.to_rgba(data_values, alpha=None)
 # QGIS wants 0..255
@@ -135,6 +152,5 @@ else:
 
 # save as ascii file
 out_file = '.'.join([prefix, 'txt'])
+print("  writing colorramp %s ..." % out_file)
 np.savetxt(out_file, qgis_array, delimiter=',', fmt=['%10.5f', '%i', '%i', '%i', '%i,'])
-
-plt.show()
