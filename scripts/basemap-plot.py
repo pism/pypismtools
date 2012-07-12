@@ -394,7 +394,6 @@ else:
     height = 1.0 * (np.max(y_var) - np.min(y_var))
     nc_projection = ppt.get_projection_from_file(nc)
     lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
-    lon_0 = -45.
 
     # This works for Antarctica but not for Greenland:
 
