@@ -12,8 +12,7 @@ import numpy as np
 import pylab as plt
 from pylab import *
 from matplotlib import colors
-from optparse import OptionParser
-
+from argparse import ArgumentParser
 from pyproj import Proj
 
 try:
@@ -163,59 +162,60 @@ class Variable(object):
 
 
 # Set up the option parser
-parser = OptionParser()
-parser.usage = "%prog [options] FILE1 FILE2 ..."
+parser = ArgumentParser()
 parser.description = "A script to plot a variable in a netCDF file over a GeoTiff. Uses GDAL python bindings, Proj4, and Basemap. Script is fine-tuned for whole Greenland plots, but can be adapted for other needs."
-parser.add_option("--alpha",dest="alpha",
+parser.add_argument("FILE", nargs='*')
+parser.add_argument("--alpha",dest="alpha",
                   help="transparency of overlay", default=1.)
-parser.add_option("--background",dest="background", 
+parser.add_argument("--background",dest="background", 
                   help="Draw a background (bluemarble, etopo, shadedrelief", default=None)
-parser.add_option("--bounds", dest="bounds",
+parser.add_argument("--bounds", dest="bounds",
                   help="lower and upper bound for colorbar, eg. -1,1", default=None)
-parser.add_option("--obs_file",dest="obs_file",
+parser.add_argument("--obs_file",dest="obs_file",
                   help='''
                   file with observations for difference plot,
 experiment - observation. Must be on same grid as experiments. Default is None''', default=None)
-parser.add_option("--colormap",dest="colormap",
+parser.add_argument("--colormap",dest="colormap",
                   help='''path to a cpt colormap, or a pylab colormap,
                   e.g. Blues''', default=None)
-parser.add_option("--coastlines",dest="coastlines", action="store_true",
+parser.add_argument("--coastlines",dest="coastlines", action="store_true",
                   help="adds a coastlines", default=False)
-parser.add_option("-c", "--colorbar", dest="colorbar",action="store_true",
+parser.add_argument("-c", "--colorbar", dest="colorbar",action="store_true",
                   help="saves a colorbar seperately",default=False)
-parser.add_option("--drawmapscale",dest="drawmapscale", action="store_true",
+parser.add_argument("--drawmapscale",dest="drawmapscale", action="store_true",
                   help="draws a map scale in the lower left corner", default=False)
-parser.add_option("--inner_title",dest="inner_title",action="store_true",
+parser.add_argument("--inner_title",dest="inner_title",action="store_true",
                   help="add an inner title",default=False)
-parser.add_option("--singlerow", dest="singlerow", action="store_true",
+parser.add_argument("--singlerow", dest="singlerow", action="store_true",
                   help="all plots on a single row", default=False)
-parser.add_option("--singlecolumn", dest="singlecolumn", action="store_true",
+parser.add_argument("--singlecolumn", dest="singlecolumn", action="store_true",
                   help="all plots on a single column", default=False)
-parser.add_option("-m", "--same_mask", dest="samemask", action="store_true",
+parser.add_argument("-m", "--same_mask", dest="samemask", action="store_true",
                   help="use mask from first plot for all plots", default=False)
-parser.add_option("--map_resolution", dest="map_res",
+parser.add_argument("--map_resolution", dest="map_res",
                   help="Resolution of boundary database (see Basemap), default = 'l' (low)", default='l')
-parser.add_option("-o", "--output_filename", dest="out_file",
+parser.add_argument("-o", "--output_filename", dest="out_file",
                   help="Name of the output file. Suffix defines output format", default='foo.png')
-parser.add_option("--geotiff_file", dest="geotiff_filename",
+parser.add_argument("--geotiff_file", dest="geotiff_filename",
                   help="GeoTIFF filename", default=None)
-parser.add_option("--out_unit", dest="outunit",
+parser.add_argument("--out_unit", dest="outunit",
                   help="Output unit, default is unit in file", default=None)
-parser.add_option("-p", "--print_size", dest="print_mode",
+parser.add_argument("-p", "--print_size", dest="print_mode",
               help="sets figure size and font size, available options are: \
               'onecol','medium','twocol','presentation'",default="twocol")
-parser.add_option("-r", "--output_resolution", dest="out_res",
+parser.add_argument("-r", "--output_resolution", dest="out_res",
                   help='''
                   Graphics resolution in dots per inch (DPI), default
                   = 300''', default=300)
-parser.add_option("--relative", dest="relative", action="store_true",
+parser.add_argument("--relative", dest="relative", action="store_true",
                   help="do relative differences.", default=False)
-parser.add_option("-v", "--variable", dest="varname",
+parser.add_argument("-v", "--variable", dest="varname",
                   help='''Variable to plot, default = 'csurf'.
                   Currently supported variables are: csurf''', default='csurf')
 
+options = parser.parse_args()
+args = options.FILE
 
-(options, args) = parser.parse_args()
 nt = len(args)
 required_no_args = 1
 max_no_args = 6
@@ -390,10 +390,11 @@ else:
     # FIXME: We do Greenland-tuning:
     center_x = (x_var[0] + x_var[-1]) / 2
     center_y = (y_var[0] + y_var[-1]) / 2
-    width = 1.15 * (np.max(x_var) - np.min(x_var))
+    width = 1.2 * (np.max(x_var) - np.min(x_var))
     height = 1.0 * (np.max(y_var) - np.min(y_var))
     nc_projection = ppt.get_projection_from_file(nc)
     lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
+    lon_0 = -45
 
     # This works for Antarctica but not for Greenland:
 
@@ -682,7 +683,6 @@ if variable.var_name not in (vars_speed, vars_dem, vars_topo) and (bounds is Non
     variable.vmin = data.min()
     variable.vmax = data.max()
     #variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
-    variable.format = None
 
 if singlerow:
     plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
