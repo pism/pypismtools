@@ -25,8 +25,10 @@ try:
 except:
     import PyPISMTools as ppt
 
-def set_shade(a,intensity=None,cmap=cm.jet,scale=10.0,azdeg=165.0,altdeg=45.0):
-    ''' sets shading for data array based on intensity layer
+
+def set_shade(a, intensity=None, cmap=cm.jet, scale=10.0, azdeg=165.0, altdeg=45.0):
+    '''
+    sets shading for data array based on intensity layer
     or the data's value itself.inputs:
     a - a 2-d array or masked array
     intensity - a 2-d array of same size as a (no chack on that)
@@ -41,7 +43,8 @@ def set_shade(a,intensity=None,cmap=cm.jet,scale=10.0,azdeg=165.0,altdeg=45.0):
     rgb - an rgb set of the Pegtop soft light composition of the data and 
            intensity can be used as input for imshow()
     based on ImageMagick's Pegtop_light:
-    http://www.imagemagick.org/Usage/compose/#pegtoplight'''
+    http://www.imagemagick.org/Usage/compose/#pegtoplight
+    '''
 
     if intensity is None:
         # hilshading the data
@@ -68,59 +71,15 @@ def hillshade(data, scale=10.0, azdeg=165.0, altdeg=45.0):
     output: a 2-d array of normalized hilshade
     '''
     # convert alt, az to radians
-    az = azdeg*pi/180.0
-    alt = altdeg*pi/180.0
+    az = azdeg * pi / 180.0
+    alt = altdeg * pi / 180.0
     # gradient in x and y directions
-    dx, dy = gradient(data/float(scale))
-    slope = 0.5*pi - arctan(hypot(dx, dy))
+    dx, dy = gradient(data / float(scale))
+    slope = 0.5 * pi - arctan(hypot(dx, dy))
     aspect = arctan2(dx, dy)
-    intensity = sin(alt)*sin(slope) + cos(alt)*cos(slope)*cos(-az - aspect - 0.5*pi)
+    intensity = sin(alt) * sin(slope) + cos(alt) * cos(slope) * cos(-az - aspect - 0.5 * pi)
     intensity = (intensity - intensity.min())/(intensity.max() - intensity.min())
     return intensity
-
-def get_dims(nc):
-    '''
-    Gets dimensions from netcdf instance
-
-    Parameters:
-    -----------
-    nc: netCDF instance
-
-    Returns:
-    --------
-    xdim, ydim: dimensions
-    '''
-        
-    ## a list of possible x-dimensions names
-    xdims = ['x','x1']
-    ## a list of possible y-dimensions names
-    ydims = ['y','y1']
-    ## a list of possible z-dimensions names
-    zdims= ['z', 'z1']
-    ## a list of possible time-dimensions names
-    tdims= ['t', 'time']
-
-    ## assign x dimension
-    for dim in xdims:
-        if dim in list(nc.dimensions.keys()):
-            xdim = dim
-    ## assign y dimension
-    for dim in ydims:
-        if dim in list(nc.dimensions.keys()):
-            ydim = dim
-    ## assign y dimension
-    for dim in zdims:
-        if dim in list(nc.dimensions.keys()):
-            zdim = dim
-        else:
-            zdim = 'z'
-    ## assign y dimension
-    for dim in tdims:
-        if dim in list(nc.dimensions.keys()):
-            tdim = dim
-        else:
-            tdim = 'time'
-    return xdim, ydim, zdim, tdim
 
 
 class Variable(object):
@@ -380,7 +339,7 @@ else:
         import sys
         sys.exit()
         
-    xdim, ydim, zdim, tdim = get_dims(nc)
+    xdim, ydim, zdim, tdim = ppt.get_dims(nc)
 
     ## coordinate variable in x-direction
     x_var = np.squeeze(nc.variables[xdim][:])
@@ -494,7 +453,7 @@ for k in range(0, nt):
         import sys.exit
         sys.exit
 
-    xdim, ydim, zdim, tdim = get_dims(nc)
+    xdim, ydim, zdim, tdim = ppt.get_dims(nc)
 
     var_order = (tdim, zdim, ydim, xdim)
 

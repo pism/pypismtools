@@ -80,6 +80,51 @@ class GeoTIFF(object):
         self.lon, self.lat = p_osr_gtiff(self.X, self.Y, inverse=True)
 
 
+def get_dims(nc):
+    '''
+    Gets dimensions from netcdf instance
+
+    Parameters:
+    -----------
+    nc: netCDF instance
+
+    Returns:
+    --------
+    xdim, ydim: dimensions
+    '''
+        
+    ## a list of possible x-dimensions names
+    xdims = ['x','x1']
+    ## a list of possible y-dimensions names
+    ydims = ['y','y1']
+    ## a list of possible z-dimensions names
+    zdims= ['z', 'z1']
+    ## a list of possible time-dimensions names
+    tdims= ['t', 'time']
+
+    ## assign x dimension
+    for dim in xdims:
+        if dim in list(nc.dimensions.keys()):
+            xdim = dim
+    ## assign y dimension
+    for dim in ydims:
+        if dim in list(nc.dimensions.keys()):
+            ydim = dim
+    ## assign y dimension
+    for dim in zdims:
+        if dim in list(nc.dimensions.keys()):
+            zdim = dim
+        else:
+            zdim = 'z'
+    ## assign y dimension
+    for dim in tdims:
+        if dim in list(nc.dimensions.keys()):
+            tdim = dim
+        else:
+            tdim = 'time'
+    return xdim, ydim, zdim, tdim
+
+
 def get_projection_from_file(nc):
     '''
     Gets a Proj projection instance from a pointer to a netCDF file
