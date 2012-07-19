@@ -101,3 +101,16 @@ the 'Print Composer'.
 .. _QGIS: http://www.qgis.org/ 
 .. _GMT: http://gmt.soest.hawaii.edu/ 
 
+Examples for contour2shp.py
+-------------------------
+
+contour2shp.py lets you extract a contour line from a variable in a
+netCDF file, and saves it as a polygon in a shapefile. Useful to create a polygon of a drainage basin from the
+mask. Or you can extract the 2000m elevation contour:
+
+``contour2shp.py -v usrf -c 2000 -s -o poly.shp Greenland_5km_v1.1.nc``
+
+.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/contour2000m.png
+   :width: 200px
+   :alt: 2000m contour line.
+

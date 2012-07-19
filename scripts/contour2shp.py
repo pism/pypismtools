@@ -18,10 +18,10 @@ except:
     import PyPISMTools as ppt
 
 
-# Shapefile related code is taken from
+# Shapefile related code is adapted from
 # http://invisibleroads.com/tutorials/gdal-shapefile-points-save.html
 
-def save(shapePath, geoLocations, proj4):
+def save(shapePath, contour_points, proj4):
     '''Save points in the given shapePath'''
     # Get driver
     driver = osgeo.ogr.GetDriverByName('ESRI Shapefile')
@@ -34,57 +34,33 @@ def save(shapePath, geoLocations, proj4):
     spatialReference = getSpatialReferenceFromProj4(proj4)
     # Create layer
     layerName = os.path.splitext(os.path.split(shapePath)[1])[0]
-    layer = shapeData.CreateLayer(layerName, spatialReference, osgeo.ogr.wkbPoint)
+    layer = shapeData.CreateLayer(layerName, spatialReference, osgeo.ogr.wkbPolygon)
     layerDefinition = layer.GetLayerDefn()
     # For each point,
-    for pointIndex, geoLocation in enumerate(geoLocations):
-        # Create point
-        geometry = osgeo.ogr.Geometry(osgeo.ogr.wkbPoint)
-        geometry.SetPoint(0, geoLocation[0], geoLocation[1])
-        # Create feature
-        feature = osgeo.ogr.Feature(layerDefinition)
-        feature.SetGeometry(geometry)
-        feature.SetFID(pointIndex)
-        # Save feature
-        layer.CreateFeature(feature)
-        # Cleanup
-        geometry.Destroy()
-        feature.Destroy()
+    polygon = osgeo.ogr.Geometry(osgeo.ogr.wkbPolygon)
+    for k in range(0,len(contour_points)):
+        geoLocations = contour_points[k]
+        ring = osgeo.ogr.Geometry(osgeo.ogr.wkbLinearRing)
+        for pointIndex, geoLocation in enumerate(geoLocations):
+            ring.AddPoint(geoLocation[0], geoLocation[1])
+        ring.CloseRings()
+        polygon.AddGeometry(ring)
+    featureDefn = layer.GetLayerDefn()
+    # Create feature
+    feature = osgeo.ogr.Feature(featureDefn)
+    feature.SetGeometry(polygon)
+    feature.SetFID(k)
+    feature.SetField('id', 1)
+    # Save feature
+    layer.CreateFeature(feature)
+    # Cleanup
+    polygon.Destroy()
+    feature.Destroy()
     # Cleanup
     shapeData.Destroy()
     # Return
     return shapePath
 
-def load(shapePath):
-    '''Given a shapePath, return a list of points in GIS coordinates'''
-    # Open shapeData
-    shapeData = osgeo.ogr.Open(validateShapePath(shapePath))
-    # Validate shapeData
-    validateShapeData(shapeData)
-    # Get the first layer
-    layer = shapeData.GetLayer()
-    # Initialize
-    points = []
-    # For each point,
-    for index in xrange(layer.GetFeatureCount()):
-        # Get
-        feature = layer.GetFeature(index)
-        geometry = feature.GetGeometryRef()
-        # Make sure that it is a point
-        if geometry.GetGeometryType() != osgeo.ogr.wkbPoint: 
-            raise ShapeDataError('This module can only load points; use geometry_store.py')
-        # Get pointCoordinates
-        pointCoordinates = geometry.GetX(), geometry.GetY()
-        # Append
-        points.append(pointCoordinates)
-        # Cleanup
-        feature.Destroy()
-    # Get spatial reference as proj4
-    proj4 = layer.GetSpatialRef().ExportToProj4()
-    # Cleanup
-    shapeData.Destroy()
-    # Return
-    return points, proj4
 
 def getSpatialReferenceFromProj4(proj4):
     '''Return GDAL spatial reference object from proj4 string'''
@@ -111,7 +87,7 @@ class ShapeDataError(Exception):
     pass
 
 
-parser = ArgumentParser(description='''A script to extract a (closed) contour line from a variable in a netCDF file.''')
+parser = ArgumentParser(description='''A script to extract a (closed) contour line from a variable in a netCDF file, and save it as a shapefile (polygon).''')
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-o", "--output_filename", dest="out_file",
                   help="Name of the output shape file", default='countour.shp')
@@ -119,6 +95,8 @@ parser.add_argument("-v", "--variable", dest="varname",
                   help='''Variable to plot, default = 'mask'.''', default='mask')
 parser.add_argument("-c", "--countour_level", dest="contour_level",
                   help='''Contour-level to extract, default = 0.''', default=0.)
+parser.add_argument("-s","--single",dest="single", action="store_true",
+                  help="save only the longest contour line, Default=False", default=False)
 
 
 options = parser.parse_args()
@@ -126,34 +104,62 @@ filename = options.FILE[0]
 shp_filename = options.out_file
 contour_level = options.contour_level
 varname = options.varname
+single = options.single
 
 nc = NC(filename, 'r')
 
-xdim, ydim = ppt.get_dims(nc)[0:2]
+xdim, ydim, zdim, tdim = ppt.get_dims(nc)
+var_order = (tdim, zdim, ydim, xdim)
 
 x_var = np.squeeze(nc.variables[xdim])
 y_var = np.squeeze(nc.variables[ydim])
 i = range(0, len(x_var))
 j = range(0, len(y_var))
 
-xx, yy = np.meshgrid(x_var, y_var)
-
-contour_var = np.array(np.squeeze(ppt.permute(nc.variables[varname])), order='C')
-
+contour_var = np.array(np.squeeze(ppt.permute(nc.variables[varname], var_order)), order='C')
 nc_projection = ppt.get_projection_from_file(nc)
 
-contour_level = 0
 # Find contours at a constant value
 contours = sorted(measure.find_contours(contour_var, contour_level),
                   key=lambda x: len(x))
+
+contours_x = []
+contours_y = []
+contour_points = []
+for k in range(0,len(contours)):
+    contour = contours[k]
+    contour_x = x_var[0] + contour[:,1] * (x_var[-1] - x_var[0]) / (len(i) - 1)
+    contour_y = y_var[0] + contour[:,0] * (y_var[-1] - y_var[0]) / (len(j) - 1)
+    contours_x.append(contour_x)
+    contours_y.append(contour_y)
+    points = [(contour_x[k], contour_y[k]) for k in range(len(contour_y))]
+    contour_points.append(points)
+# reverse direction, last entry (longest contour) first.
+contours_x.reverse()
+contours_y.reverse()
+contour_points.reverse()
 # We only extract the longest contigous contour
 contour = contours[-1]
-
 contour_x = x_var[0] + contour[:,1] * (x_var[-1] - x_var[0]) / (len(i) - 1)
 contour_y = y_var[0] + contour[:,0] * (y_var[-1] - y_var[0]) / (len(j) - 1)
+
+if single:
+    contour_points = [contour_points[0]]
+    
 # save shapefile
 print(("Saving shapefile %s" % shp_filename))
-points = [(contour_x[k], contour_y[k]) for k in range(len(contour_y))]
-save(shp_filename, points, nc_projection.srs)
+save(shp_filename, contour_points, nc_projection.srs)
+
+xx, yy = np.meshgrid(x_var, y_var)
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.pcolormesh(xx, yy, contour_var, cmap=plt.cm.Blues_r)
+for k in range(0,len(contour_points)):
+    plt.plot(contours_x[k], contours_y[k], linewidth=2, color='r')
+plt.axis('image')
+plt.xticks([])
+plt.yticks([])
+plt.show()
 
 nc.close()
