@@ -4,7 +4,9 @@ The ``PyPISMTools`` module
 PyPISMTools is a collection of classes and functions to evaluate PISM studies by
 providing tools for binning and histogram plotting. It also includes
 helper functions and wrappers for things like unit conversion,
-defining figure sizes and parameters, and more.
+defining figure sizes and parameters, and more. Additionally, some
+scripts are included, to plot netCDF variables over GeoTIFF files
+using basemap, to generate colorramps forQGIS, and to extract contour lines.
 
 Requirements
 -------------------------
