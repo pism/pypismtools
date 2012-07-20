@@ -420,7 +420,7 @@ def colorList():
     return colors
 
 
-def gmtColormap(fileName, log_color=None):
+def gmtColormap(fileName, log_color=None, reverse=False):
     '''
     Import a CPT colormap from GMT.
 
@@ -478,6 +478,11 @@ def gmtColormap(fileName, log_color=None):
     r.append(rtemp)
     g.append(gtemp)
     b.append(btemp)
+
+    if reverse:
+        r.reverse()
+        g.reverse()
+        b.reverse()
 
     x = np.array(x, np.float32)
     r = np.array(r, np.float32)

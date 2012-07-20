@@ -279,8 +279,8 @@ elif varname in vars_topo:
     if cmap is None:
         cmap = plt.cm.Blues
 
-    vmin = -1000
-    vmax = 1000
+    vmin = -5000
+    vmax = 1400
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format')

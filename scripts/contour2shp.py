@@ -4,7 +4,6 @@ import numpy as np
 import pylab as plt
 from skimage import measure
 from argparse import ArgumentParser
-from scipy.interpolate import RectBivariateSpline
 
 from netCDF4 import Dataset as NC
 
@@ -36,11 +35,12 @@ def save(shapePath, contour_points, proj4):
     layerName = os.path.splitext(os.path.split(shapePath)[1])[0]
     layer = shapeData.CreateLayer(layerName, spatialReference, osgeo.ogr.wkbPolygon)
     layerDefinition = layer.GetLayerDefn()
-    # For each point,
+    # For each contour,
     polygon = osgeo.ogr.Geometry(osgeo.ogr.wkbPolygon)
     for k in range(0,len(contour_points)):
         geoLocations = contour_points[k]
         ring = osgeo.ogr.Geometry(osgeo.ogr.wkbLinearRing)
+        # For each point,
         for pointIndex, geoLocation in enumerate(geoLocations):
             ring.AddPoint(geoLocation[0], geoLocation[1])
         ring.CloseRings()
@@ -50,7 +50,6 @@ def save(shapePath, contour_points, proj4):
     feature = osgeo.ogr.Feature(featureDefn)
     feature.SetGeometry(polygon)
     feature.SetFID(k)
-    feature.SetField('id', 1)
     # Save feature
     layer.CreateFeature(feature)
     # Cleanup
@@ -68,9 +67,11 @@ def getSpatialReferenceFromProj4(proj4):
     spatialReference.ImportFromProj4(proj4)
     return spatialReference
 
+
 def validateShapePath(shapePath):
     '''Validate shapefile extension'''
     return os.path.splitext(str(shapePath))[0] + '.shp'
+
 
 def validateShapeData(shapeData):
     '''Make sure we can access the shapefile'''
@@ -138,10 +139,6 @@ for k in range(0,len(contours)):
 contours_x.reverse()
 contours_y.reverse()
 contour_points.reverse()
-# We only extract the longest contigous contour
-contour = contours[-1]
-contour_x = x_var[0] + contour[:,1] * (x_var[-1] - x_var[0]) / (len(i) - 1)
-contour_y = y_var[0] + contour[:,0] * (y_var[-1] - y_var[0]) / (len(j) - 1)
 
 if single:
     contour_points = [contour_points[0]]
@@ -150,10 +147,11 @@ if single:
 print(("Saving shapefile %s" % shp_filename))
 save(shp_filename, contour_points, nc_projection.srs)
 
-xx, yy = np.meshgrid(x_var, y_var)
 
+# display result
 fig = plt.figure()
 ax = fig.add_subplot(111)
+xx, yy = np.meshgrid(x_var, y_var)
 ax.pcolormesh(xx, yy, contour_var, cmap=plt.cm.Blues_r)
 for k in range(0,len(contour_points)):
     plt.plot(contours_x[k], contours_y[k], linewidth=2, color='r')

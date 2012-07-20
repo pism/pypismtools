@@ -67,6 +67,9 @@ parser.add_argument("--extend", dest="extend", type=float,
 parser.add_argument("--N", dest="N", type=int,
                   help='''
                   a * logspace(vmin, vmax, N''', default=1024)
+parser.add_argument("-r", "--reverse",dest="reverse", action="store_true",
+                  help="reverse color scale", default=False)
+
 options = parser.parse_args()
 args = options.FILE
 a = options.a
@@ -75,14 +78,14 @@ extend = options.extend
 N = options.N
 vmin = options.vmin
 vmax = options.vmax
-
+reverse = options.reverse
 # experimental
 log_color = False
 
 # read in CPT colormap
 cmap_file = args[0]
 prefix, suffix = cmap_file.split('.')
-cdict = gmtColormap(cmap_file, log_color=log_color)
+cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
 
 
 # either log scaling or linear scaling (default)
