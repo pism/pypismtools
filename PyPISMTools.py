@@ -149,7 +149,7 @@ def get_projection_from_file(nc):
         try:
             ## go through variables and look for 'grid_mapping' attribute
             for var in nc.variables.keys():
-                if hasattr(nc.variables[var],'grid_mapping'):
+                if hasattr(nc.variables[var], 'grid_mapping'):
                     mappingvarname = nc.variables[var].grid_mapping
             print('Found projection information in variable %s, using it' % mappingvarname)
             var_mapping = nc.variables[mappingvarname]
@@ -231,7 +231,7 @@ def set_mode(mode, aspect_ratio=0.95):
 
         plt.rcParams.update(params)
 
-        return lw, 0.2
+        return lw, 0.30
 
     def set_medium():
         '''
@@ -259,7 +259,7 @@ def set_mode(mode, aspect_ratio=0.95):
 
         plt.rcParams.update(params)
 
-        return lw, 0.2
+        return lw, 0.35
 
     def set_presentation():
         '''
@@ -316,7 +316,7 @@ def set_mode(mode, aspect_ratio=0.95):
 
         plt.rcParams.update(params)
 
-        return lw, 0.30
+        return lw, 0.35
 
     if (mode == "onecol"):
         return set_onecol()

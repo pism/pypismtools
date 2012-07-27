@@ -10,9 +10,9 @@ from mpl_toolkits.basemap import Basemap, cm
 from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
 import pylab as plt
-from pylab import *
 from matplotlib import colors
 from argparse import ArgumentParser
+
 from pyproj import Proj
 
 try:
@@ -24,62 +24,6 @@ try:
     import PyPISMTools.PyPISMTools as ppt
 except:
     import PyPISMTools as ppt
-
-
-def set_shade(a, intensity=None, cmap=cm.jet, scale=10.0, azdeg=165.0, altdeg=45.0):
-    '''
-    sets shading for data array based on intensity layer
-    or the data's value itself.inputs:
-    a - a 2-d array or masked array
-    intensity - a 2-d array of same size as a (no chack on that)
-    representing the intensity layer. if none is given
-    the data itself is used after getting the hillshade values
-    see hillshade for more details.
-    cmap - a colormap (e.g matplotlib.colors.LinearSegmentedColormap
-    instance)
-    scale, azdeg, altdeg - parameters for hilshade function see there for
-    more details
-    output:
-    rgb - an rgb set of the Pegtop soft light composition of the data and 
-           intensity can be used as input for imshow()
-    based on ImageMagick's Pegtop_light:
-    http://www.imagemagick.org/Usage/compose/#pegtoplight
-    '''
-
-    if intensity is None:
-        # hilshading the data
-        intensity = hillshade(a,scale=10.0,azdeg=165.0,altdeg=45.0)
-    else:
-        # or normalize the intensity
-        intensity = (intensity - intensity.min())/(intensity.max() - intensity.min())
-    # get rgb of normalized data based on cmap
-    rgb = cmap((a-a.min())/float(a.max()-a.min()))[:,:,:3]
-    # form an rgb eqvivalent of intensity
-    d = intensity.repeat(3).reshape(rgb.shape)
-    # simulate illumination based on pegtop algorithm.
-    rgb = 2 * d * rgb + (rgb ** 2) * (1 - 2 * d)
-    return rgb
-
-def hillshade(data, scale=10.0, azdeg=165.0, altdeg=45.0):
-    ''' convert data to hillshade based on matplotlib.colors.LightSource class.
-    input:
-         data - a 2-d array of data
-         scale - scaling value of the data. higher number = lower gradient
-         azdeg - where the light comes from: 0 south ; 90 east ; 180 north ;
-                      270 west
-         altdeg - where the light comes from: 0 horison ; 90 zenith
-    output: a 2-d array of normalized hilshade
-    '''
-    # convert alt, az to radians
-    az = azdeg * pi / 180.0
-    alt = altdeg * pi / 180.0
-    # gradient in x and y directions
-    dx, dy = gradient(data / float(scale))
-    slope = 0.5 * pi - arctan(hypot(dx, dy))
-    aspect = arctan2(dx, dy)
-    intensity = sin(alt) * sin(slope) + cos(alt) * cos(slope) * cos(-az - aspect - 0.5 * pi)
-    intensity = (intensity - intensity.min())/(intensity.max() - intensity.min())
-    return intensity
 
 
 class Variable(object):
@@ -126,10 +70,13 @@ parser.description = "A script to plot a variable in a netCDF file over a GeoTif
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("--alpha",dest="alpha",
                   help="transparency of overlay", default=1.)
-parser.add_argument("--background",dest="background", 
+parser.add_argument("--background",dest="background",
                   help="Draw a background (bluemarble, etopo, shadedrelief", default=None)
-parser.add_argument("--bounds", dest="bounds",
-                  help="lower and upper bound for colorbar, eg. -1,1", default=None)
+parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
+                  help="lower and upper bound for colorbar, eg. -1 1", default=None)
+parser.add_argument("--boundary_tol", dest="boundary_tol", nargs=1, type=float,
+                  help='''if set, color areas brown where obs <= boundary_tol but data >= boundary_tol,
+                  works for difference plots only.''', default=None)
 parser.add_argument("--obs_file",dest="obs_file",
                   help='''
                   file with observations for difference plot,
@@ -149,8 +96,6 @@ parser.add_argument("--singlerow", dest="singlerow", action="store_true",
                   help="all plots on a single row", default=False)
 parser.add_argument("--singlecolumn", dest="singlecolumn", action="store_true",
                   help="all plots on a single column", default=False)
-parser.add_argument("-m", "--same_mask", dest="samemask", action="store_true",
-                  help="use mask from first plot for all plots", default=False)
 parser.add_argument("--map_resolution", dest="map_res",
                   help="Resolution of boundary database (see Basemap), default = 'l' (low)", default='l')
 parser.add_argument("-o", "--output_filename", dest="out_file",
@@ -168,6 +113,8 @@ parser.add_argument("-r", "--output_resolution", dest="out_res",
                   = 300''', default=300)
 parser.add_argument("--relative", dest="relative", action="store_true",
                   help="do relative differences.", default=False)
+parser.add_argument("--tol", dest="tol", type=float,
+                  help="tolerance", default=0.)
 parser.add_argument("-v", "--variable", dest="varname",
                   help='''Variable to plot, default = 'csurf'.
                   Currently supported variables are: csurf''', default='csurf')
@@ -194,6 +141,7 @@ else:
 alpha = float(options.alpha)
 background = options.background
 bounds = options.bounds
+boundary_tol = options.boundary_tol
 colormap = options.colormap
 coastlines = options.coastlines
 colorbar = options.colorbar
@@ -202,7 +150,6 @@ inner_title = options.inner_title
 map_res = options.map_res
 geotiff_filename = options.geotiff_filename
 print_mode = options.print_mode
-samemask = options.samemask
 obs_file = options.obs_file
 outunit = options.outunit
 out_res = int(options.out_res)
@@ -210,6 +157,7 @@ out_file = options.out_file
 singlerow = options.singlerow
 singlecolumn = options.singlecolumn
 relative = options.relative
+tol = options.tol
 varname = options.varname
 
 cmap = None
@@ -305,9 +253,8 @@ else:
 bounds_min = -1
 bounds_max = 1
 if bounds is not None:
-    bounds_min, bounds_max = bounds.split(',')
-    bounds_min = float(bounds_min)
-    bounds_max = float(bounds_max)
+    bounds_min = bounds[0]
+    bounds_max = bounds[1]
     variable.vmin = bounds_min
     variable.vmax = bounds_max
     variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
@@ -383,6 +330,9 @@ if obs_file is not None:
         import sys
         sys.exit()
         
+    # get the dimensions
+    xdim, ydim, zdim, tdim = ppt.get_dims(nc)
+    # set up dimension ordering
     var_order = (tdim, zdim, ydim, xdim)
 
     if varname == 'csurf':
@@ -392,7 +342,7 @@ if obs_file is not None:
             var = 'magnitude'
     else:
         var = varname
-    print(("    - reading variable %s from file %s" % (var, filename)))
+    print(("    - reading variable %s from file %s" % (var, obs_file)))
     try:
         data = np.squeeze(ppt.permute(nc.variables[var], var_order))
     except:
@@ -417,9 +367,11 @@ if obs_file is not None:
         try:
             fill  = nc.variables[var]._FillValue
             mask = (data == fill)
-            obs_values = np.ma.array(data, mask = mask)
+            
         except:
-            obs_values = data
+            mask = np.zeros_like(data)
+        mask[data <= tol] = 1
+        obs_values = np.ma.array(data, mask = mask)
     
     nc.close()
 
@@ -453,10 +405,11 @@ for k in range(0, nt):
         import sys.exit
         sys.exit
 
+    # get the dimensions
     xdim, ydim, zdim, tdim = ppt.get_dims(nc)
-
+    # set up dimension ordering
     var_order = (tdim, zdim, ydim, xdim)
-
+    # add lat/lon values
     lats.append(np.squeeze(ppt.permute(nc.variables['lat'], var_order)))
     lons.append(np.squeeze(ppt.permute(nc.variables['lon'], var_order)))
 
@@ -491,7 +444,7 @@ for k in range(0, nt):
     else:
         try:
             fill  = nc.variables[var]._FillValue
-            mask = (data == fill)
+            mask = (data == fill)            
             values.append(np.ma.array(data, mask = mask))
         except:
             values.append(data)
@@ -556,11 +509,21 @@ else:
                     share_all=True)
 
 
-for k in range(0,nt):
+if variable.var_name not in (vars_speed, vars_dem, vars_topo) and (bounds is None):
+    variable.vmin = data.min()
+    variable.vmax = data.max()
+if bounds:
+    variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
+    variable.extend = 'both'
+    variable.ticks = None
+    variable.format = None
+
+for k in range(0, nt):
     ax = grid[k]
     m.ax = ax
     xx, yy = m(lons[k], lats[k])
 
+    # Draw a background if given
     if (background == 'bluemable'):
         m.bluemarble()
     elif (background == 'etopo'):
@@ -569,14 +532,24 @@ for k in range(0,nt):
         m.shadedrelief()
     else:
         pass
-    
-    if samemask and (k != 0):
-        values[k].mask = values[0].mask
-        
+
+    # Plot GeoTIFF file if given
     if geotiff_filename is not None:
         m.pcolormesh(xx_gtiff, yy_gtiff, np.flipud(geotiff.RasterArray),
                      cmap=plt.cm.gray)
-        
+
+    # Draw a boundary mask. Areas where
+    #   obs_values <= boundary_tol and values > boundary_tol
+    # are colored brown.
+    if boundary_tol and obs_file:
+        boundary_mask = np.zeros_like(data)
+        b_mask = np.ones_like(data)
+        b_mask[np.logical_and((obs_values <=  boundary_tol), (values[k] > boundary_tol))] = 0
+        b_mask[ocean_mask[k] == 4] = 1
+        boundary_mask = np.ma.array(data=boundary_mask, mask=b_mask)
+        b = m.pcolormesh(xx, yy, boundary_mask, cmap=plt.cm.BrBG, alpha=alpha)
+
+    # If observations are given, calculate absolute or relative differences
     if obs_file:
         if relative:
             data = (values[k] - obs_values) / obs_values
@@ -588,9 +561,11 @@ for k in range(0,nt):
             cs = m.pcolormesh(xx, yy, data,
                               cmap=variable.cmap, alpha=alpha, norm=variable.norm)
     else:
+        # otherwise just plot data
         data = values[k]
         cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap, alpha=alpha,
               norm=variable.norm)
+
     if singlerow:
         m.drawmeridians(np.arange(-175., 175., meridian_spacing),
                         labels = [0, 0, 0, 1], linewidth=0.5)
@@ -638,10 +613,6 @@ for k in range(0,nt):
         m.drawmapscale(lons[0][0, 0] + 4, lats[0][0, 0] + 1.75, lon_0, lat_0,
                    500, fontsize=plt.rcParams['font.size'], barstyle='fancy')
 
-if variable.var_name not in (vars_speed, vars_dem, vars_topo) and (bounds is None):
-    variable.vmin = data.min()
-    variable.vmax = data.max()
-    #variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
 
 if singlerow:
     plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
