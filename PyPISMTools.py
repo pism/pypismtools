@@ -90,7 +90,7 @@ def get_dims(nc):
 
     Returns:
     --------
-    xdim, ydim: dimensions
+    xdim, ydim, zdim, tdim: dimensions
     '''
         
     ## a list of possible x-dimensions names
