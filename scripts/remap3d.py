@@ -117,11 +117,14 @@ if __name__ == '__main__':
     parser.add_argument("FILE", nargs='*')
     parser.add_argument("--test",dest="test", action='store_true',
                       help="test with some fake date", default=False)
+    parser.add_argument("-c", "--copy_thickness", dest="copy_thickness", action='store_true',
+                      help="copy ice thickness to new file", default=False)
     parser.add_argument("-v", "--variable", dest="varname",
                   help='''Variable used for remapping, default = "enthalpy".''', default='enthalpy')
 
     options = parser.parse_args()
     args = options.FILE
+    copy_thickness = options.copy_thickness
     test = options.test
     interp_var_name = options.varname
     thk_var_name = 'thk'
@@ -136,6 +139,10 @@ if __name__ == '__main__':
         to_file_name = args[2]
 
         subprocess.call(["ncks", "-O", from_file_name, to_file_name])
+        if copy_thickness:
+            print("copy ice thickness from %s to %s." % (thk_file_name, to_file_name))
+            subprocess.call(["ncks", "-A -v thk", thk_file_name, to_file_name])
+
 
         # open file in append mode
         nc_to = NC(to_file_name, 'a')
