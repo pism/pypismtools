@@ -84,14 +84,14 @@ experiment - observation. Must be on same grid as experiments. Default is None''
 parser.add_argument("--colormap",dest="colormap",
                   help='''path to a cpt colormap, or a pylab colormap,
                   e.g. Blues''', default=None)
-parser.add_argument("--coastlines",dest="coastlines", action="store_true",
+parser.add_argument("--coastlines", dest="coastlines", action="store_true",
                   help="adds a coastlines", default=False)
-parser.add_argument("-c", "--colorbar", dest="colorbar",action="store_true",
-                  help="saves a colorbar seperately",default=False)
-parser.add_argument("--drawmapscale",dest="drawmapscale", action="store_true",
+parser.add_argument("-c", "--colorbar", dest="colorbar", action="store_true",
+                  help="saves a colorbar seperately", default=False)
+parser.add_argument("--drawmapscale", dest="drawmapscale", action="store_true",
                   help="draws a map scale in the lower left corner", default=False)
-parser.add_argument("--inner_title",dest="inner_title",action="store_true",
-                  help="add an inner title",default=False)
+parser.add_argument("--inner_title", dest="inner_title", action="store_true",
+                  help="add an inner title", default=False)
 parser.add_argument("--singlerow", dest="singlerow", action="store_true",
                   help="all plots on a single row", default=False)
 parser.add_argument("--singlecolumn", dest="singlecolumn", action="store_true",
@@ -106,7 +106,7 @@ parser.add_argument("--out_unit", dest="outunit",
                   help="Output unit, default is unit in file", default=None)
 parser.add_argument("-p", "--print_size", dest="print_mode",
               help="sets figure size and font size, available options are: \
-              'onecol','medium','twocol','presentation'",default="twocol")
+              'onecol','medium','twocol','presentation'", default="twocol")
 parser.add_argument("-r", "--output_resolution", dest="out_res",
                   help='''
                   Graphics resolution in dots per inch (DPI), default
@@ -184,6 +184,7 @@ parallels_spacing = 5
 vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag')
 vars_dem = ('thk', 'usurf', 'usrf')
 vars_topo = ('topg')
+vars_dt = ('dhdt')
 
 if varname in vars_speed:
 
@@ -233,6 +234,20 @@ elif varname in vars_topo:
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format')
     attr_vals = (None, cmap, norm, vmin, vmax, 'both', '%d')
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
+elif varname in vars_dt:
+
+    if cmap is None:
+        cmap = plt.cm.RdBu
+        
+    vmin = None
+    vmax = None
+    norm = None
+
+    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format')
+    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None)
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -512,6 +527,7 @@ else:
 if variable.var_name not in (vars_speed, vars_dem, vars_topo) and (bounds is None):
     variable.vmin = data.min()
     variable.vmax = data.max()
+
 if bounds:
     variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
     variable.extend = 'both'
