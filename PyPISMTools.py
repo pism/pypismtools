@@ -196,8 +196,8 @@ def get_golden_mean():
 def set_mode(mode, aspect_ratio=0.95):
     '''
     Set the print mode, i.e. document and font size. Options are:
-    - onecol: width=85mm, font size=8pt. Appropriate for 1-column figures
-    - twocol: width=150mm, font size=8pt. Default.
+    - onecol: width=80mm, font size=8pt. Appropriate for 1-column figures
+    - twocol: width=160mm, font size=8pt. Default.
               Appropriate for 2-column figures
     - medium: width=85mm, font size=8pt.
     - presentation: width=85mm, font size=10pt. For presentations.
@@ -213,7 +213,7 @@ def set_mode(mode, aspect_ratio=0.95):
         fontsize = 8
         lw = 1.
         markersize = 2
-        fig_width = 3.32  # inch
+        fig_width = 3.15  # inch
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
@@ -267,7 +267,7 @@ def set_mode(mode, aspect_ratio=0.95):
         for pad_inches
         '''
 
-        fontsize = 10
+        fontsize = 8
         lw = 1.5
         markersize = 3
         fig_width = 6.64  # inch
@@ -298,7 +298,7 @@ def set_mode(mode, aspect_ratio=0.95):
         fontsize = 8
         lw = 1.2
         markersize = 3
-        fig_width = 6.   # inch
+        fig_width = 6.3   # inch
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
