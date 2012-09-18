@@ -115,6 +115,8 @@ parser.add_argument("--relative", dest="relative", action="store_true",
                   help="do relative differences.", default=False)
 parser.add_argument("--tol", dest="tol", type=float,
                   help="tolerance", default=0.)
+parser.add_argument("--level", dest="level", type=int,
+                  help="level, for 3D data only. Default = 0", default=0)
 parser.add_argument("-v", "--variable", dest="varname",
                   help='''Variable to plot, default = 'csurf'.
                   Currently supported variables are: csurf''', default='csurf')
@@ -147,6 +149,7 @@ coastlines = options.coastlines
 colorbar = options.colorbar
 drawmapscale = options.drawmapscale
 inner_title = options.inner_title
+level = options.level
 map_res = options.map_res
 geotiff_filename = options.geotiff_filename
 print_mode = options.print_mode
@@ -438,6 +441,9 @@ for k in range(0, nt):
     print(("    - reading variable %s from file %s" % (var, filename)))
     try:
         data = np.squeeze(ppt.permute(nc.variables[var], var_order))
+        if (data.ndim == 3):
+            data = data[level,:]
+        
     except:
         print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
               % (variable.var_name, filename)))
