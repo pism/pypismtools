@@ -238,7 +238,7 @@ def set_mode(mode, aspect_ratio=0.95):
         Define parameters for "medium" mode and return value for pad_inches
         '''
 
-        fontsize = 6
+        fontsize = 8
         markersize = 2
         lw = 1
         fig_width = 4.8  # inch
