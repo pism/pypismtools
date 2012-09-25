@@ -118,8 +118,7 @@ parser.add_argument("--tol", dest="tol", type=float,
 parser.add_argument("--level", dest="level", type=int,
                   help="level, for 3D data only. Default = 0", default=0)
 parser.add_argument("-v", "--variable", dest="varname",
-                  help='''Variable to plot, default = 'csurf'.
-                  Currently supported variables are: csurf''', default='csurf')
+                  help='''Variable to plot, default = 'csurf'.''', default='csurf')
 
 options = parser.parse_args()
 args = options.FILE
@@ -385,7 +384,6 @@ if obs_file is not None:
         try:
             fill  = nc.variables[var]._FillValue
             mask = (data == fill)
-            
         except:
             mask = np.zeros_like(data)
         mask[data <= tol] = 1
@@ -465,7 +463,7 @@ for k in range(0, nt):
     else:
         try:
             fill  = nc.variables[var]._FillValue
-            mask = (data == fill)            
+            mask = (data == fill)
             values.append(np.ma.array(data, mask = mask))
         except:
             values.append(data)
