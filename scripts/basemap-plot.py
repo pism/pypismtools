@@ -187,6 +187,7 @@ vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag')
 vars_dem = ('thk', 'usurf', 'usrf')
 vars_topo = ('topg')
 vars_dt = ('dhdt')
+vars_cmb = ('climatic_mass_balance')
 
 if varname in vars_speed:
 
@@ -243,6 +244,20 @@ elif varname in vars_dt:
 
     if cmap is None:
         cmap = plt.cm.RdBu
+        
+    vmin = None
+    vmax = None
+    norm = None
+
+    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format')
+    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None)
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
+elif varname in vars_cmb:
+
+    if cmap is None:
+        cmap = plt.cm.RdBu_r
         
     vmin = None
     vmax = None
