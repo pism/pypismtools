@@ -433,8 +433,8 @@ for k in range(0, nt):
     except:
         print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
               % filename))
-        import sys.exit
-        sys.exit
+        import sys
+        sys.exit(1)
 
     # get the dimensions
     xdim, ydim, zdim, tdim = ppt.get_dims(nc)
@@ -456,18 +456,19 @@ for k in range(0, nt):
         data = np.squeeze(ppt.permute(nc.variables[var], var_order))
         if (data.ndim == 3):
             data = data[level,:]
-        
     except:
         print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
               % (variable.var_name, filename)))
-        exit(2)
+        import sys
+        sys.exit(1)
 
     try:
         inunit = str(nc.variables[var].units)
     except:
         print(("ERROR:  units not found in variable '%s' in file %s ... ending ..."
               % (variable.var_name, filename)))
-        exit(2)
+        import sys
+        sys.exit(1)
 
     if outunit is not None:
               data = ppt.unit_converter(data, inunit, outunit)
