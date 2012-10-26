@@ -358,14 +358,14 @@ if obs_file is not None:
         nc = NC(obs_file, 'r')
     except:
         print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
-              % filename))
+              % obs_file))
         import sys
         sys.exit()
         
     # get the dimensions
     xdim, ydim, zdim, tdim = ppt.get_dims(nc)
     # set up dimension ordering
-    var_order = (tdim, zdim, ydim, xdim)
+    dim_order = (tdim, zdim, ydim, xdim)
 
     if varname == 'csurf':
         if 'csurf' in list(nc.variables.keys()):
@@ -376,17 +376,17 @@ if obs_file is not None:
         var = varname
     print(("    - reading variable %s from file %s" % (var, obs_file)))
     try:
-        data = np.squeeze(ppt.permute(nc.variables[var], var_order))
+        data = np.squeeze(ppt.permute(nc.variables[var], dim_order))
     except:
         print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
-              % (variable.var_name, filename)))
+              % (variable.var_name, obs_file)))
         exit(2)
 
     try:
         inunit = str(nc.variables[var].units)
     except:
         print(("ERROR:  units not found in variable '%s' in file %s ... ending ..."
-              % (variable.var_name, filename)))
+              % (variable.var_name, obs_file)))
         exit(2)
 
     if outunit is not None:
@@ -439,10 +439,10 @@ for k in range(0, nt):
     # get the dimensions
     xdim, ydim, zdim, tdim = ppt.get_dims(nc)
     # set up dimension ordering
-    var_order = (tdim, zdim, ydim, xdim)
+    dim_order = (tdim, zdim, ydim, xdim)
     # add lat/lon values
-    lats.append(np.squeeze(ppt.permute(nc.variables['lat'], var_order)))
-    lons.append(np.squeeze(ppt.permute(nc.variables['lon'], var_order)))
+    lats.append(np.squeeze(ppt.permute(nc.variables['lat'], dim_order)))
+    lons.append(np.squeeze(ppt.permute(nc.variables['lon'], dim_order)))
 
     if varname == 'csurf':
         if 'csurf' in list(nc.variables.keys()):
@@ -453,7 +453,7 @@ for k in range(0, nt):
         var = varname
     print(("    - reading variable %s from file %s" % (var, filename)))
     try:
-        data = np.squeeze(ppt.permute(nc.variables[var], var_order))
+        data = np.squeeze(ppt.permute(nc.variables[var], dim_order))
         if (data.ndim == 3):
             data = data[level,:]
     except:
@@ -641,7 +641,7 @@ for k in range(0, nt):
 
     im_titles = ['a)','b)','c)','d)','e)','f)']
     if inner_title:
-        for ax in range(0,nt):
+        for ax in range(0, nt):
             t = ppt.add_inner_title(fig.axes[ax], im_titles[ax], loc=2)
             t.patch.set_ec("none")
 
