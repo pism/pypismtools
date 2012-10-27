@@ -88,6 +88,8 @@ parser.add_argument("--coastlines", dest="coastlines", action="store_true",
                   help="adds a coastlines", default=False)
 parser.add_argument("-c", "--colorbar", dest="colorbar", action="store_true",
                   help="saves a colorbar seperately", default=False)
+parser.add_argument("--colorbar_label", dest="colorbar_label", action="store_true",
+                  help="saves a colorbar seperately", default=False)
 parser.add_argument("--drawmapscale", dest="drawmapscale", action="store_true",
                   help="draws a map scale in the lower left corner", default=False)
 parser.add_argument("--inner_title", dest="inner_title", action="store_true",
@@ -146,6 +148,7 @@ boundary_tol = options.boundary_tol
 colormap = options.colormap
 coastlines = options.coastlines
 colorbar = options.colorbar
+colorbar_label = options.colorbar_label
 drawmapscale = options.drawmapscale
 inner_title = options.inner_title
 level = options.level
@@ -206,9 +209,9 @@ if varname in vars_speed:
     norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm',
-                 'vmin', 'vmax', 'extend', 'format')
+                 'vmin', 'vmax', 'extend', 'format', 'unit')
     attr_vals = ([1, 3, 10, 30, 100, 300, 1000, 3000], cmap,
-                 norm, vmin, vmax, 'both', '%d')
+                 norm, vmin, vmax, 'both', '%d', 'm/a')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -221,8 +224,8 @@ elif varname in vars_dem:
     vmax = None
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
-    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format')
-    attr_vals = (None, cmap, norm, vmin, vmax, 'max', '%d')
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format', 'unit')
+    attr_vals = (None, cmap, norm, vmin, vmax, 'max', '%d', 'm')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -235,8 +238,8 @@ elif varname in vars_topo:
     vmax = 1400
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
-    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format')
-    attr_vals = (None, cmap, norm, vmin, vmax, 'both', '%d')
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format', 'unit')
+    attr_vals = (None, cmap, norm, vmin, vmax, 'both', '%d', 'm a.s.l.')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -263,8 +266,8 @@ elif varname in vars_cmb:
     vmax = None
     norm = None
 
-    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format')
-    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None)
+    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format', 'unit')
+    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, 'm/a')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -651,7 +654,7 @@ for k in range(0, nt):
 
 
 if singlerow:
-    plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
+    cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
                                          cmap=variable.cmap,
                                          norm=variable.norm,
                                          extend=variable.extend,
@@ -660,7 +663,7 @@ if singlerow:
                                          ticks=variable.ticks,
                                          format=variable.format)
 elif singlecolumn:
-    plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
+    cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
                                          cmap=variable.cmap,
                                          norm=variable.norm,
                                          extend=variable.extend,
@@ -668,7 +671,7 @@ elif singlecolumn:
                                          drawedges=False,
                                          ticks=variable.ticks)
 else:
-    plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
+    cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
                                          cmap=variable.cmap,
                                          norm=variable.norm,
                                          extend=variable.extend,
@@ -676,6 +679,8 @@ else:
                                          drawedges=False,
                                          ticks=variable.ticks,
                                          format=variable.format)
-
+if colorbar_label:
+    cbar.set_label('m/a')
+    
 print("  writing image %s ..." % out_file)
 fig.savefig(out_file, bbox_inches='tight', pad_inches=pad_inches, dpi=out_res)
