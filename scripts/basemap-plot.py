@@ -621,17 +621,17 @@ for k in range(0, nt):
             m.drawmeridians(np.arange(-175., 175., meridian_spacing),
                             labels = [0, 0, 0, 0], linewidth=0.5)
     else:
-        if (k==0) or (k==3):
+        if (k==0) or (k==2):
             m.drawparallels(np.arange(-90., 90., parallels_spacing),
                             labels = [1, 0, 0, 0], linewidth=0.5)
         else:
             m.drawparallels(np.arange(-90., 90., parallels_spacing),
                             labels = [0, 0, 0, 0], linewidth=0.5)
-        if (k>=3):
+        if (k>=2):
             m.drawmeridians(np.arange(-175., 175., meridian_spacing),
                             labels = [0, 0, 0, 1], linewidth=0.5)
         else:
-            m.drawparallels(np.arange(-90., 90., meridian_spacing),
+            m.drawmeridians(np.arange(-90., 90., meridian_spacing),
                             labels = [0, 0, 0, 0], linewidth=0.5)
 
 
