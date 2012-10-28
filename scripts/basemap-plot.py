@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 # Copyright (C) 2011 Andy Aschwanden
 #
 # Script creates a basemap plot of a variable in a netCDF file
@@ -37,7 +36,7 @@ class Variable(object):
 
         kwargsdict = {}
         expected_args = ['ticks', 'cmap', 'norm', 'vmin', 'vmax',
-                         'extend', 'format']
+                         'extend', 'format', 'colorbar_label']
         for key in list(kwargs.keys()):
             if key in expected_args:
                 kwargsdict[key] = kwargs[key]
@@ -63,6 +62,8 @@ class Variable(object):
         if 'format' in kwargsdict:
             self.format = kwargsdict['format']
 
+        if 'colorbar_label' in kwargsdict:
+            self.colorbar_label = kwargsdict['colorbar_label']
 
 # Set up the option parser
 parser = ArgumentParser()
@@ -115,6 +116,8 @@ parser.add_argument("-r", "--output_resolution", dest="out_res",
                   = 300''', default=300)
 parser.add_argument("--relative", dest="relative", action="store_true",
                   help="do relative differences.", default=False)
+parser.add_argument("--no_rasterize", dest="rasterized", action="store_false",
+                  help="do relative differences.", default=True)
 parser.add_argument("--tol", dest="tol", type=float,
                   help="tolerance", default=0.)
 parser.add_argument("--level", dest="level", type=int,
@@ -162,6 +165,7 @@ out_file = options.out_file
 singlerow = options.singlerow
 singlecolumn = options.singlecolumn
 relative = options.relative
+rasterized = options.rasterized
 tol = options.tol
 varname = options.varname
 
@@ -185,11 +189,12 @@ if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
 # set constants and other stuff
 meridian_spacing = 10
 parallels_spacing = 5
+geotiff_rasterized = True
 
 vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag')
 vars_dem = ('thk', 'usurf', 'usrf')
 vars_topo = ('topg')
-vars_dt = ('dhdt')
+vars_dh = ('dhdt')
 vars_cmb = ('climatic_mass_balance')
 
 if varname in vars_speed:
@@ -209,9 +214,9 @@ if varname in vars_speed:
     norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm',
-                 'vmin', 'vmax', 'extend', 'format', 'unit')
+                 'vmin', 'vmax', 'extend', 'format', 'colorbar_label')
     attr_vals = ([1, 3, 10, 30, 100, 300, 1000, 3000], cmap,
-                 norm, vmin, vmax, 'both', '%d', 'm/a')
+                 norm, vmin, vmax, 'both', '%d', 'm a$^{-1}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -224,7 +229,7 @@ elif varname in vars_dem:
     vmax = None
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
-    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format', 'unit')
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format', 'colorbar_label')
     attr_vals = (None, cmap, norm, vmin, vmax, 'max', '%d', 'm')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
@@ -238,12 +243,12 @@ elif varname in vars_topo:
     vmax = 1400
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
-    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format', 'unit')
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format', 'colorbar_label')
     attr_vals = (None, cmap, norm, vmin, vmax, 'both', '%d', 'm a.s.l.')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
-elif varname in vars_dt:
+elif varname in vars_dh:
 
     if cmap is None:
         cmap = plt.cm.RdBu
@@ -252,8 +257,10 @@ elif varname in vars_dt:
     vmax = None
     norm = None
 
-    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format')
-    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None)
+    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend',
+                 'format', 'colorbar_label')
+    attr_vals = (None, vmin, vmax, norm, cmap, 'both',
+                 None, 'm')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -266,7 +273,7 @@ elif varname in vars_cmb:
     vmax = None
     norm = None
 
-    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format', 'unit')
+    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format', 'colorbar_label')
     attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, 'm/a')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
@@ -497,8 +504,17 @@ for k in range(0, nt):
 
 
 # set the print mode
-lw, pad_inches = ppt.set_mode(print_mode)
-
+if print_mode in 'height':
+    if (nt==2):
+        lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.75)
+    if (nt==3):
+        lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.55)
+    elif (nt==4):
+        lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.35)
+    else:
+        lw, pad_inches = ppt.set_mode(print_mode)
+else:
+    lw, pad_inches = ppt.set_mode(print_mode)
 
 # make a separate colorbar (if requested)
 if colorbar:
@@ -575,7 +591,7 @@ for k in range(0, nt):
     # Plot GeoTIFF file if given
     if geotiff_filename is not None:
         m.pcolormesh(xx_gtiff, yy_gtiff, np.flipud(geotiff.RasterArray),
-                     cmap=plt.cm.gray)
+                     cmap=plt.cm.gray, rasterized=geotiff_rasterized)
 
     # Draw a boundary mask. Areas where
     #   obs_values <= boundary_tol and values > boundary_tol
@@ -586,24 +602,26 @@ for k in range(0, nt):
         b_mask[np.logical_and((obs_values <=  boundary_tol), (values[k] > boundary_tol))] = 0
         b_mask[ocean_mask[k] == 4] = 1
         boundary_mask = np.ma.array(data=boundary_mask, mask=b_mask)
-        b = m.pcolormesh(xx, yy, boundary_mask, cmap=plt.cm.BrBG, alpha=alpha)
+        b = m.pcolormesh(xx, yy, boundary_mask, cmap=plt.cm.BrBG,
+                         alpha=alpha, rasterized=rasterized)
 
     # If observations are given, calculate absolute or relative differences
     if obs_file:
         if relative:
             data = (values[k] - obs_values) / obs_values
-            cs = m.pcolormesh(xx, yy,
-                              (data),
-                cmap=variable.cmap, alpha=alpha, norm=variable.norm)
+            cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap,
+                              alpha=alpha, norm=variable.norm,
+                              rasterized=rasterized)
         else:
             data = values[k] - obs_values
-            cs = m.pcolormesh(xx, yy, data,
-                              cmap=variable.cmap, alpha=alpha, norm=variable.norm)
+            cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap,
+                              alpha=alpha, norm=variable.norm,
+                              rasterized=rasterized)
     else:
         # otherwise just plot data
         data = values[k]
         cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap, alpha=alpha,
-              norm=variable.norm)
+                          norm=variable.norm, rasterized=rasterized)
 
     if singlerow:
         m.drawmeridians(np.arange(-175., 175., meridian_spacing),
@@ -680,7 +698,7 @@ else:
                                          ticks=variable.ticks,
                                          format=variable.format)
 if colorbar_label:
-    cbar.set_label('m/a')
-    
+    cbar.set_label(variable.colorbar_label)
+
 print("  writing image %s ..." % out_file)
 fig.savefig(out_file, bbox_inches='tight', pad_inches=pad_inches, dpi=out_res)

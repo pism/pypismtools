@@ -200,6 +200,7 @@ def set_mode(mode, aspect_ratio=0.95):
     - twocol: width=160mm, font size=8pt. Default.
               Appropriate for 2-column figures
     - medium: width=85mm, font size=8pt.
+    - height: height=2.5in.
     - presentation: width=85mm, font size=10pt. For presentations.
     '''
 
@@ -217,7 +218,7 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'eps',
+        params = {'backend': 'ps',
                   'lines.linewidth': lw,
                   'axes.labelsize': fontsize,
                   'text.fontsize': fontsize,
@@ -245,7 +246,7 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'eps',
+        params = {'backend': 'ps',
                   'lines.linewidth': lw,
                   'axes.labelsize': fontsize,
                   'text.fontsize': fontsize,
@@ -274,7 +275,7 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'eps',
+        params = {'backend': 'ps',
                   'lines.linewidth': lw,
                   'axes.labelsize': fontsize,
                   'text.fontsize': fontsize,
@@ -302,7 +303,7 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'eps',
+        params = {'backend': 'ps',
                   'lines.linewidth': lw,
                   'axes.labelsize': fontsize,
                   'text.fontsize': fontsize,
@@ -318,6 +319,33 @@ def set_mode(mode, aspect_ratio=0.95):
 
         return lw, 0.35
 
+    def set_height():
+        '''
+        Define parameters for "twocol" mode and return value for pad_inches
+        '''
+        fontsize = 8
+        lw = 1.1
+        markersize = 2
+        fig_height = 2.5   # inch
+        fig_width =fig_height / aspect_ratio  # inch
+        fig_size = [fig_width, fig_height]
+
+        params = {'backend': 'ps',
+                  'lines.linewidth': lw,
+                  'axes.labelsize': fontsize,
+                  'text.fontsize': fontsize,
+                  'xtick.labelsize': fontsize,
+                  'ytick.labelsize': fontsize,
+                  'lines.linestyle': linestyle,
+                  'lines.markersize': markersize,
+                  'legend.fontsize': fontsize,
+                  'font.size': fontsize,
+                  'figure.figsize': fig_size}
+
+        plt.rcParams.update(params)
+
+        return lw, 0.025
+
     if (mode == "onecol"):
         return set_onecol()
     elif (mode == "medium"):
@@ -326,6 +354,8 @@ def set_mode(mode, aspect_ratio=0.95):
         return set_presentation()
     elif (mode == "twocol"):
         return set_twocol()
+    elif (mode == "height"):
+        return set_height()
     else:
         print("%s mode not recognized, using onecol instead" % mode)
         return set_twocol()
