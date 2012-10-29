@@ -505,11 +505,15 @@ for k in range(0, nt):
 
 # set the print mode
 if print_mode in 'height':
-    if (nt==2):
+    if relative:
+        ntn = nt
+    else:
+        ntn = nt - 1
+    if (ntn==2):
         lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.75)
-    if (nt==3):
+    if (ntn==3):
         lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.55)
-    elif (nt==4):
+    elif (ntn==4):
         lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.35)
     else:
         lw, pad_inches = ppt.set_mode(print_mode)
