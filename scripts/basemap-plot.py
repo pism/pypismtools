@@ -512,6 +512,8 @@ if print_mode in 'height':
         lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.55)
     elif (ntn==4):
         lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.35)
+    elif (ntn==5):
+        lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.25)
     else:
         lw, pad_inches = ppt.set_mode(print_mode)
 else:
