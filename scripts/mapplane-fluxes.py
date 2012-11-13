@@ -14,8 +14,7 @@ except:
 
 # Set up the argument parser
 parser = ArgumentParser()
-parser.description = '''A script for PISM output files to make mass time series
-plots using pylab/matplotlib'''
+parser.description = '''Calculate mapplane fluxes, cross-sectional areas, etc.'''
 parser.add_argument("FILE", nargs='*')
 
 options = parser.parse_args()
@@ -23,12 +22,16 @@ args = options.FILE
 nt = len(args)
 var_name = 'ocean_kill_flux_cumulative'
 outunit = 'Gt'
+min_discharge = -0.1
 
 values = []
 record = -1
 no_cells = []
+thicknesses = []
+areas = []
 cum_lengths = []
 cum_areas = []
+cum_flux = []
 for k in range(0, nt):
 
     file_name = args[k]
@@ -53,7 +56,7 @@ for k in range(0, nt):
     y_units = nc.variables[ydim].units
 
     var = 'topg'
-    print(("    - reading variable %s from file %s" % (var, file_name)))
+    print(("    - reading variable %s" % var))
     try:
         topg = np.squeeze(ppt.permute(nc.variables[var], dim_order))
         topg_units = nc.variables[var].units
@@ -68,7 +71,7 @@ for k in range(0, nt):
     topg = np.ma.array(topg, mask = mask)
 
     var = 'thk'
-    print(("    - reading variable %s from file %s" % (var, file_name)))
+    print(("    - reading variable %s" % var))
     try:
         thk = np.squeeze(ppt.permute(nc.variables[var], dim_order))
         thk_units = nc.variables[var].units
@@ -128,7 +131,7 @@ for k in range(0, nt):
     if outunit is not None:
         data = ppt.unit_converter(data, inunit, outunit)
 
-    mask = (data >= 0)
+    mask = (data >= min_discharge)
     data = np.ma.array(data, mask = mask)
 
     outdimunits = 'm'
@@ -136,17 +139,40 @@ for k in range(0, nt):
     dy = ppt.unit_converter(np.abs(y[1] - y[0]), y_units, outdimunits)
 
     velbar = np.sqrt(ubar ** 2 + vbar ** 2)
-    
+
+    is_discharge = data.nonzero()
     # get number of non-zero non-masked cells
-    n_cells = data[data.nonzero()].data.shape[0]
+    n_cells = data[is_discharge].data.shape[0]
+
+    n = 3
+    nx, ny = thk.shape
+    ii, jj = np.indices((n,n))
+
+    thk_avg = np.zeros((n_cells))
+    gatethk_avg = np.zeros((n_cells))
+    velbar_avg = np.zeros((n_cells))
+    
+    for k in range(0, n_cells):
+        r = (ii + is_discharge[0][k]) % (nx - 1)  # periodic stencil
+        c = (jj + is_discharge[1][k]) % (ny - 1)  # periodic stencil
+        thk_avg[k] = thk[r,c].sum() / len(thk[r,c].nonzero())
+        gatethk_avg[k] = np.abs(topg[r,c]).sum() / len(np.abs(topg[r,c]).nonzero())
+        velbar_avg[k] = velbar[r,c].sum() / len(velbar[r,c].nonzero())
+    
     no_cells.append(n_cells)
     # calculate cumulative length of discharge cells depending on
     # grid resolution
     cum_length = n_cells * dx  # in m
     cum_lengths.append(cum_length)
-    cum_thickness = np.abs(topg[data.nonzero()].sum())
-    cum_area = cum_length * cum_thickness
+    thickness = np.abs(thk[is_discharge])
+    area = thk_avg * dx
+    areas.append(area)
+    thicknesses.append(thickness)
+    cum_thickness = thickness.sum()
+    cum_area = area.sum()
     cum_areas.append(cum_area)
     values.append(data)
 
     nc.close()
+
+print ppt.unit_converter(cum_areas,'m2','km2')
