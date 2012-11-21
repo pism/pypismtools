@@ -196,6 +196,7 @@ vars_dem = ('thk', 'usurf', 'usrf')
 vars_topo = ('topg')
 vars_dh = ('dhdt')
 vars_cmb = ('climatic_mass_balance')
+vars_temp = ('ice_surface_temp', 'temppabase','temppa')
 
 if varname in vars_speed:
 
@@ -274,7 +275,21 @@ elif varname in vars_cmb:
     norm = None
 
     attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format', 'colorbar_label')
-    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, 'm/a')
+    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, 'm a$^{-1}$')
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
+elif varname in vars_temp:
+
+    if cmap is None:
+        cmap = plt.cm.gist_rainbow_r
+        
+    vmin = None
+    vmax = None
+    norm = None
+
+    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format', 'colorbar_label')
+    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, u'\u00B0C')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -335,14 +350,22 @@ else:
     ## coordinate variable in y-direction
     y_var = np.squeeze(nc.variables[ydim][:])
 
-    # FIXME: We do Greenland-tuning:
-    center_x = (x_var[0] + x_var[-1]) / 2
-    center_y = (y_var[0] + y_var[-1]) / 2
-    width = 1.2 * (np.max(x_var) - np.min(x_var))
-    height = 1.0 * (np.max(y_var) - np.min(y_var))
-    nc_projection = ppt.get_projection_from_file(nc)
-    lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
-    lon_0 = -45
+    # Testing, doesn't work yet
+    try:
+        lat1 = nc.variables["lat"][:]
+        lon1 = nc.variables["lon"][:]
+        lat_0 = (lat1[-1,0] + lat1[-1,-1]) / 2
+        lon_0 = (lon1[0,0] + lon1[0,-1]) / 2
+        print lat_0, lon_0
+    except:
+        # FIXME: We do Greenland-tuning:
+        center_x = (x_var[0] + x_var[-1]) / 2
+        center_y = (y_var[0] + y_var[-1]) / 2
+        width = 1.2 * (np.max(x_var) - np.min(x_var))
+        height = 1.0 * (np.max(y_var) - np.min(y_var))
+        nc_projection = ppt.get_projection_from_file(nc)
+        lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
+        lon_0 = -45
 
     # This works for Antarctica but not for Greenland:
 
@@ -704,4 +727,5 @@ if colorbar_label:
     cbar.set_label(variable.colorbar_label)
 
 print("  writing image %s ..." % out_file)
-fig.savefig(out_file, bbox_inches='tight', pad_inches=pad_inches, dpi=out_res)
+# fig.savefig(out_file, bbox_inches='tight', pad_inches=pad_inches, dpi=out_res)
+fig.savefig(out_file, bbox_inches='tight', dpi=out_res)
