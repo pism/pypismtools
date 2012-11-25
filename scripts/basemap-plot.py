@@ -197,6 +197,7 @@ vars_topo = ('topg')
 vars_dh = ('dhdt')
 vars_cmb = ('climatic_mass_balance')
 vars_temp = ('ice_surface_temp', 'temppabase','temppa')
+vars_melt = ("bmelt")
 
 if varname in vars_speed:
 
@@ -218,6 +219,21 @@ if varname in vars_speed:
                  'vmin', 'vmax', 'extend', 'format', 'colorbar_label')
     attr_vals = ([1, 3, 10, 30, 100, 300, 1000, 3000], cmap,
                  norm, vmin, vmax, 'both', '%d', 'm a$^{-1}$')
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
+elif varname in vars_melt:
+
+    cmap = plt.cm.OrRd
+
+    vmin = 0.001
+    vmax = 1
+    norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
+    attr_keys = ('ticks', 'cmap', 'norm',
+                 'vmin', 'vmax', 'extend', 'format', 'colorbar_label')
+    attr_vals = ([0.001, 0.01, 0.1, 1], cmap,
+                 norm, vmin, vmax, 'max', '%3.3f', 'm a$^{-1}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
