@@ -284,7 +284,7 @@ elif varname in vars_dh:
 elif varname in vars_cmb:
 
     if cmap is None:
-        cmap = plt.cm.RdBu_r
+        cmap = plt.cm.RdBu
         
     vmin = None
     vmax = None
