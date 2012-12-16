@@ -129,7 +129,7 @@ options = parser.parse_args()
 args = options.FILE
 
 nt = len(args)
-required_no_args = 1
+required_no_args = 0
 max_no_args = 6
 if (nt < required_no_args):
     print(("received $i arguments, at least %i expected"
@@ -366,22 +366,22 @@ else:
     ## coordinate variable in y-direction
     y_var = np.squeeze(nc.variables[ydim][:])
 
-    # Testing, doesn't work yet
-    try:
-        lat1 = nc.variables["lat"][:]
-        lon1 = nc.variables["lon"][:]
-        lat_0 = (lat1[-1,0] + lat1[-1,-1]) / 2
-        lon_0 = (lon1[0,0] + lon1[0,-1]) / 2
-        print lat_0, lon_0
-    except:
-        # FIXME: We do Greenland-tuning:
-        center_x = (x_var[0] + x_var[-1]) / 2
-        center_y = (y_var[0] + y_var[-1]) / 2
-        width = 1.2 * (np.max(x_var) - np.min(x_var))
-        height = 1.0 * (np.max(y_var) - np.min(y_var))
-        nc_projection = ppt.get_projection_from_file(nc)
-        lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
-        lon_0 = -45
+    ## # Testing, doesn't work yet
+    ## try:
+    ##     lat1 = np.squeeze(nc.variables["lat"][:])
+    ##     lon1 = np.squeeze(nc.variables["lon"][:])
+    ##     lat_0 = (lat1[-1,-1] + lat1[0,0]) / 2
+    ##     lon_0 = (lon1[0,0] + lon1[0,-1]) / 2
+    ##     print lat_0, lon_0
+    ## except:
+    ##     # FIXME: We do Greenland-tuning:
+    center_x = (x_var[0] + x_var[-1]) / 2
+    center_y = (y_var[0] + y_var[-1]) / 2
+    nc_projection = ppt.get_projection_from_file(nc)
+    lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
+    ##     lon_0 = -45
+    width = 1.2 * (np.max(x_var) - np.min(x_var))
+    height = 1.0 * (np.max(y_var) - np.min(y_var))
 
     # This works for Antarctica but not for Greenland:
 
