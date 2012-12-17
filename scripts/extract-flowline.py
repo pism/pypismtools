@@ -219,12 +219,14 @@ for var_name in nc_in.variables:
         print var_name, dimensions
         var_out = nc.createVariable(var_name, datatype,
                                     dimensions=dimensions, fill_value=fill_value)
-        var_out[:] = fl_values
+            #var_out[:] = fl_values
+        print fl_values
         for att in var_in.ncattrs():
             if att == '_FillValue':
                 continue
             else:
                 setattr(var_out, att, getattr(var_in, att))
+        print("Done with %s" % var_name)
 
 
 nc_in.close()
