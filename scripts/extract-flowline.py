@@ -128,7 +128,7 @@ else:
     else:
         out_filename = args[2]
 
-print("  opening NetCDF file %s ..." % in_filename)
+print("Opening NetCDF file %s ..." % in_filename)
 try:
     # open netCDF file in 'read' mode
     nc_in = NC(in_filename, 'r')
@@ -154,7 +154,6 @@ projection = ppt.get_projection_from_file(nc_in)
 print("Reading flowline from %s" % flowline_filename)
 fl, fl_x, fl_y, fl_lon, fl_lat = create_flowline_axis(flowline_filename,
                                                       projection)
-print("Done")
 
 # indices (i,j)
 fl_i = (np.floor((fl_x - x0) / dx)).astype('int')
@@ -167,13 +166,13 @@ print("Creating dimensions")
 unlimdimname = False
 unlimdim = None
 # create global attributes.
-nc = NC(out_filename, 'w')
+nc = NC(out_filename, 'w', format='NETCDF4')
 # copy global attributes
 for attname in nc_in.ncattrs():
     setattr(nc, attname,getattr(nc_in, attname))
 # create dimensions
 fldim = "flowline"    
-nc.createDimension(fldim)
+nc.createDimension(fldim, len(fl))
 for dim_name, dim in nc_in.dimensions.iteritems():
     if dim_name not in (mapplane_dim_names or nc.dimensions):
         if dim.isunlimited():
@@ -182,7 +181,7 @@ for dim_name, dim in nc_in.dimensions.iteritems():
             nc.createDimension(dim_name, None)
         else:
             nc.createDimension(dim_name, len(dim))
-print("Done")            
+
 
 # figure out which variables not need to be copied to the new file.
 # mapplane coordinate variables
@@ -269,7 +268,7 @@ for var_name in nc_in.variables:
             input_order = (fldim, zdim, tdim)
             # Create variable
             var_out = nc.createVariable(var_name, datatype,
-                                        dimensions=dimensions, fill_value=fill_value)            
+                                        dimensions=dimensions, fill_value=fill_value)
             fl_values = dim_permute(in_values[fl_i,fl_j,::],input_order=input_order,
                                     output_order=dimensions)
             var_out[:] = fl_values
@@ -283,6 +282,7 @@ for var_name in nc_in.variables:
             fl_values = dim_permute(in_values[fl_i,fl_j,::],input_order=input_order,
                                     output_order=dimensions)
             var_out[:] = fl_values
+
         elif (xdim in in_dimensions and ydim in in_dimensions):
             in_values = np.squeeze(ppt.permute(var_in, dim_order))
             dimensions = (fldim)
@@ -305,8 +305,9 @@ for var_name in nc_in.variables:
                 continue
             else:
                 setattr(var_out, att, getattr(var_in, att))
-        print("Done with %s" % var_name)
+        print("  - done with %s" % var_name)
 
 
 nc_in.close()
 nc.close()
+print("Done")
