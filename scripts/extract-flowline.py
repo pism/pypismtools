@@ -67,6 +67,36 @@ def create_flowline_axis(flowline_filename, projection):
     return x, fl_x, fl_y, fl_lon, fl_lat
 
 
+def dim_permute(values, input_order=('time', 'z', 'zb', 'y', 'x'),
+            output_order=('time', 'z', 'zb', 'y', 'x')):
+    '''
+    Permute dimensions of an array_like object
+
+    Parameters
+    ----------
+    values : array_like
+    input_order : dimension tuple
+    output_order: dimension tuple (optional)
+                  default ordering is ('time', 'z', 'zb', 'y', 'x')
+
+    Returns
+    -------
+    values_perm : array_like
+    '''
+
+    # filter out irrelevant dimensions
+    dimensions = filter(lambda(x): x in input_order,
+                        output_order)
+
+    # create the mapping
+    mapping = map(lambda(x): dimensions.index(x),
+                  input_order)
+
+    if mapping:
+        return np.transpose(values, mapping)
+    else:
+        return values  # so that it does not break processing "mapping"
+
         
 # Set up the option parser
 parser = ArgumentParser()
@@ -75,6 +105,7 @@ parser.add_argument("FILE", nargs='*')
 
 options = parser.parse_args()
 args = options.FILE
+fill_value = -2e33
 
 n_args = len(args)
 required_no_args = 2
@@ -111,13 +142,20 @@ except:
 xdim, ydim, zdim, tdim = ppt.get_dims(nc_in)
 x = nc_in.variables[xdim][:]
 y = nc_in.variables[ydim][:]
+x0 = x[0]
+y0 = y[0]
+dx = x[1] - x[0]
+dy = y[1] - y[0]
 # set up dimension ordering
-dim_order = (tdim, xdim, ydim, zdim)
+dim_order = (xdim, ydim, zdim, tdim)
 projection = ppt.get_projection_from_file(nc_in)
 
+# Read in flowline data
 fl, fl_x, fl_y, fl_lon, fl_lat = create_flowline_axis(flowline_filename,
                                                       projection)
-nf = len(fl)
+# indices (i,j)
+fl_i = (np.floor((fl_x - x0) / dx)).astype('int')
+fl_j = (np.floor((fl_y - y0) / dy)).astype('int')
 
 mapplane_dim_names = (xdim, ydim)
 
@@ -141,31 +179,10 @@ for dim_name, dim in nc_in.dimensions.iteritems():
         else:
             nc.createDimension(dim_name, len(dim))
             
-try:
-    time_bounds_var_name = nc_in.variables[tdim].bounds
-except:
-    pass
-
-try:
-    nt = len(nc_in.variables[tdim])
-except:
-    nt = None
-try:
-    nx = len(nc_in.variables[xdim])
-except:
-    nx = None
-try:
-    ny = len(nc_in.variables[ydim])
-except:
-    ny = None
-try:
-    nz = len(nc_in.variables[zdim])
-except:
-    nz = None
 
 # figure out which variables not need to be copied to the new file.
 # mapplane coordinate variables
-vars_not_copied = ['lat', 'lon', xdim, ydim]
+vars_not_copied = ['lat', 'lon', xdim, ydim, tdim]
 for var_name in nc_in.variables:
     var = nc_in.variables[var_name]
     if hasattr(var, 'grid_mapping'):
@@ -182,10 +199,58 @@ for i in range(len(vars_not_copied)-2, -1, -1):
         del vars_not_copied[i]
     else:
         last = vars_not_copied[i]
-        
+
+
+var_name = tdim
+try:
+    var_in = nc_in.variables[tdim]
+    dimensions = var_in.dimensions
+    datatype = var_in.dtype
+    if hasattr(var_in, 'bounds'):
+        time_bounds = var_in.bounds
+    var_out = nc.createVariable(var_name, datatype,
+                                        dimensions=dimensions, fill_value=fill_value)
+    var_out[:] = var_in[:]
+    for att in var_in.ncattrs():
+        if att == '_FillValue':
+            continue
+        else:
+            setattr(var_out, att, getattr(var_in, att))
+except:
+    pass
+
+if time_bounds:
+    var_name = time_bounds
+    var_in = nc_in.variables[var_name]
+    dimensions = var_in.dimensions
+    datatype = var_in.dtype
+    if hasattr(var, 'bounds'):
+        time_bounds = var_in.bounds
+    var_out = nc.createVariable(var_name, datatype,
+                                        dimensions=dimensions, fill_value=fill_value)
+    var_out[:] = var_in[:]
+    for att in var_in.ncattrs():
+        if att == '_FillValue':
+            continue
+        else:
+            setattr(var_out, att, getattr(var_in, att))
+
+var = 'lon'
+var_out = nc.createVariable(var, 'f', dimensions=(fldim))
+var_out.units = "degrees_east";
+var_out.valid_range = -180., 180.
+var_out.standard_name = "longitude"
+var_out[:] = fl_lon
+
+var = 'lat'
+var_out = nc.createVariable(var, 'f', dimensions=(fldim))
+var_out.units = "degrees_north";
+var_out.valid_range = -90., 90.
+var_out.standard_name = "latitude"
+var_out[:] = fl_lat
+
 for var_name in nc_in.variables:
     if var_name not in vars_not_copied:
-        counter = 0
         var_in = nc_in.variables[var_name]
         datatype = var_in.dtype
         in_dimensions = var_in.dimensions
@@ -196,52 +261,30 @@ for var_name in nc_in.variables:
         if (xdim in in_dimensions and ydim in in_dimensions and zdim in in_dimensions and tdim in in_dimensions):
             in_values = ppt.permute(var_in, dim_order)
             dimensions = (tdim, fldim, zdim)
+            input_order = (fldim, zdim, tdim)
             # Create variable
             var_out = nc.createVariable(var_name, datatype,
                                         dimensions=dimensions, fill_value=fill_value)            
-            fl_values = np.zeros((nt, nf, nz))
-            max_counter = nt * nz
-            print("\nInterpolating variable %s, " % var_name)
-            counter = 0
-            stderr.write("percent done: ")
-            stderr.write("000")
-            for t in range(nt):
-                for z in range(nz):
-                    values = in_values[t,:,:,z]
-                    f = RectBivariateSpline(x, y, values)
-                    fl_values[t,:,:,z] = np.array([f(xp, yp)[0,0] for xp, yp in zip(fl_x, fl_y)])
-                    stderr.write("\b\b\b%03d" % (100.0 * counter / max_counter))
-                    var_out[t,:,z] = fl_values
-                    counter += 1
+            fl_values = dim_permute(in_values[fl_i,fl_j,::],input_order=input_order,
+                                    output_order=dimensions)
+            var_out[:] = fl_values
         elif (xdim in in_dimensions and ydim in in_dimensions and tdim in in_dimensions):
             in_values = ppt.permute(var_in, dim_order)
             dimensions = (tdim, fldim)
+            input_order = (fldim, tdim)
             # Create variable
             var_out = nc.createVariable(var_name, datatype,
                                         dimensions=dimensions, fill_value=fill_value)
-            fl_values = np.zeros((nt, nf))
-            max_counter = nt
-            print("\nInterpolating variable %s, " % var_name)
-            counter = 0
-            stderr.write("percent done: ")
-            stderr.write("000")
-            for t in range(nt):
-                values = in_values[t,:,:]
-                f = RectBivariateSpline(x, y, values)
-                fl_values[t,:] = np.array([f(xp, yp)[0,0] for xp, yp in zip(fl_x, fl_y)])
-                stderr.write("\b\b\b%03d" % (100.0 * counter / max_counter))
-                var_out[t,:] = fl_values
-                counter += 1
+            fl_values = dim_permute(in_values[fl_i,fl_j,::],input_order=input_order,
+                                    output_order=dimensions)
+            var_out[:] = fl_values
         elif (xdim in in_dimensions and ydim in in_dimensions):
             in_values = np.squeeze(ppt.permute(var_in, dim_order))
             dimensions = (fldim)
             # Create variable
             var_out = nc.createVariable(var_name, datatype,
                                         dimensions=dimensions, fill_value=fill_value)
-            fl_values = np.zeros((nf))
-            values = in_values
-            f = RectBivariateSpline(x, y, values)
-            fl_values[:] = np.array([f(xp, yp)[0,0] for xp, yp in zip(fl_x, fl_y)])
+            fl_values = in_values[fl_i,fl_j]
             var_out[:] = fl_values
         else:
             dimensions = in_dimensions
@@ -260,5 +303,5 @@ for var_name in nc_in.variables:
         print("Done with %s" % var_name)
 
 
-#nc_in.close()
+nc_in.close()
 nc.close()
