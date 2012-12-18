@@ -163,64 +163,95 @@ try:
 except:
     nz = None
 
+# figure out which variables not need to be copied to the new file.
+# mapplane coordinate variables
+vars_not_copied = ['lat', 'lon', xdim, ydim]
 for var_name in nc_in.variables:
     var = nc_in.variables[var_name]
-    ndim = var.ndim
     if hasattr(var, 'grid_mapping'):
         mapping_var_name = var.grid_mapping
+        vars_not_copied.append(mapping_var_name)
+    if hasattr(var, 'bounds'):
+        bounds_var_name = var.bounds
+        vars_not_copied.append(bounds_var_name)
 
-vars_not_copied = [mapping_var_name, 'lat', 'lon', xdim, ydim]
-
+vars_not_copied.sort()
+last = vars_not_copied[-1]
+for i in range(len(vars_not_copied)-2, -1, -1):
+    if last == vars_not_copied[i]:
+        del vars_not_copied[i]
+    else:
+        last = vars_not_copied[i]
+        
 for var_name in nc_in.variables:
     if var_name not in vars_not_copied:
         counter = 0
         var_in = nc_in.variables[var_name]
         datatype = var_in.dtype
         in_dimensions = var_in.dimensions
-        in_values = np.squeeze(ppt.permute(var_in, dim_order))
         if hasattr(var_in, '_FillValue'):
             fill_value = var_in._FillValue
         else:
             fill_value = None
-        print("\nInterpolating variable %s, " % var_name)
-        counter = 0
-        stderr.write("percent done: ")
-        stderr.write("000")
-        if (xdim in in_dimensions and ydim in in_dimensions and zdim in in_dimensions and tdim in in_dimensions) :
+        if (xdim in in_dimensions and ydim in in_dimensions and zdim in in_dimensions and tdim in in_dimensions):
+            in_values = ppt.permute(var_in, dim_order)
             dimensions = (tdim, fldim, zdim)
+            # Create variable
+            var_out = nc.createVariable(var_name, datatype,
+                                        dimensions=dimensions, fill_value=fill_value)            
             fl_values = np.zeros((nt, nf, nz))
             max_counter = nt * nz
+            print("\nInterpolating variable %s, " % var_name)
+            counter = 0
+            stderr.write("percent done: ")
+            stderr.write("000")
             for t in range(nt):
                 for z in range(nz):
                     values = in_values[t,:,:,z]
                     f = RectBivariateSpline(x, y, values)
                     fl_values[t,:,:,z] = np.array([f(xp, yp)[0,0] for xp, yp in zip(fl_x, fl_y)])
                     stderr.write("\b\b\b%03d" % (100.0 * counter / max_counter))
+                    var_out[t,:,z] = fl_values
                     counter += 1
         elif (xdim in in_dimensions and ydim in in_dimensions and tdim in in_dimensions):
+            in_values = ppt.permute(var_in, dim_order)
             dimensions = (tdim, fldim)
+            # Create variable
+            var_out = nc.createVariable(var_name, datatype,
+                                        dimensions=dimensions, fill_value=fill_value)
             fl_values = np.zeros((nt, nf))
             max_counter = nt
+            print("\nInterpolating variable %s, " % var_name)
+            counter = 0
+            stderr.write("percent done: ")
+            stderr.write("000")
             for t in range(nt):
                 values = in_values[t,:,:]
                 f = RectBivariateSpline(x, y, values)
                 fl_values[t,:] = np.array([f(xp, yp)[0,0] for xp, yp in zip(fl_x, fl_y)])
                 stderr.write("\b\b\b%03d" % (100.0 * counter / max_counter))
+                var_out[t,:] = fl_values
                 counter += 1
         elif (xdim in in_dimensions and ydim in in_dimensions):
+            in_values = np.squeeze(ppt.permute(var_in, dim_order))
             dimensions = (fldim)
+            # Create variable
+            var_out = nc.createVariable(var_name, datatype,
+                                        dimensions=dimensions, fill_value=fill_value)
             fl_values = np.zeros((nf))
             values = in_values
             f = RectBivariateSpline(x, y, values)
             fl_values[:] = np.array([f(xp, yp)[0,0] for xp, yp in zip(fl_x, fl_y)])
+            var_out[:] = fl_values
         else:
             dimensions = in_dimensions
-            fl_values = in_values
-        print var_name, dimensions
-        var_out = nc.createVariable(var_name, datatype,
-                                    dimensions=dimensions, fill_value=fill_value)
-            #var_out[:] = fl_values
-        print fl_values
+            # Create variable
+            var_out = nc.createVariable(var_name, datatype,
+                                        dimensions=dimensions, fill_value=fill_value)
+            dimensions = in_dimensions
+            if (dimensions > 0):
+                in_values = nc.variables[var_name][:]
+                var_out[:] = in_values
         for att in var_in.ncattrs():
             if att == '_FillValue':
                 continue
@@ -229,5 +260,5 @@ for var_name in nc_in.variables:
         print("Done with %s" % var_name)
 
 
-nc_in.close()
+#nc_in.close()
 nc.close()
