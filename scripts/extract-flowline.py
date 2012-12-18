@@ -151,15 +151,19 @@ dim_order = (xdim, ydim, zdim, tdim)
 projection = ppt.get_projection_from_file(nc_in)
 
 # Read in flowline data
+print("Reading flowline from %s" % flowline_filename)
 fl, fl_x, fl_y, fl_lon, fl_lat = create_flowline_axis(flowline_filename,
                                                       projection)
+print("Done")
+
 # indices (i,j)
 fl_i = (np.floor((fl_x - x0) / dx)).astype('int')
 fl_j = (np.floor((fl_y - y0) / dy)).astype('int')
 
 mapplane_dim_names = (xdim, ydim)
 
- # create dimensions. Check for unlimited dim.
+# create dimensions. Check for unlimited dim.
+print("Creating dimensions") 
 unlimdimname = False
 unlimdim = None
 # create global attributes.
@@ -178,7 +182,7 @@ for dim_name, dim in nc_in.dimensions.iteritems():
             nc.createDimension(dim_name, None)
         else:
             nc.createDimension(dim_name, len(dim))
-            
+print("Done")            
 
 # figure out which variables not need to be copied to the new file.
 # mapplane coordinate variables
@@ -249,6 +253,7 @@ var_out.valid_range = -90., 90.
 var_out.standard_name = "latitude"
 var_out[:] = fl_lat
 
+print("Copying variables")
 for var_name in nc_in.variables:
     if var_name not in vars_not_copied:
         var_in = nc_in.variables[var_name]
