@@ -2,6 +2,7 @@
 # Copyright (C) 2012 Andy Aschwanden
 #
 
+import time
 from argparse import ArgumentParser
 import numpy as np
 from scipy.interpolate import RectBivariateSpline
@@ -99,8 +100,13 @@ def dim_permute(values, input_order=('time', 'z', 'zb', 'y', 'x'),
 
         
 # Set up the option parser
+
+description = '''A script to extract data along a given flowline.
+The flowline must be given in an ascii file with col(0)=lat, col(1)=lon.
+The file may have a header in row(0).'''
+
 parser = ArgumentParser()
-parser.description = "A script to extract data along a given flowline."
+parser.description = description
 parser.add_argument("FILE", nargs='*')
 
 options = parser.parse_args()
@@ -173,6 +179,13 @@ for attname in nc_in.ncattrs():
 # create dimensions
 fldim = "flowline"    
 nc.createDimension(fldim, len(fl))
+var_out = nc.createVariable(fldim, 'f', dimensions=(fldim), fill_value=fill_value)
+fldim_values = np.zeros_like(fl)
+fldim_values[1::] = np.cumsum(np.sqrt(np.diff(fl_x)**2 + np.diff(fl_y)**2))
+var_out[:] = fldim_values
+var_out.long_name = 'distance along flowline'
+var_out.units = 'm'
+
 for dim_name, dim in nc_in.dimensions.iteritems():
     if dim_name not in (mapplane_dim_names or nc.dimensions):
         if dim.isunlimited():
@@ -307,6 +320,14 @@ for var_name in nc_in.variables:
                 setattr(var_out, att, getattr(var_in, att))
         print("  - done with %s" % var_name)
 
+# writing global attributes
+script_command = ' '.join([time.ctime(), ':', __file__.split('/')[-1],
+                           ' '.join([str(x) for x in args])])
+if nc.history:
+    history = nc.history
+    nc.history = script_command + '\n ' + history
+else:
+    nc.history = script_command
 
 nc_in.close()
 nc.close()
