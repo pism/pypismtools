@@ -20,6 +20,44 @@ except:
     import PyPISMTools as ppt
 
 
+def piecewise_bilinear(x, y, fl_i, fl_j, A, B, C, D):
+    '''
+    Returns a piece-wise bilinear interpolation.
+
+      ^ y
+      |
+      |
+      B-----C
+      |     |
+      | *   |   x
+    --A-----D---->
+      |
+
+    Parameters
+    ----------
+    x, y: 1d coordinate arrays
+    fl_i, fl_j: 1d indices arrays
+    A, B, C, D: array_like containing corner values
+
+    Returns
+    -------
+    pw_linear: array with shape like fl_i containing interpolated values
+    '''
+
+    delta_x = fl_x - x[fl_i]
+    delta_y = fl_y - y[fl_j]
+
+    alpha = 1. / dx * delta_x
+    beta  = 1. / dy * delta_y
+
+    pw_bilinear = ( (1 - alpha) * (1 - beta) * A +
+                  (1 - alpha) *      beta  * B +
+                  alpha       *      beta  * C +
+                  alpha       * (1 - beta) * D )
+
+    return pw_bilinear
+
+
 def load_flowline(filename):
     '''
     Loads lat / lon from an ascii file.
@@ -101,7 +139,8 @@ def dim_permute(values, input_order=('time', 'z', 'zb', 'y', 'x'),
         
 # Set up the option parser
 
-description = '''A script to extract data along a given flowline.
+description = '''A script to extract data along a given flowline using
+bilinear interpolation.
 The flowline must be given in an ascii file with col(0)=lat, col(1)=lon.
 The file may have a header in row(0).'''
 
@@ -164,6 +203,11 @@ fl, fl_x, fl_y, fl_lon, fl_lat = create_flowline_axis(flowline_filename,
 # indices (i,j)
 fl_i = (np.floor((fl_x - x0) / dx)).astype('int')
 fl_j = (np.floor((fl_y - y0) / dy)).astype('int')
+
+A_i, A_j = fl_i, fl_j
+B_i, B_j = fl_i, fl_j + 1
+C_i, C_j = fl_i + 1, fl_j + 1
+D_i, D_j = fl_i + 1, fl_j
 
 mapplane_dim_names = (xdim, ydim)
 
@@ -282,9 +326,15 @@ for var_name in nc_in.variables:
             # Create variable
             var_out = nc.createVariable(var_name, datatype,
                                         dimensions=dimensions, fill_value=fill_value)
-            fl_values = dim_permute(in_values[fl_i,fl_j,::],input_order=input_order,
+            A_values = dim_permute(in_values[A_i,A_j,::],input_order=input_order,
                                     output_order=dimensions)
-            var_out[:] = fl_values
+            B_values = dim_permute(in_values[B_i,B_j,::],input_order=input_order,
+                                    output_order=dimensions)
+            C_values = dim_permute(in_values[C_i,C_j,::],input_order=input_order,
+                                    output_order=dimensions)
+            D_values = dim_permute(in_values[D_i,D_j,::],input_order=input_order,
+                                    output_order=dimensions)
+            var_out[:] = piecewise_bilinear(x, y, fl_i, fl_j, A_values, B_values, C_values, D_values)
         elif (xdim in in_dimensions and ydim in in_dimensions and tdim in in_dimensions):
             in_values = ppt.permute(var_in, dim_order)
             dimensions = (tdim, fldim)
@@ -292,18 +342,26 @@ for var_name in nc_in.variables:
             # Create variable
             var_out = nc.createVariable(var_name, datatype,
                                         dimensions=dimensions, fill_value=fill_value)
-            fl_values = dim_permute(in_values[fl_i,fl_j,::],input_order=input_order,
+            A_values = dim_permute(in_values[A_i,A_j,::],input_order=input_order,
                                     output_order=dimensions)
-            var_out[:] = fl_values
-
+            B_values = dim_permute(in_values[B_i,B_j,::],input_order=input_order,
+                                    output_order=dimensions)
+            C_values = dim_permute(in_values[C_i,C_j,::],input_order=input_order,
+                                    output_order=dimensions)
+            D_values = dim_permute(in_values[D_i,D_j,::],input_order=input_order,
+                                    output_order=dimensions)
+            var_out[:] = piecewise_bilinear(x, y, fl_i, fl_j, A_values, B_values, C_values, D_values)
         elif (xdim in in_dimensions and ydim in in_dimensions):
             in_values = np.squeeze(ppt.permute(var_in, dim_order))
             dimensions = (fldim)
             # Create variable
             var_out = nc.createVariable(var_name, datatype,
                                         dimensions=dimensions, fill_value=fill_value)
-            fl_values = in_values[fl_i,fl_j]
-            var_out[:] = fl_values
+            A_values = in_values[A_i,A_j]
+            B_values = in_values[B_i,B_j]
+            C_values = in_values[C_i,C_j]
+            D_values = in_values[D_i,D_j]
+            var_out[:] = piecewise_bilinear(x, y, fl_i, fl_j, A_values, B_values, C_values, D_values)
         else:
             dimensions = in_dimensions
             # Create variable
