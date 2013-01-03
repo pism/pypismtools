@@ -223,7 +223,7 @@ for attname in nc_in.ncattrs():
 # create dimensions
 fldim = "flowline"    
 nc.createDimension(fldim, len(fl))
-var_out = nc.createVariable(fldim, 'f', dimensions=(fldim), fill_value=fill_value)
+var_out = nc.createVariable(fldim, 'f', dimensions=(fldim))
 fldim_values = np.zeros_like(fl)
 fldim_values[1::] = np.cumsum(np.sqrt(np.diff(fl_x)**2 + np.diff(fl_y)**2))
 var_out[:] = fldim_values
