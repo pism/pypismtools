@@ -140,15 +140,18 @@ def dim_permute(values, input_order=('time', 'z', 'zb', 'y', 'x'),
 # Set up the option parser
 
 description = '''A script to extract data along a given flowline using
-bilinear interpolation.
+piece-wise constant or bilinear interpolation.
 The flowline must be given in an ascii file with col(0)=lat, col(1)=lon.
 The file may have a header in row(0).'''
 
 parser = ArgumentParser()
 parser.description = description
 parser.add_argument("FILE", nargs='*')
+parser.add_argument("-b", "--bilinear",dest="bilinear",action="store_true",
+                  help="Piece-wise bilinear interpolation, Default=False",default=False)
 
 options = parser.parse_args()
+bilinear = options.bilinear
 args = options.FILE
 fill_value = -2e33
 
@@ -195,14 +198,29 @@ dy = y[1] - y[0]
 dim_order = (xdim, ydim, zdim, tdim)
 projection = ppt.get_projection_from_file(nc_in)
 
+
 # Read in flowline data
 print("Reading flowline from %s" % flowline_filename)
 fl, fl_x, fl_y, fl_lon, fl_lat = create_flowline_axis(flowline_filename,
                                                       projection)
 
 # indices (i,j)
-fl_i = (np.floor((fl_x - x0) / dx)).astype('int')
-fl_j = (np.floor((fl_y - y0) / dy)).astype('int')
+fl_i = (np.floor((fl_x - x0) / dx)).astype('int') + 1
+fl_j = (np.floor((fl_y - y0) / dy)).astype('int') + 1
+
+# Filter out double entries                                                 
+duplicates_idx = np.zeros(len(fl_i))
+for n, x_idx in enumerate(fl_i):
+    if (n+1) < len(fl_i):
+        if x_idx == fl_i[n+1] and fl_j[n] == fl_j[n+1]:
+            duplicates_idx[n] = fl_j[n]
+
+fl_i = fl_i[duplicates_idx == 0]
+fl_j = fl_j[duplicates_idx == 0]
+fl_x = fl_x[duplicates_idx == 0]
+fl_y = fl_y[duplicates_idx == 0]
+fl_lat = fl_lat[duplicates_idx == 0]
+fl_lon = fl_lon[duplicates_idx == 0]
 
 A_i, A_j = fl_i, fl_j
 B_i, B_j = fl_i, fl_j + 1
@@ -222,9 +240,9 @@ for attname in nc_in.ncattrs():
     setattr(nc, attname,getattr(nc_in, attname))
 # create dimensions
 fldim = "flowline"    
-nc.createDimension(fldim, len(fl))
+nc.createDimension(fldim, len(fl_x))
 var_out = nc.createVariable(fldim, 'f', dimensions=(fldim))
-fldim_values = np.zeros_like(fl)
+fldim_values = np.zeros_like(fl_x)
 fldim_values[1::] = np.cumsum(np.sqrt(np.diff(fl_x)**2 + np.diff(fl_y)**2))
 var_out[:] = fldim_values
 var_out.long_name = 'distance along flowline'
@@ -313,6 +331,8 @@ print("Copying variables")
 for var_name in nc_in.variables:
     if var_name not in vars_not_copied:
         var_in = nc_in.variables[var_name]
+        if var_name == 'csurf':
+            csurf = var_in[:]
         datatype = var_in.dtype
         in_dimensions = var_in.dimensions
         if hasattr(var_in, '_FillValue'):
@@ -326,15 +346,20 @@ for var_name in nc_in.variables:
             # Create variable
             var_out = nc.createVariable(var_name, datatype,
                                         dimensions=dimensions, fill_value=fill_value)
-            A_values = dim_permute(in_values[A_i,A_j,::],input_order=input_order,
-                                    output_order=dimensions)
-            B_values = dim_permute(in_values[B_i,B_j,::],input_order=input_order,
-                                    output_order=dimensions)
-            C_values = dim_permute(in_values[C_i,C_j,::],input_order=input_order,
-                                    output_order=dimensions)
-            D_values = dim_permute(in_values[D_i,D_j,::],input_order=input_order,
-                                    output_order=dimensions)
-            var_out[:] = piecewise_bilinear(x, y, fl_i, fl_j, A_values, B_values, C_values, D_values)
+            if bilinear:
+                A_values = dim_permute(in_values[A_i,A_j,::],input_order=input_order,
+                                        output_order=dimensions)
+                B_values = dim_permute(in_values[B_i,B_j,::],input_order=input_order,
+                                        output_order=dimensions)
+                C_values = dim_permute(in_values[C_i,C_j,::],input_order=input_order,
+                                        output_order=dimensions)
+                D_values = dim_permute(in_values[D_i,D_j,::],input_order=input_order,
+                                        output_order=dimensions)
+                var_out[:] = piecewise_bilinear(x, y, fl_i, fl_j, A_values, B_values, C_values, D_values)
+            else:
+                fl_values = dim_permute(in_values[fl_i,fl_j,::],input_order=input_order,
+                                        output_order=dimensions)
+                var_out[:] = fl_values
         elif (xdim in in_dimensions and ydim in in_dimensions and tdim in in_dimensions):
             in_values = ppt.permute(var_in, dim_order)
             dimensions = (tdim, fldim)
@@ -342,26 +367,36 @@ for var_name in nc_in.variables:
             # Create variable
             var_out = nc.createVariable(var_name, datatype,
                                         dimensions=dimensions, fill_value=fill_value)
-            A_values = dim_permute(in_values[A_i,A_j,::],input_order=input_order,
-                                    output_order=dimensions)
-            B_values = dim_permute(in_values[B_i,B_j,::],input_order=input_order,
-                                    output_order=dimensions)
-            C_values = dim_permute(in_values[C_i,C_j,::],input_order=input_order,
-                                    output_order=dimensions)
-            D_values = dim_permute(in_values[D_i,D_j,::],input_order=input_order,
-                                    output_order=dimensions)
-            var_out[:] = piecewise_bilinear(x, y, fl_i, fl_j, A_values, B_values, C_values, D_values)
+            if bilinear:
+                A_values = dim_permute(in_values[A_i,A_j,::],input_order=input_order,
+                                        output_order=dimensions)
+                B_values = dim_permute(in_values[B_i,B_j,::],input_order=input_order,
+                                        output_order=dimensions)
+                C_values = dim_permute(in_values[C_i,C_j,::],input_order=input_order,
+                                        output_order=dimensions)
+                D_values = dim_permute(in_values[D_i,D_j,::],input_order=input_order,
+                                        output_order=dimensions)
+                var_out[:] = piecewise_bilinear(x, y, fl_i, fl_j, A_values, B_values, C_values, D_values)
+            else:
+                fl_values = dim_permute(in_values[fl_i,fl_j,::],input_order=input_order,
+                                        output_order=dimensions)
+                var_out[:] = fl_values
         elif (xdim in in_dimensions and ydim in in_dimensions):
             in_values = np.squeeze(ppt.permute(var_in, dim_order))
             dimensions = (fldim)
             # Create variable
             var_out = nc.createVariable(var_name, datatype,
                                         dimensions=dimensions, fill_value=fill_value)
-            A_values = in_values[A_i,A_j]
-            B_values = in_values[B_i,B_j]
-            C_values = in_values[C_i,C_j]
-            D_values = in_values[D_i,D_j]
-            var_out[:] = piecewise_bilinear(x, y, fl_i, fl_j, A_values, B_values, C_values, D_values)
+            if bilinear:
+                A_values = in_values[A_i,A_j]
+                B_values = in_values[B_i,B_j]
+                C_values = in_values[C_i,C_j]
+                D_values = in_values[D_i,D_j]
+                var_out[:] = piecewise_bilinear(x, y, fl_i, fl_j, A_values, B_values, C_values, D_values)
+            else:
+                fl_values = dim_permute(in_values[fl_i,fl_j],input_order=input_order,
+                                        output_order=dimensions)
+                var_out[:] = fl_values
         else:
             dimensions = in_dimensions
             # Create variable
@@ -378,9 +413,10 @@ for var_name in nc_in.variables:
                 setattr(var_out, att, getattr(var_in, att))
         print("  - done with %s" % var_name)
 
+
 # writing global attributes
 script_command = ' '.join([time.ctime(), ':', __file__.split('/')[-1],
-                           ' '.join([str(x) for x in args])])
+                           ' '.join([str(l) for l in args])])
 if nc.history:
     history = nc.history
     nc.history = script_command + '\n ' + history
