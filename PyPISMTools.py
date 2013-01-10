@@ -450,7 +450,7 @@ def colorList():
     return colors
 
 
-def gmtColormap(fileName, log_color=None, reverse=False):
+def gmtColormap(fileName, log_color=False, reverse=False):
     '''
     Import a CPT colormap from GMT.
 
@@ -461,11 +461,11 @@ def gmtColormap(fileName, log_color=None, reverse=False):
     Example
     -------
     >>> cdict = gmtColormap("mycolormap.cpt")
-    >>> gmt_colormap = colors.LinearSegmentedColormap("my_colormap",cdict)
+    >>> gmt_colormap = colors.LinearSegmentedColormap("my_colormap", cdict)
 
     Notes
     -----
-    This code snipplet is from
+    This code snipplet modified after
     http://www.mail-archive.com/matplotlib-users@lists.sourceforge.net/msg09547.html
     '''
     import colorsys
