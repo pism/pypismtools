@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2011 Andy Aschwanden
+# Copyright (C) 2011-2013 Andy Aschwanden
 #
 # Script creates a basemap plot of a variable in a netCDF file
 # with a geotiff background (if given).
@@ -179,7 +179,7 @@ if colormap is not None:
     cmap = colors.LinearSegmentedColormap('my_colormap', cdict)
             
 # check output format
-pre, suffix = out_file.split('.')
+suffix = out_file.split('.')[-1]
 if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
     print(('Requested output format %s not supported, try png, pdf, svg, ps, eps'
           % suffix))
@@ -256,8 +256,10 @@ elif varname in vars_topo:
     if cmap is None:
         cmap = plt.cm.Blues
 
-    vmin = -5000
-    vmax = 1400
+    ## vmin = -5000
+    ## vmax = 1400
+    vmin = -1000
+    vmax = 2100
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format', 'colorbar_label')
@@ -318,8 +320,8 @@ else:
     vmax = None
     norm = None
 
-    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend')
-    attr_vals = (None, cmap, norm, vmin, vmax, 'both')
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format')
+    attr_vals = (None, cmap, norm, vmin, vmax, 'both', None)
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
