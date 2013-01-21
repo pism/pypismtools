@@ -122,6 +122,10 @@ parser.add_argument("--tol", dest="tol", type=float,
                   help="tolerance", default=0.)
 parser.add_argument("--level", dest="level", type=int,
                   help="level, for 3D data only. Default = 0", default=0)
+parser.add_argument("-s", "--shaded", dest="shaded", action="store_true",
+                  help='''Shaded topography. CAREFUL, this options is experimental.
+                  It uses imshow, which does not support masked arrays,
+                  and we also get the projetion slighly wrong.''', default=False)
 parser.add_argument("-v", "--variable", dest="varname",
                   help='''Variable to plot, default = 'csurf'.''', default='csurf')
 
@@ -162,6 +166,7 @@ obs_file = options.obs_file
 outunit = options.outunit
 out_res = int(options.out_res)
 out_file = options.out_file
+shaded = options.shaded
 singlerow = options.singlerow
 singlecolumn = options.singlecolumn
 relative = options.relative
@@ -648,8 +653,12 @@ for k in range(0, nt):
 
     # Plot GeoTIFF file if given
     if geotiff_filename is not None:
-        m.pcolormesh(xx_gtiff, yy_gtiff, np.flipud(geotiff.RasterArray),
-                     cmap=plt.cm.gray, rasterized=geotiff_rasterized)
+        if shaded:
+            m.imshow(np.flipud(geotiff.RasterArray),
+                         cmap=plt.cm.gray, rasterized=geotiff_rasterized)
+        else:
+            m.pcolormesh(xx_gtiff, yy_gtiff, np.flipud(geotiff.RasterArray),
+                         cmap=plt.cm.gray, rasterized=geotiff_rasterized)
 
     # Draw a boundary mask. Areas where
     #   obs_values <= boundary_tol and values > boundary_tol
@@ -678,7 +687,18 @@ for k in range(0, nt):
     else:
         # otherwise just plot data
         data = values[k]
-        cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap, alpha=alpha,
+        if shaded:
+            from matplotlib.colors import LightSource
+            # create light source object.
+            ls = LightSource(hsv_min_val=.1, hsv_max_val=.9,
+                             hsv_min_sat=.85, hsv_max_sat=.15)
+            # convert data to rgb array including shading from light source.
+            # (must specify color map)
+            data = ls.shade(data, variable.cmap)
+            cs = m.imshow(data, cmap=variable.cmap, alpha=alpha,
+                          norm=variable.norm, rasterized=rasterized)
+        else:
+            cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap, alpha=alpha,
                           norm=variable.norm, rasterized=rasterized)
 
     if singlerow:
