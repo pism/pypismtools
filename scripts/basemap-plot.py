@@ -117,7 +117,7 @@ parser.add_argument("-r", "--output_resolution", dest="out_res",
 parser.add_argument("--relative", dest="relative", action="store_true",
                   help="do relative differences.", default=False)
 parser.add_argument("--no_rasterize", dest="rasterized", action="store_false",
-                  help="do relative differences.", default=True)
+                  help="Don't rasterize plot. Slow.", default=True)
 parser.add_argument("--tol", dest="tol", type=float,
                   help="tolerance", default=0.)
 parser.add_argument("--level", dest="level", type=int,
@@ -198,6 +198,7 @@ vars_dh = ('dhdt', 'climatic_mass_balance_cumulative')
 vars_cmb = ('climatic_mass_balance')
 vars_temp = ('ice_surface_temp', 'temppabase','temppa')
 vars_melt = ("bmelt")
+vars_div = ("divHU", "divUH", "divHU_umt", "divHU_cresis", "divHU_searise")
 
 if varname in vars_speed:
 
@@ -311,6 +312,20 @@ elif varname in vars_temp:
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
+elif varname in vars_div:
+
+    if cmap is None:
+        cmap = plt.cm.gist_ncar
+
+    vmin = None
+    vmax = None
+    norm = None
+
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format', 'colorbar_label')
+    attr_vals = (None, cmap, norm, vmin, vmax, 'both', None, 'm a$^{-1}$')
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
 else:
 
     if cmap is None:
@@ -384,7 +399,6 @@ else:
     ##     lon_0 = -45
     width = 1.2 * (np.max(x_var) - np.min(x_var))
     height = 1.0 * (np.max(y_var) - np.min(y_var))
-
     # This works for Antarctica but not for Greenland:
 
     ## nc_projection = ppt.get_projection_from_file(nc)
@@ -711,8 +725,8 @@ for k in range(0, nt):
             t.patch.set_ec("none")
 
     if drawmapscale:
-        m.drawmapscale(lons[0][0, 0] + 4, lats[0][0, 0] + 1.75, lon_0, lat_0,
-                   500, fontsize=plt.rcParams['font.size'], barstyle='fancy')
+        m.drawmapscale(lons[0][0, 0] + 0.75, lats[0][0, 0] + 0.2, lon_0, lat_0,
+                   50, fontsize=plt.rcParams['font.size'], barstyle='fancy')
 
 
 if singlerow:
@@ -747,3 +761,4 @@ if colorbar_label:
 print("  writing image %s ..." % out_file)
 # fig.savefig(out_file, bbox_inches='tight', pad_inches=pad_inches, dpi=out_res)
 fig.savefig(out_file, bbox_inches='tight', dpi=out_res)
+
