@@ -465,6 +465,8 @@ if obs_file is not None:
     if variable.var_name in vars_dem:
         mask = (data <= variable.vmin)
         obs_values = np.ma.array(data, mask = mask)
+    elif variable.var_name in vars_topo:
+        obs_values = data
     else:
         try:
             fill  = nc.variables[var]._FillValue
