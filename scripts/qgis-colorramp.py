@@ -60,9 +60,9 @@ parser.add_argument("--vmin", dest="vmin", type=float,
 parser.add_argument("--vmax", dest="vmax", type=float,
                   help='''
                   a * logspace(vmin, vmax, N''', default=3)
-parser.add_argument("--extend", dest="extend", type=float,
+parser.add_argument("--extend", dest="extend", nargs=2, type=float,
                   help='''
-                  appends color ramp by repeating last color for value''',
+                  appends color ramp by repeating first and last color for value''',
                     default=None)
 parser.add_argument("--N", dest="N", type=int,
                   help='''
@@ -84,8 +84,15 @@ log_color = False
 
 # read in CPT colormap
 cmap_file = args[0]
-prefix, suffix = cmap_file.split('.')
-cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
+
+try:
+        cdict = plt.cm.datad[cmap_file]
+        prefix = cmap_file
+except:
+        # import and convert colormap
+        cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
+        prefix = '.'.join(cmap_file.split('.')[0:-2])
+        suffix = cmap_file.split('.')[-1]
 
 
 # either log scaling or linear scaling (default)
@@ -138,12 +145,16 @@ rgba *= 255
 # create an output array combining data values and rgb values
 if extend:
         qgis_array = np.zeros((N + 1, 5))
-        for k in range(N):
+        for k in range(1, N):
                 qgis_array[k, 0] = data_values[k]
                 qgis_array[k, 1:4] = rgba[k, 0:3]
                 qgis_array[k, 4] = 255
+        # repeat first color
+        qgis_array[0, 0] = extend[0]
+        qgis_array[0, 1:4] = rgba[1, 0:3]
+        qgis_array[0, 4] = 255
         # repeat last color
-        qgis_array[N, 0] = extend
+        qgis_array[N, 0] = extend[1]
         qgis_array[N, 1:4] = rgba[N - 1, 0:3]
         qgis_array[N, 4] = 255
 else:
