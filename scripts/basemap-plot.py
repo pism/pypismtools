@@ -105,6 +105,8 @@ parser.add_argument("-o", "--output_filename", dest="out_file",
                   help="Name of the output file. Suffix defines output format", default='foo.png')
 parser.add_argument("--geotiff_file", dest="geotiff_filename",
                   help="GeoTIFF filename", default=None)
+parser.add_argument("--shape_file", dest="shape_filename",
+                  help="Shapefile filename", default=None)
 parser.add_argument("--out_unit", dest="outunit",
                   help="Output unit, default is unit in file", default=None)
 parser.add_argument("-p", "--print_size", dest="print_mode",
@@ -173,6 +175,7 @@ relative = options.relative
 rasterized = options.rasterized
 tol = options.tol
 varname = options.varname
+shape_filename = options.shape_filename
 
 cmap = None
 if colormap is not None:
@@ -749,6 +752,14 @@ for k in range(0, nt):
     if drawmapscale:
         m.drawmapscale(lons[0][0, 0] + 0.75, lats[0][0, 0] + 0.2, lon_0, lat_0,
                    50, fontsize=plt.rcParams['font.size'], barstyle='fancy')
+
+    if shape_filename:
+        try:
+            m.readshapefile(shape_filename.split('.shp')[0],
+                        'my_shapefile', linewidth=1.1)
+        except:
+            m.readshapefile(shape_filename,
+                        'my_shapefile', linewidth=1.1)
 
 
 if singlerow:
