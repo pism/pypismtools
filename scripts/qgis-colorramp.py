@@ -91,7 +91,7 @@ try:
 except:
         # import and convert colormap
         cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
-        prefix = '.'.join(cmap_file.split('.')[0:-2])
+        prefix = '.'.join(cmap_file.split('.')[0:-1])
         suffix = cmap_file.split('.')[-1]
 
 

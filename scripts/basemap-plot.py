@@ -220,7 +220,7 @@ if varname in vars_speed:
         except:
             cmap = plt.cm.Blues
 
-    vmin = 0.3
+    vmin = 3.
     vmax = 3e3
     norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
