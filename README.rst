@@ -42,7 +42,7 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 
 - First, plot the magnitude of horizontal surface velocities 'surfvelmag' and save as 'surfvelmag.png'.
 
-``$ basemap-plot.py --singlerow -v surfvelmag -o surfvelmag.png Greenland_5km_v1.1.nc``
+``$ basemap-plot.py --singlerow -v surfvelmag --colorbar_label -o surfvelmag.png Greenland_5km_v1.1.nc``
 
 .. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/surfvelmag.png
    :width: 300px
@@ -63,7 +63,8 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 
 - Use a geotiff file as background, plot the colorbar horizontally. In this case, projection information is taken from the geotiff:
 
-``$ basemap-plot.py --geotiff mygeotiff.tif --singlecolumn -v surfvelmag -o geotiff.png Greenland_5km_v1.1.nc``
+``$ basemap-plot.py --geotiff mygeotiff.tif --singlecolumn -v
+surfvelmag --colorbar_label -o geotiff.png Greenland_5km_v1.1.nc``
 
 .. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/geotiff.png
    :width: 260px

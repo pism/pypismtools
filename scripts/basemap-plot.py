@@ -214,7 +214,7 @@ if varname in vars_speed:
         try:
             basedir =  ppt.__file__.split(ppt.__package__)
             cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
-                                    '/colormaps/Full_saturation_spectrum_CCW.cpt')
+                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
             cmap = colors.LinearSegmentedColormap('my_colormap',
         cdict)
         except:
@@ -610,7 +610,7 @@ if singlerow:
                     nrows_ncols = (1, nt), # creates 1 x nt grid of axes
                     axes_pad=0.05, # pad between axes in inch.
                     cbar_mode='single',
-                    cbar_size=0.1,
+                    cbar_size=0.115,
                     cbar_location='right',
                     share_all=True)
 elif singlecolumn:
@@ -618,7 +618,7 @@ elif singlecolumn:
                     nrows_ncols = (nt, 1), # creates nt x 1 grid of axes
                     axes_pad=0.05, # pad between axes in inch.
                     cbar_mode='single',
-                    cbar_size=0.1,
+                    cbar_size=0.115,
                     cbar_location='top',
                     share_all=True)
 else:
@@ -626,7 +626,7 @@ else:
                     nrows_ncols = (2, nt/2), # creates 2 x nt/2 grid of axes
                     axes_pad=0.05, # pad between axes in inch.
                     cbar_mode='single',
-                    cbar_size=0.1,
+                    cbar_size=0.115,
                     cbar_location='top',
                     share_all=True)
 
