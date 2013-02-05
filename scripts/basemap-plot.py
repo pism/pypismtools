@@ -671,11 +671,11 @@ for k in range(0, nt):
         if shaded:
             from matplotlib.colors import LightSource
             # create light source object.
-            ls = LightSource(hsv_min_val=.1, hsv_max_val=.9,
+            lightsource = LightSource(hsv_min_val=.1, hsv_max_val=.9,
                              hsv_min_sat=.85, hsv_max_sat=.15)
             # convert data to rgba array including shading from light source.
             # (must specify color map)
-            data = ls.shade(data, variable.cmap)
+            data = lightsource.shade(data, variable.cmap)
             cs = m.imshow(data, cmap=variable.cmap, alpha=alpha,
                           norm=variable.norm, rasterized=rasterized)
         else:
