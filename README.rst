@@ -79,7 +79,7 @@ qgis-colorramp-plot.py creates linear and log-scaled colorramps for QGIS_ from G
 
 To show the bathymetry around Greenland, you can use the IBCAO colormap. By running the following command
 
-``qgis-colorramp.py --vmin -5000 --vmax 1400 --extend 3000 ibcao.cpt``
+``qgis-colorramp.py --vmin -5000 --vmax 1400 --extend -10000 4000 ibcao.cpt``
 
 you get a linear colorramp from -5000m to 1400m, and the last color
 will be extended to 3000m. The result should like like

@@ -127,7 +127,7 @@ parser.add_argument("--level", dest="level", type=int,
 parser.add_argument("-s", "--shaded", dest="shaded", action="store_true",
                   help='''Shaded topography. CAREFUL, this options is experimental.
                   It uses imshow, which does not support masked arrays,
-                  and we also get the projetion slighly wrong.''', default=False)
+                  and we also get the projection slighly wrong.''', default=False)
 parser.add_argument("-v", "--variable", dest="varname",
                   help='''Variable to plot, default = 'csurf'.''', default='csurf')
 
@@ -376,7 +376,6 @@ else:
     filename = args[0]
     print("  opening NetCDF file %s ..." % filename)
     try:
-        # open netCDF file in 'append' mode
         nc = NC(filename, 'r')
     except:
         print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
@@ -391,35 +390,12 @@ else:
     ## coordinate variable in y-direction
     y_var = np.squeeze(nc.variables[ydim][:])
 
-    ## # Testing, doesn't work yet
-    ## try:
-    ##     lat1 = np.squeeze(nc.variables["lat"][:])
-    ##     lon1 = np.squeeze(nc.variables["lon"][:])
-    ##     lat_0 = (lat1[-1,-1] + lat1[0,0]) / 2
-    ##     lon_0 = (lon1[0,0] + lon1[0,-1]) / 2
-    ##     print lat_0, lon_0
-    ## except:
-    ##     # FIXME: We do Greenland-tuning:
     center_x = (x_var[0] + x_var[-1]) / 2
     center_y = (y_var[0] + y_var[-1]) / 2
     nc_projection = ppt.get_projection_from_file(nc)
     lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
-    ##     lon_0 = -45
     width = 1.2 * (np.max(x_var) - np.min(x_var))
     height = 1.0 * (np.max(y_var) - np.min(y_var))
-    # This works for Antarctica but not for Greenland:
-
-    ## nc_projection = ppt.get_projection_from_file(nc)
-    ## srs_list = nc_projection.srs.split('+')
-    ## srs_dict = {}
-    ## for x in range(0, len(srs_list)):
-    ##     mylist = srs_list[x].split('=')
-    ##     try:
-    ##         srs_dict[mylist[0]] = float(mylist[1])
-    ##     except:
-    ##         pass
-    ## lat_0 = srs_dict['lat_0']
-    ## lon_0 = srs_dict['lon_0']
     
     nc.close()
 
@@ -697,7 +673,7 @@ for k in range(0, nt):
             # create light source object.
             ls = LightSource(hsv_min_val=.1, hsv_max_val=.9,
                              hsv_min_sat=.85, hsv_max_sat=.15)
-            # convert data to rgb array including shading from light source.
+            # convert data to rgba array including shading from light source.
             # (must specify color map)
             data = ls.shade(data, variable.cmap)
             cs = m.imshow(data, cmap=variable.cmap, alpha=alpha,
@@ -750,8 +726,13 @@ for k in range(0, nt):
             t.patch.set_ec("none")
 
     if drawmapscale:
-        m.drawmapscale(lons[0][0, 0] + 0.75, lats[0][0, 0] + 0.2, lon_0, lat_0,
-                   50, fontsize=plt.rcParams['font.size'], barstyle='fancy')
+        x_c = m.llcrnrx + np.abs(m.urcrnrx - m.llcrnrx) * 0.15
+        y_c = m.llcrnry + np.abs(m.urcrnry - m.llcrnry) * 0.075
+        lon_c, lat_c = m(x_c, y_c, inverse=True)
+        ms_width = np.abs(m.urcrnrx - m.llcrnrx) * 0.2 / 1e3
+        m.drawmapscale(lon_c, lat_c, lon_0, lat_0, ms_width,
+                       units='km', fontsize=plt.rcParams['font.size'],
+            barstyle='fancy')
 
     if shape_filename:
         try:
