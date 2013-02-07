@@ -21,7 +21,7 @@ except:
 # Shapefile related code is adapted from
 # http://invisibleroads.com/tutorials/gdal-shapefile-points-save.html
 
-def save(shapePath, contour_points, proj4):
+def save(shapePath, contour_points):
     '''Save points in the given shapePath'''
     # Get driver
     driver = osgeo.ogr.GetDriverByName('ESRI Shapefile')
@@ -60,13 +60,6 @@ def save(shapePath, contour_points, proj4):
     shapeData.Destroy()
     # Return
     return shapePath
-
-
-def getSpatialReferenceFromProj4(proj4):
-    '''Return GDAL spatial reference object from proj4 string'''
-    spatialReference = osgeo.osr.SpatialReference()
-    spatialReference.ImportFromProj4(proj4)
-    return spatialReference
 
 
 def validateShapePath(shapePath):
@@ -153,7 +146,7 @@ if single:
     
 # save shapefile
 print(("Saving shapefile %s" % shp_filename))
-save(shp_filename, contour_points, nc_projection.srs)
+save(shp_filename, contour_points)
 
 
 # display result
