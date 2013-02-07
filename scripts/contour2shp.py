@@ -10,6 +10,7 @@ from netCDF4 import Dataset as NC
 import osgeo.ogr
 import osgeo.osr
 import os
+from pyproj import Proj
 
 try:
     import PyPISMTools.PyPISMTools as ppt
@@ -29,9 +30,9 @@ def save(shapePath, contour_points, proj4):
     if os.path.exists(shapePath): 
         os.remove(shapePath)
     shapeData = driver.CreateDataSource(shapePath)
-    # Create spatialReference
-    spatialReference = getSpatialReferenceFromProj4(proj4)
-    # Create layer
+    # Create spatialReference, EPSG 4326 (lonlat)
+    spatialReference = osgeo.osr.SpatialReference()
+    spatialReference.ImportFromEPSG(4326)
     layerName = os.path.splitext(os.path.split(shapePath)[1])[0]
     layer = shapeData.CreateLayer(layerName, spatialReference, osgeo.ogr.wkbPolygon)
     layerDefinition = layer.GetLayerDefn()
@@ -126,18 +127,25 @@ contours = sorted(measure.find_contours(contour_var, contour_level),
 
 contours_x = []
 contours_y = []
+contours_lon = []
+contours_lat = []
 contour_points = []
 for k in range(0,len(contours)):
     contour = contours[k]
     contour_x = x_var[0] + contour[:,1] * (x_var[-1] - x_var[0]) / (len(i) - 1)
     contour_y = y_var[0] + contour[:,0] * (y_var[-1] - y_var[0]) / (len(j) - 1)
+    contour_lon, contour_lat = nc_projection(contour_x, contour_y, inverse=True)
     contours_x.append(contour_x)
     contours_y.append(contour_y)
-    points = [(contour_x[k], contour_y[k]) for k in range(len(contour_y))]
+    contours_lon.append(contour_lon)
+    contours_lat.append(contour_lat)
+    points = [(contour_lon[k], contour_lat[k]) for k in range(len(contour_lat))]
     contour_points.append(points)
 # reverse direction, last entry (longest contour) first.
 contours_x.reverse()
 contours_y.reverse()
+contours_lon.reverse()
+contours_lat.reverse()
 contour_points.reverse()
 
 if single:
