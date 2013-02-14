@@ -452,7 +452,7 @@ if obs_file is not None:
             mask = (data == fill)
         except:
             mask = np.zeros_like(data)
-        mask[data <= tol] = 1
+            mask[data <= tol] = 1
         obs_values = np.ma.array(data, mask = mask)
     
     nc.close()
