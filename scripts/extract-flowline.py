@@ -58,9 +58,9 @@ def piecewise_bilinear(x, y, fl_i, fl_j, A, B, C, D):
     return pw_bilinear
 
 
-def load_flowline(filename):
+def read_textfile(filename):
     '''
-    Loads lat / lon from an ascii file.
+    Reads lat / lon from an ascii file.
 
     Paramters
     ----------
@@ -69,7 +69,6 @@ def load_flowline(filename):
     Returns
     -------
     lat, lon: array_like coordinates
-
     '''
 
     try:
@@ -79,6 +78,39 @@ def load_flowline(filename):
 
     return lat, lon
 
+def read_shapefile(flowline_filename):
+    '''
+    Reads lat / lon from a ESRI shape file.
+
+    Paramters
+    ----------
+    flowline_filename: filename of ESRI shape file.
+
+    Returns
+    -------
+    lat, lon: array_like coordinates
+    '''
+    import ogr
+    driver = ogr.GetDriverByName('ESRI Shapefile')
+    data_source = driver.Open(flowline_filename, 0)
+    layer = data_source.GetLayer(0)
+    srs=layer.GetSpatialRef()
+    # Make sure we use lat/lon coordinates.
+    # Fixme: allow reprojection onto lat/lon if needed.
+    if not srs.IsGeographic():
+        print('''Spatial Reference System in % s is not lat/lon. Exiting.''' % flowline_filename)
+        import sys
+        sys.exit(0)
+    cnt = layer.GetFeatureCount()
+    x = []
+    y = []
+    for pt in range(0, cnt):
+        feature = layer.GetFeature(pt)
+        geometry = feature.GetGeometryRef()
+        x.append(geometry.GetX())
+        y.append(geometry.GetY())
+
+    return np.asarray(y), np.asarray(x)
 
 def create_flowline_axis(flowline_filename, projection):
     '''
@@ -96,7 +128,10 @@ def create_flowline_axis(flowline_filename, projection):
     lon: array_like longitudes
     '''
 
-    fl_lat, fl_lon = load_flowline(flowline_filename)
+    try:
+        fl_lat, fl_lon = read_shapefile(flowline_filename)
+    except:
+        fl_lat, fl_lon = load_textfile(flowline_filename)
     fl_x, fl_y = projection(fl_lon, fl_lat)
 
     x = np.zeros_like(fl_x)
@@ -295,7 +330,7 @@ try:
         else:
             setattr(var_out, att, getattr(var_in, att))
 except:
-    pass
+    time_bounds = None
 
 if time_bounds:
     var_name = time_bounds
@@ -384,6 +419,7 @@ for var_name in nc_in.variables:
         elif (xdim in in_dimensions and ydim in in_dimensions):
             in_values = np.squeeze(ppt.permute(var_in, dim_order))
             dimensions = (fldim)
+            input_order = (fldim)
             # Create variable
             var_out = nc.createVariable(var_name, datatype,
                                         dimensions=dimensions, fill_value=fill_value)
@@ -394,9 +430,7 @@ for var_name in nc_in.variables:
                 D_values = in_values[D_i,D_j]
                 var_out[:] = piecewise_bilinear(x, y, fl_i, fl_j, A_values, B_values, C_values, D_values)
             else:
-                fl_values = dim_permute(in_values[fl_i,fl_j],input_order=input_order,
-                                        output_order=dimensions)
-                var_out[:] = fl_values
+                var_out[:] = in_values[fl_i,fl_j]
         else:
             dimensions = in_dimensions
             # Create variable
