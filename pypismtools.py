@@ -1,7 +1,7 @@
 '''
-PyPISMTools: Tools to evaluate PISM parameter studies
+pypismtools: Tools to evaluate PISM parameter studies
 
-PyPISMTools is a module to facilitate evaluation of PISM parameter
+pypismtools is a module to facilitate evaluation of PISM parameter
 studies. It mainly comprises two classes, Observation and Experiment,
 which act as containers for observational data and PISM model
 simulations, along with helper functions. The experiment class

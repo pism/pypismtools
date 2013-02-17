@@ -5,9 +5,9 @@ from matplotlib import colors, mpl
 from argparse import ArgumentParser
 
 try:
-        from PyPISMTools import gmtColormap
+        from pypismtools import gmtColormap
 except:
-        from PyPISMTools.PyPISMTools import gmtColormap
+        from pypismtools.pypismtools import gmtColormap
 
 def cmap_map(function, cmap):
     """

@@ -15,9 +15,9 @@ except:
     from netCDF3 import Dataset as NC
 
 try:
-    import PyPISMTools.PyPISMTools as ppt
+    import pypismtools.pypismtools as ppt
 except:
-    import PyPISMTools as ppt
+    import pypismtools as ppt
 
 
 def piecewise_bilinear(x, y, fl_i, fl_j, A, B, C, D):

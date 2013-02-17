@@ -20,9 +20,9 @@ except:
     from netCDF3 import Dataset as NC
 
 try:
-    import PyPISMTools.PyPISMTools as ppt
+    import pypismtools.pypismtools as ppt
 except:
-    import PyPISMTools as ppt
+    import pypismtools as ppt
 
 
 class Variable(object):

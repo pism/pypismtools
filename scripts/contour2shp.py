@@ -13,9 +13,9 @@ import os
 from pyproj import Proj
 
 try:
-    import PyPISMTools.PyPISMTools as ppt
+    import pypismtools.pypismtools as ppt
 except:
-    import PyPISMTools as ppt
+    import pypismtools as ppt
 
 
 # Shapefile related code is adapted from

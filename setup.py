@@ -2,7 +2,7 @@ from distutils.core import setup
 import os
 import sys
 
-PKG_NAME = 'PyPISMTools'
+PKG_NAME = 'pypismtools'
 print(('\nInstalling %s' % PKG_NAME))
 print('----------------------------')
 
@@ -35,7 +35,7 @@ setup(name=PKG_NAME,
       description='Python tools to evaluate PISM results',
       author='Andy Aschwanden',
       author_email='aaschwanden@alaska.edu',
-      url='https://github.com/pism/PyPISMTools',
+      url='https://github.com/pism/pypismtools',
       classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',

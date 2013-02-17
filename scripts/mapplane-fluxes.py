@@ -8,9 +8,9 @@ from argparse import ArgumentParser
 from netCDF4 import Dataset as NC
 
 try:
-    import PyPISMTools.PyPISMTools as ppt
+    import pypismtools.pypismtools as ppt
 except:
-    import PyPISMTools as ppt
+    import pypismtools as ppt
 
 from udunits2 import Converter, System, Unit
 sys = System()
