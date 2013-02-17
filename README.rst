@@ -1,7 +1,7 @@
-The ``PyPISMTools`` module
+The ``pypismtools`` module
 ======================
  
-PyPISMTools is a collection of classes and functions to evaluate PISM studies by
+pypismtools is a collection of classes and functions to evaluate PISM studies by
 providing tools for binning and histogram plotting. It also includes
 helper functions and wrappers for things like unit conversion,
 defining figure sizes and parameters, and more. Additionally, some
@@ -44,7 +44,7 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 
 ``$ basemap-plot.py --singlerow -v surfvelmag --colorbar_label -o surfvelmag.png Greenland_5km_v1.1.nc``
 
-.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/surfvelmag.png
+.. figure:: https://github.com/pism/pypismtools/raw/master/docs/surfvelmag.png
    :width: 300px
    :alt: Magnitude of surface velocities.
 
@@ -55,7 +55,7 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 
 ``$ basemap-plot.py --background etopo --coastlines --map_resolution i --singlerow -v thk -o etopothk.png Greenland_5km_v1.1.nc``
 
-.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/etopothk.png
+.. figure:: https://github.com/pism/pypismtools/raw/master/docs/etopothk.png
    :width: 260px
    :alt: Ice thickness with ETOPO background.
 
@@ -66,7 +66,7 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 ``$ basemap-plot.py --geotiff mygeotiff.tif --singlecolumn -v
 surfvelmag --colorbar_label -o geotiff.png Greenland_5km_v1.1.nc``
 
-.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/geotiff.png
+.. figure:: https://github.com/pism/pypismtools/raw/master/docs/geotiff.png
    :width: 260px
    :alt: Ice thickness with ETOPO background.
 
@@ -84,7 +84,7 @@ To show the bathymetry around Greenland, you can use the IBCAO colormap. By runn
 you get a linear colorramp from -5000m to 1400m, and the last color
 will be extended to 3000m. The result should like like
 
-.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/ibcao.png
+.. figure:: https://github.com/pism/pypismtools/raw/master/docs/ibcao.png
    :width: 200px
    :alt: Linear DEM colormap IBCAO.
 
@@ -92,7 +92,7 @@ For a nice log-scaled colormap to show speeds, try:
 
 ``qgis-colorramp.py --a 3 --log --extend 30000 Full_saturation_spectrum_CCW.cpt``
 
-.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/Full_saturation_spectrum_CCW.png
+.. figure:: https://github.com/pism/pypismtools/raw/master/docs/Full_saturation_spectrum_CCW.png
    :width: 200px
    :alt: Log-scaled colorramp.
 
@@ -113,7 +113,7 @@ mask. Or you can extract the 2000m elevation contour:
 
 ``contour2shp.py -v usrf -c 2000 -s -o poly.shp Greenland_5km_v1.1.nc``
 
-.. figure:: https://github.com/pism/PyPISMTools/raw/master/docs/contour2000m.png
+.. figure:: https://github.com/pism/pypismtools/raw/master/docs/contour2000m.png
    :width: 200px
    :alt: 2000m contour line.
 
