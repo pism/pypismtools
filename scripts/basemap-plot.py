@@ -224,8 +224,8 @@ if varname in vars_speed:
     vmax = 3e3
     norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
-    attr_keys = ('ticks', 'cmap', 'norm',
-                 'vmin', 'vmax', 'extend', 'format', 'colorbar_label')
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
+                 'colorbar_label')
     attr_vals = ([1, 3, 10, 30, 100, 300, 1000, 3000], cmap,
                  norm, vmin, vmax, 'both', '%d', 'm a$^{-1}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
@@ -239,8 +239,8 @@ elif varname in vars_melt:
     vmax = 1
     norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
-    attr_keys = ('ticks', 'cmap', 'norm',
-                 'vmin', 'vmax', 'extend', 'format', 'colorbar_label')
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
+                 'colorbar_label')
     attr_vals = ([0.001, 0.01, 0.1, 1], cmap,
                  norm, vmin, vmax, 'max', '%3.3f', 'm a$^{-1}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
@@ -255,7 +255,8 @@ elif varname in vars_dem:
     vmax = None
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
-    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format', 'colorbar_label')
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
+                 'colorbar_label')
     attr_vals = (None, cmap, norm, vmin, vmax, 'max', '%d', 'm')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
@@ -271,7 +272,8 @@ elif varname in vars_topo:
     vmax = 2100
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
-    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format', 'colorbar_label')
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
+                 'colorbar_label')
     attr_vals = (None, cmap, norm, vmin, vmax, 'both', '%d', 'm a.s.l.')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
@@ -301,7 +303,8 @@ elif varname in vars_cmb:
     vmax = None
     norm = None
 
-    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format', 'colorbar_label')
+    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format',
+                 'colorbar_label')
     attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, 'm a$^{-1}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
@@ -315,7 +318,8 @@ elif varname in vars_temp:
     vmax = None
     norm = None
 
-    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format', 'colorbar_label')
+    attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format',
+                 'colorbar_label')
     attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, u'\u00B0C')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
@@ -329,7 +333,8 @@ elif varname in vars_div:
     vmax = None
     norm = None
 
-    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format', 'colorbar_label')
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
+                 'colorbar_label')
     attr_vals = (None, cmap, norm, vmin, vmax, 'both', None, 'm a$^{-1}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
@@ -390,12 +395,12 @@ else:
     ## coordinate variable in y-direction
     y_var = np.squeeze(nc.variables[ydim][:])
 
-    center_x = (x_var[0] + x_var[-1]) / 2
-    center_y = (y_var[0] + y_var[-1]) / 2
+    center_x = (x_var[0]+x_var[-1]) / 2
+    center_y = (y_var[0]+y_var[-1]) / 2
     nc_projection = ppt.get_projection_from_file(nc)
     lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
-    width = 1.2 * (np.max(x_var) - np.min(x_var))
-    height = 1.0 * (np.max(y_var) - np.min(y_var))
+    width = 1.2 * (np.max(x_var)-np.min(x_var))
+    height = 1.0 * (np.max(y_var)-np.min(y_var))
     
     nc.close()
 

@@ -125,8 +125,8 @@ contours_lat = []
 contour_points = []
 for k in range(0,len(contours)):
     contour = contours[k]
-    contour_x = x_var[0] + contour[:,1] * (x_var[-1] - x_var[0]) / (len(i) - 1)
-    contour_y = y_var[0] + contour[:,0] * (y_var[-1] - y_var[0]) / (len(j) - 1)
+    contour_x = x_var[0] + contour[:,1] * (x_var[-1]-x_var[0])/(len(i)-1)
+    contour_y = y_var[0] + contour[:,0] * (y_var[-1]-y_var[0])/(len(j)-1)
     contour_lon, contour_lat = nc_projection(contour_x, contour_y, inverse=True)
     contours_x.append(contour_x)
     contours_y.append(contour_y)
