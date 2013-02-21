@@ -527,7 +527,7 @@ for k in range(0, nt):
         sys.exit(1)
 
     if outunit is not None:
-              data = ppt.unit_converter(data, inunit, outunit)
+        data = ppt.unit_converter(data, inunit, outunit)
 
     if variable.var_name in vars_dem:
         mask = (data <= variable.vmin)
@@ -540,12 +540,11 @@ for k in range(0, nt):
         except:
             values.append(data)
 
-    ocean_mask_varname = 'mask'
+    ocean_mask_varname = 'oceanmask'
     if ocean_mask_varname in nc.variables.keys():
         ocean_mask.append(np.squeeze(ppt.permute(nc.variables['mask'])))
     else:
         ocean_mask.append(np.zeros_like(data))
-
     nc.close()
 
 

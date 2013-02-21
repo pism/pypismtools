@@ -213,7 +213,7 @@ else:
     profile_filename = args[0]
     in_filename = args[1]
     if (n_args == 2):
-pr        out_filename = 'profile.nc'
+        out_filename = 'profile.nc'
     else:
         out_filename = args[2]
 
