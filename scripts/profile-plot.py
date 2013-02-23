@@ -33,6 +33,10 @@ parser.add_argument("--x_bounds", dest="x_bounds", nargs=2, type=int,
                   help="lower and upper bound for abscissa, eg. 0 200", default=None)
 parser.add_argument("-l", "--labels",dest="labels",
                   help="comma-separated list with labels, put in quotes like 'label 1,label 2'",default=None)
+parser.add_argument("--labelbar_title",dest="labelbar_title",
+                  help='''Label bar title''',default=None)
+parser.add_argument("--figure_title",dest="figure_title",
+                  help='''Figure title''',default=None)
 parser.add_argument("--index_ij", dest="index_ij", nargs=2, type=float,
                   help="i and j index for spatial fields, eg. 10 10", default=[36, 92])
 parser.add_argument("-f", "--output_format",dest="out_formats",
@@ -69,9 +73,11 @@ if options.labels != None:
 else:
     labels = None
 bounds = options.bounds
+figure_title = options.figure_title
 index_i, index_j = options.index_ij[0], options.index_ij[1]
 x_bounds = options.x_bounds    
 golden_mean = get_golden_mean()
+labelbar_title = options.labelbar_title
 normalize = options.normalize
 out_res = options.out_res
 outfile = options.outfile
@@ -111,6 +117,11 @@ var_values = []
 var_ylabels = []
 var_longnames = []
 
+# FIXME:
+# If a list of variables is given, only do first in list.
+
+var = variables[0]
+
 for k in range(no_args):
 
     print("opening file %s" % args[k])
@@ -121,57 +132,58 @@ for k in range(no_args):
     profile_outunits = 'km'
     profile_axis = np.squeeze(unit_converter(profile[:], profile_units, profile_outunits))
 
-    for var in variables:
-        var_units = nc.variables[var].units
-        var_longname = nc.variables[var].long_name
-        var_longnames.append(var_longname)
-        if var in ("ivol"):
-            scale_exponent = 6
-            scale = 10 ** scale_exponent
-            out_units = "km3"
-            var_unit_str = ("10$^{%i}$ km$^{3}$" % scale_exponent)
-        elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
-                     "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
-                     "climatic_mass_balance_cumulative",
-                     "effective_climatic_mass_balance_cumulative",
-                     "effective_ice_discharge_cumulative"):
-            out_units = "Gt"
-            var_unit_str = "Gt"
-            ylabel = ("mass change [%s]" % var_unit_str)
-        elif var in ("ocean_kill_flux"):
-            out_units = "Gt year-1"
-            var_unit_str = "Gt a$^{-1}$"
-            ylabel = ("mass change [%s]" % var_unit_str)
-        elif var in ("usurf", "topg"):
-            out_units = "m"
-            var_unit_str = "m a.s.l"
-            ylabel = ("elevation [%s]" % var_unit_str)
-        elif var in ("eigen1", "eigen2"):
-            out_units = "year-1"
-            var_unit_str = "a$^{-1}$"
-            ylabel = ("strain rate [%s]" % var_unit_str)
-        elif var in ("taud", "taud_mag", "taud_x", "taud_y", "bwp"):
-            out_units = "Pa"
-            var_unit_str = "Pa"
-            ylabel = ("pressure [%s]" % var_unit_str)
-        elif var in ("csurf", "cbase", "cbar"):
-            out_units = "m year-1"
-            var_unit_str = "m a$^{-1}$"
-            ylabel = ("speed [%s]" % var_unit_str)
-        else:
-            print("unit %s not recognized" % var_units)
-        var_ylabels.append(ylabel)
+    var_units = nc.variables[var].units
+    var_longname = nc.variables[var].long_name
+    var_longnames.append(var_longname)
+    if var in ("ivol"):
+        scale_exponent = 6
+        scale = 10 ** scale_exponent
+        out_units = "km3"
+        var_unit_str = ("10$^{%i}$ km$^{3}$" % scale_exponent)
+    elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
+                 "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
+                 "climatic_mass_balance_cumulative",
+                 "effective_climatic_mass_balance_cumulative",
+                 "effective_ice_discharge_cumulative"):
+        out_units = "Gt"
+        var_unit_str = "Gt"
+        ylabel = ("mass change [%s]" % var_unit_str)
+    elif var in ("ocean_kill_flux"):
+        out_units = "Gt year-1"
+        var_unit_str = "Gt a$^{-1}$"
+        ylabel = ("mass change [%s]" % var_unit_str)
+    elif var in ("usurf", "topg"):
+        out_units = "m"
+        var_unit_str = "m a.s.l"
+        ylabel = ("elevation [%s]" % var_unit_str)
+    elif var in ("eigen1", "eigen2"):
+        out_units = "year-1"
+        var_unit_str = "a$^{-1}$"
+        ylabel = ("strain rate [%s]" % var_unit_str)
+    elif var in ("taud", "taud_mag", "taud_x", "taud_y", "bwp"):
+        out_units = "Pa"
+        var_unit_str = "Pa"
+        ylabel = ("pressure [%s]" % var_unit_str)
+    elif var in ("csurf", "cbase", "cbar"):
+        out_units = "m year-1"
+        var_unit_str = "m a$^{-1}$"
+        ylabel = ("speed [%s]" % var_unit_str)
+    else:
+        print("unit %s not recognized" % var_units)
+    var_ylabels.append(ylabel)
 
-        try:
-            var_vals = unit_converter(np.squeeze(permute(nc.variables[var],
-                                                         output_order=output_order)),var_units, out_units)
-        except:
-            var_vals = unit_converter(np.squeeze(permute(nc.variables[var],
-                                                         output_order=output_order_cdo)),var_units, out_units)
-        if normalize:
-            var_vals -= var_vals[0]
+    try:
+        var_vals = unit_converter(
+            np.squeeze(permute(nc.variables[var],
+                               output_order=output_order)),var_units, out_units)
+    except:
+        var_vals = unit_converter(
+            np.squeeze(permute(nc.variables[var],
+                               output_order=output_order_cdo)),var_units, out_units)
+    if normalize:
+        var_vals -= var_vals[0]
 
-        var_values.append(var_vals)
+    var_values.append(var_vals)
 
     nc.close()
 
@@ -185,31 +197,25 @@ plt.rcParams['legend.fancybox'] = True
 
 my_colors = colorList()
 
-for k in range(len(variables)):
+fig = plt.figure()
+ax = fig.add_subplot(111)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-
-    lines = []
-    for idx in range(no_args):
-        line = var_values[k][:,idx]
-        colorVal = scalarMap.to_rgba(idx)
-        if nt > len(my_colors):
-            retLine, = ax.plot(profile_axis[::skip],line[::skip], color=colorVal)
-        else:
-            retLine, = ax.plot(profile_axis,line, color=my_colors[idx])
-        lines.append(retLine)
-    ax.set_xlabel("distance along profile [%s]" % profile_outunits)
-    ax.set_ylabel(var_ylabels[k])
-    if x_bounds:
-        ax.set_xlim(x_bounds[0], x_bounds[1])
-    label = [date[x].strftime('%Y-%m-%d') for x in range(len(date))]
-    if len(label) < 6:
-        ax.legend(label)
-    outfile = "foo"
-    for out_format in out_formats:
-        out_file = outfile + '_' + variables[k] + '.' + out_format
-        print "  - writing image %s ..." % out_file
-        fig.savefig(out_file ,bbox_inches='tight', dpi=out_res)
+lines = []
+for idx in range(no_args):
+    line = var_values[idx][:]
+    retLine, = ax.plot(profile_axis, line, color=my_colors[idx])
+    lines.append(retLine)
+ax.set_xlabel("distance along profile [%s]" % profile_outunits)
+ax.set_ylabel(var_ylabels[k])
+if x_bounds:
+    ax.set_xlim(x_bounds[0], x_bounds[1])
+if len(labels) < 6:
+    ax.legend(labels, title=labelbar_title)
+plt.title(figure_title)
+outfile = "foo"
+for out_format in out_formats:
+    out_file = outfile + '_' + var + '.' + out_format
+    print "  - writing image %s ..." % out_file
+    fig.savefig(out_file ,bbox_inches='tight', dpi=out_res)
 
 

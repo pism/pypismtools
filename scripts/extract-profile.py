@@ -99,7 +99,8 @@ def read_shapefile(filename):
     # Make sure we use lat/lon coordinates.
     # Fixme: allow reprojection onto lat/lon if needed.
     if not srs.IsGeographic():
-        print('''Spatial Reference System in % s is not lat/lon. Exiting.''' % filename)
+        print('''Spatial Reference System in % s is not lat/lon. Exiting.'''
+              % filename)
         import sys
         sys.exit(0)
     cnt = layer.GetFeatureCount()
@@ -113,7 +114,7 @@ def read_shapefile(filename):
 
     return np.asarray(y), np.asarray(x)
 
-def create_profile_axis(filename, projection):
+def create_profile_axis(filename, projection, flip):
     '''
     Create a profile axis.
 
@@ -133,7 +134,10 @@ def create_profile_axis(filename, projection):
     try:
         fl_lat, fl_lon = read_shapefile(filename)
     except:
-        fl_lat, fl_lon = load_textfile(filename)
+        fl_lat, fl_lon = read_textfile(filename)
+    if flip:
+        fl_lat = fl_lat[::-1]
+        fl_lon = fl_lon[::-1]
     fl_x, fl_y = projection(fl_lon, fl_lat)
 
     x = np.zeros_like(fl_x)
@@ -190,10 +194,15 @@ parser.add_argument(
     "-b", "--bilinear",dest="bilinear",action="store_true",
     help='''Piece-wise bilinear interpolation, Default=False''',
     default=False)
+parser.add_argument(
+    "-f", "--flip",dest="flip",action="store_true",
+    help='''Flip profile direction, Default=False''',
+    default=False)
 
 options = parser.parse_args()
 bilinear = options.bilinear
 args = options.FILE
+flip = options.flip
 fill_value = -2e33
 
 n_args = len(args)
@@ -243,7 +252,7 @@ projection = ppt.get_projection_from_file(nc_in)
 # Read in profile data
 print("Reading profile from %s" % profile_filename)
 fl, fl_x, fl_y, fl_lon, fl_lat = create_profile_axis(
-    profile_filename, projection)
+    profile_filename, projection, flip)
 
 # indices (i,j)
 fl_i = (np.floor((fl_x-x0) / dx)).astype('int') + 1
