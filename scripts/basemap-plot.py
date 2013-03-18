@@ -25,6 +25,33 @@ except:
     import pypismtools as ppt
 
 
+def draw_background(self):
+    # Draw a background if given
+    if (background == 'bluemable'):
+        self.bluemarble()
+    elif (background == 'etopo'):
+        self.etopo()
+    elif (background == 'shadedrelief'):
+        self.shadedrelief()
+    else:
+        pass
+
+def draw_geotiff(self):
+    # Plot GeoTIFF file if given
+    if geotiff_filename is not None:
+        if shaded:
+            self.imshow(np.flipud(geotiff.RasterArray),
+                         cmap=plt.cm.gray, rasterized=geotiff_rasterized)
+        else:
+            self.pcolormesh(xx_gtiff, yy_gtiff, np.flipud(geotiff.RasterArray),
+                         cmap=plt.cm.gray, rasterized=geotiff_rasterized)
+
+def draw_streamlines(self):
+    if streamfunction_filename is not None:
+        speed = np.sqrt(us**2 + vs**2)
+        m.streamplot(sf_lon, sf_lat, us, vs, color=speed,
+                     linewidth=2, cmap=plt.cm.autumn, latlon=True)
+
 class Variable(object):
     '''
     A class containing variable-specific stuff such as colorbars, tickmarks, etc
@@ -78,7 +105,7 @@ parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
 parser.add_argument("--boundary_tol", dest="boundary_tol", nargs=1, type=float,
                   help='''if set, color areas brown where obs <= boundary_tol but data >= boundary_tol,
                   works for difference plots only.''', default=None)
-parser.add_argument("--obs_file",dest="obs_file",
+parser.add_argument("--obs_file",dest="obs_filename",
                   help='''
                   file with observations for difference plot,
 experiment - observation. Must be on same grid as experiments. Default is None''', default=None)
@@ -101,11 +128,13 @@ parser.add_argument("--singlecolumn", dest="singlecolumn", action="store_true",
                   help="all plots on a single column", default=False)
 parser.add_argument("--map_resolution", dest="map_res",
                   help="Resolution of boundary database (see Basemap), default = 'l' (low)", default='l')
-parser.add_argument("-o", "--output_filename", dest="out_file",
+parser.add_argument("-o", "--output_file", dest="out_filename",
                   help="Name of the output file. Suffix defines output format", default='foo.png')
 parser.add_argument("--geotiff_file", dest="geotiff_filename",
                   help="GeoTIFF filename", default=None)
 parser.add_argument("--shape_file", dest="shape_filename",
+                  help="Shapefile filename", default=None)
+parser.add_argument("--streamfunction_file", dest="streamfunction_filename",
                   help="Shapefile filename", default=None)
 parser.add_argument("--out_unit", dest="outunit",
                   help="Output unit, default is unit in file", default=None)
@@ -164,10 +193,10 @@ level = options.level
 map_res = options.map_res
 geotiff_filename = options.geotiff_filename
 print_mode = options.print_mode
-obs_file = options.obs_file
+obs_filename = options.obs_filename
 outunit = options.outunit
 out_res = int(options.out_res)
-out_file = options.out_file
+out_filename = options.out_filename
 shaded = options.shaded
 singlerow = options.singlerow
 singlecolumn = options.singlecolumn
@@ -176,6 +205,7 @@ rasterized = options.rasterized
 tol = options.tol
 varname = options.varname
 shape_filename = options.shape_filename
+streamfunction_filename = options.streamfunction_filename
 
 cmap = None
 if colormap is not None:
@@ -187,7 +217,7 @@ if colormap is not None:
     cmap = colors.LinearSegmentedColormap('my_colormap', cdict)
             
 # check output format
-suffix = out_file.split('.')[-1]
+suffix = out_filename.split('.')[-1]
 if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
     print(('Requested output format %s not supported, try png, pdf, svg, ps, eps'
           % suffix))
@@ -362,7 +392,7 @@ if bounds is not None:
     variable.vmax = bounds_max
     variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
 
-if obs_file is not None:
+if obs_filename is not None:
     variable.vmin = bounds_min
     variable.vmax = bounds_max
     variable.norm = colors.Normalize(vmin=variable.vmin,
@@ -405,14 +435,14 @@ else:
     nc.close()
 
 
-if obs_file is not None:
-    print("  opening NetCDF file %s ..." % obs_file)
+if obs_filename is not None:
+    print("  opening NetCDF file %s ..." % obs_filename)
     try:
         # open netCDF file in 'append' mode
-        nc = NC(obs_file, 'r')
+        nc = NC(obs_filename, 'r')
     except:
         print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
-              % obs_file))
+              % obs_filename))
         import sys
         sys.exit()
         
@@ -428,19 +458,19 @@ if obs_file is not None:
             var = 'magnitude'
     else:
         var = varname
-    print(("    - reading variable %s from file %s" % (var, obs_file)))
+    print(("    - reading variable %s from file %s" % (var, obs_filename)))
     try:
         data = np.squeeze(ppt.permute(nc.variables[var], dim_order))
     except:
         print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
-              % (variable.var_name, obs_file)))
+              % (variable.var_name, obs_filename)))
         exit(2)
 
     try:
         inunit = str(nc.variables[var].units)
     except:
         print(("ERROR:  units not found in variable '%s' in file %s ... ending ..."
-              % (variable.var_name, obs_file)))
+              % (variable.var_name, obs_filename)))
         exit(2)
 
     if outunit is not None:
@@ -462,6 +492,64 @@ if obs_file is not None:
     
     nc.close()
 
+
+if streamfunction_filename is not None:
+    print("  opening NetCDF file %s ..." % streamfunction_filename)
+    try:
+        nc = NC(streamfunction_filename, 'r')
+    except:
+        print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
+              % streamfunction_filename))
+        import sys
+        sys.exit()
+        
+    # get the dimensions
+    xdim, ydim, zdim, tdim = ppt.get_dims(nc)
+    # set up dimension ordering
+    dim_order = (tdim, zdim, ydim, xdim)
+    # add lat/lon values
+    sf_lat = np.squeeze(ppt.permute(nc.variables['lat'], dim_order))
+    sf_lon = np.squeeze(ppt.permute(nc.variables['lon'], dim_order))
+
+    var = 'us'
+    print(("    - reading variable %s from file %s" % (var, streamfunction_filename)))
+    try:
+        us = np.squeeze(ppt.permute(nc.variables[var], dim_order))
+    except:
+        print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
+              % (var, streamfunction_filename)))
+        exit(2)
+
+    try:
+        inunit = str(nc.variables[var].units)
+    except:
+        print(("ERROR:  units not found in variable '%s' in file %s ... ending ..."
+              % (var, streamfunction_filename)))
+        exit(2)
+
+    if outunit is not None:
+        us = ppt.unit_converter(us, inunit, outunit)
+
+    var = 'vs'
+    print(("    - reading variable %s from file %s" % (var, streamfunction_filename)))
+    try:
+        vs = np.squeeze(ppt.permute(nc.variables[var], dim_order))
+    except:
+        print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
+              % (var, streamfunction_filename)))
+        exit(2)
+
+    try:
+        inunit = str(nc.variables[var].units)
+    except:
+        print(("ERROR:  units not found in variable '%s' in file %s ... ending ..."
+              % (var, streamfunction_filename)))
+        exit(2)
+
+    if outunit is not None:
+        vs = ppt.unit_converter(us, inunit, outunit)
+    
+    nc.close()
 
 print("  creating Basemap ...")
 m = Basemap(width=width,
@@ -585,198 +673,200 @@ if colorbar:
 
 # create the figure
 fig = plt.figure()
-if singlerow:
-    grid = ImageGrid(fig, 111, # similar to subplot(111)
-                    nrows_ncols = (1, nt), # creates 1 x nt grid of axes
-                    axes_pad=0.05, # pad between axes in inch.
-                    cbar_mode='single',
-                    cbar_size=0.115,
-                    cbar_location='right',
-                    share_all=True)
-elif singlecolumn:
-    grid = ImageGrid(fig, 111, # similar to subplot(111)
-                    nrows_ncols = (nt, 1), # creates nt x 1 grid of axes
-                    axes_pad=0.05, # pad between axes in inch.
-                    cbar_mode='single',
-                    cbar_size=0.115,
-                    cbar_location='top',
-                    share_all=True)
-else:
-    grid = ImageGrid(fig, 111, # similar to subplot(111)
-                    nrows_ncols = (2, nt/2), # creates 2 x nt/2 grid of axes
-                    axes_pad=0.05, # pad between axes in inch.
-                    cbar_mode='single',
-                    cbar_size=0.115,
-                    cbar_location='top',
-                    share_all=True)
 
+import types
+m.draw_background = types.MethodType(draw_background, m)
+m.draw_geotiff = types.MethodType(draw_geotiff, m)
+m.draw_streamlines = types.MethodType(draw_streamlines, m)
 
-if variable.var_name not in (vars_speed, vars_dem, vars_topo) and (bounds is None):
-    variable.vmin = data.min()
-    variable.vmax = data.max()
-
-if bounds:
-    variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
-    variable.extend = 'both'
-    variable.ticks = None
-    variable.format = None
-
-for k in range(0, nt):
-    ax = grid[k]
+if nt == 0:
+    ax = fig.add_subplot(111)
     m.ax = ax
-    xx, yy = m(lons[k], lats[k])
+    m.draw_background()
+    m.draw_geotiff()
+    m.draw_streamlines()
+    m.drawmeridians(np.arange(-175., 175., meridian_spacing),
+                            labels = [0, 0, 0, 1], linewidth=0.5)
+    m.drawparallels(np.arange(-90., 90., parallels_spacing),
+                            labels = [1, 0, 0, 0], linewidth=0.5)
 
-    # Draw a background if given
-    if (background == 'bluemable'):
-        m.bluemarble()
-    elif (background == 'etopo'):
-        m.etopo()
-    elif (background == 'shadedrelief'):
-        m.shadedrelief()
-    else:
-        pass
+else:
 
-    # Plot GeoTIFF file if given
-    if geotiff_filename is not None:
-        if shaded:
-            m.imshow(np.flipud(geotiff.RasterArray),
-                         cmap=plt.cm.gray, rasterized=geotiff_rasterized)
-        else:
-            m.pcolormesh(xx_gtiff, yy_gtiff, np.flipud(geotiff.RasterArray),
-                         cmap=plt.cm.gray, rasterized=geotiff_rasterized)
+    if variable.var_name not in (vars_speed, vars_dem, vars_topo) and (bounds is None):
+        variable.vmin = data.min()
+        variable.vmax = data.max()
 
-    # Draw a boundary mask. Areas where
-    #   obs_values <= boundary_tol and values > boundary_tol
-    # are colored brown.
-    if boundary_tol and obs_file:
-        boundary_mask = np.zeros_like(data)
-        b_mask = np.ones_like(data)
-        b_mask[np.logical_and((obs_values <=  boundary_tol), (values[k] > boundary_tol))] = 0
-        b_mask[ocean_mask[k] == 4] = 1
-        boundary_mask = np.ma.array(data=boundary_mask, mask=b_mask)
-        b = m.pcolormesh(xx, yy, boundary_mask, cmap=plt.cm.BrBG,
-                         alpha=alpha, rasterized=rasterized)
-
-    # If observations are given, calculate absolute or relative differences
-    if obs_file:
-        if relative:
-            data = (values[k] - obs_values) / obs_values
-            cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap,
-                              alpha=alpha, norm=variable.norm,
-                              rasterized=rasterized)
-        else:
-            data = values[k] - obs_values
-            cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap,
-                              alpha=alpha, norm=variable.norm,
-                              rasterized=rasterized)
-    else:
-        # otherwise just plot data
-        data = values[k]
-        if shaded:
-            from matplotlib.colors import LightSource
-            # create light source object.
-            lightsource = LightSource(hsv_min_val=.1, hsv_max_val=.9,
-                             hsv_min_sat=.85, hsv_max_sat=.15)
-            # convert data to rgba array including shading from light source.
-            # (must specify color map)
-            data = lightsource.shade(data, variable.cmap)
-            cs = m.imshow(data, cmap=variable.cmap, alpha=alpha,
-                          norm=variable.norm, rasterized=rasterized)
-        else:
-            cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap, alpha=alpha,
-                          norm=variable.norm, rasterized=rasterized)
+    if bounds:
+        variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
+        variable.extend = 'both'
+        variable.ticks = None
+        variable.format = None
 
     if singlerow:
-        m.drawmeridians(np.arange(-175., 175., meridian_spacing),
-                        labels = [0, 0, 0, 1], linewidth=0.5)
-        if (k==0):
-            m.drawparallels(np.arange(-90., 90., parallels_spacing),
-                            labels = [1, 0, 0, 0], linewidth=0.5)
-        else:
-            m.drawparallels(np.arange(-90., 90., parallels_spacing),
-                            labels = [0, 0, 0, 0], linewidth=0.5)
+        grid = ImageGrid(fig, 111, # similar to subplot(111)
+                        nrows_ncols = (1, nt), # creates 1 x nt grid of axes
+                        axes_pad=0.05, # pad between axes in inch.
+                        cbar_mode='single',
+                        cbar_size=0.115,
+                        cbar_location='right',
+                        share_all=True)
     elif singlecolumn:
-        m.drawparallels(np.arange(-90., 90., parallels_spacing),
-                        labels = [1, 0, 0, 0], linewidth=0.5)
-        if (k==nt-1):
+        grid = ImageGrid(fig, 111, # similar to subplot(111)
+                        nrows_ncols = (nt, 1), # creates nt x 1 grid of axes
+                        axes_pad=0.05, # pad between axes in inch.
+                        cbar_mode='single',
+                        cbar_size=0.115,
+                        cbar_location='top',
+                        share_all=True)
+    else:
+        grid = ImageGrid(fig, 111, # similar to subplot(111)
+                        nrows_ncols = (2, nt/2), # creates 2 x nt/2 grid of axes
+                        axes_pad=0.05, # pad between axes in inch.
+                        cbar_mode='single',
+                        cbar_size=0.115,
+                        cbar_location='top',
+                        share_all=True)
+
+    for k in range(0, nt):
+        ax = grid[k]
+        m.ax = ax
+        xx, yy = m(lons[k], lats[k])
+
+        m.draw_background()
+        m.draw_geotiff()
+
+        # Draw a boundary mask. Areas where
+        #   obs_values <= boundary_tol and values > boundary_tol
+        # are colored brown.
+        if boundary_tol and obs_filename:
+            boundary_mask = np.zeros_like(data)
+            b_mask = np.ones_like(data)
+            b_mask[np.logical_and((obs_values <=  boundary_tol), (values[k] > boundary_tol))] = 0
+            b_mask[ocean_mask[k] == 4] = 1
+            boundary_mask = np.ma.array(data=boundary_mask, mask=b_mask)
+            b = m.pcolormesh(xx, yy, boundary_mask, cmap=plt.cm.BrBG,
+                             alpha=alpha, rasterized=rasterized)
+
+        # If observations are given, calculate absolute or relative differences
+        if obs_filename:
+            if relative:
+                data = (values[k] - obs_values) / obs_values
+                cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap,
+                                  alpha=alpha, norm=variable.norm,
+                                  rasterized=rasterized)
+            else:
+                data = values[k] - obs_values
+                cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap,
+                                  alpha=alpha, norm=variable.norm,
+                                  rasterized=rasterized)
+        else:
+            # otherwise just plot data
+            data = values[k]
+            if shaded:
+                from matplotlib.colors import LightSource
+                # create light source object.
+                lightsource = LightSource(hsv_min_val=.1, hsv_max_val=.9,
+                                 hsv_min_sat=.85, hsv_max_sat=.15)
+                # convert data to rgba array including shading from light source.
+                # (must specify color map)
+                data = lightsource.shade(data, variable.cmap)
+                cs = m.imshow(data, cmap=variable.cmap, alpha=alpha,
+                              norm=variable.norm, rasterized=rasterized)
+            else:
+                cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap, alpha=alpha,
+                              norm=variable.norm, rasterized=rasterized)
+
+        if singlerow:
             m.drawmeridians(np.arange(-175., 175., meridian_spacing),
                             labels = [0, 0, 0, 1], linewidth=0.5)
-        else:
-            m.drawmeridians(np.arange(-175., 175., meridian_spacing),
-                            labels = [0, 0, 0, 0], linewidth=0.5)
-    else:
-        if (k==0) or (k==2):
+            if (k==0):
+                m.drawparallels(np.arange(-90., 90., parallels_spacing),
+                                labels = [1, 0, 0, 0], linewidth=0.5)
+            else:
+                m.drawparallels(np.arange(-90., 90., parallels_spacing),
+                                labels = [0, 0, 0, 0], linewidth=0.5)
+        elif singlecolumn:
             m.drawparallels(np.arange(-90., 90., parallels_spacing),
                             labels = [1, 0, 0, 0], linewidth=0.5)
+            if (k==nt-1):
+                m.drawmeridians(np.arange(-175., 175., meridian_spacing),
+                                labels = [0, 0, 0, 1], linewidth=0.5)
+            else:
+                m.drawmeridians(np.arange(-175., 175., meridian_spacing),
+                                labels = [0, 0, 0, 0], linewidth=0.5)
         else:
-            m.drawparallels(np.arange(-90., 90., parallels_spacing),
-                            labels = [0, 0, 0, 0], linewidth=0.5)
-        if (k>=2):
-            m.drawmeridians(np.arange(-175., 175., meridian_spacing),
-                            labels = [0, 0, 0, 1], linewidth=0.5)
-        else:
-            m.drawmeridians(np.arange(-90., 90., meridian_spacing),
-                            labels = [0, 0, 0, 0], linewidth=0.5)
+            if (k==0) or (k==2):
+                m.drawparallels(np.arange(-90., 90., parallels_spacing),
+                                labels = [1, 0, 0, 0], linewidth=0.5)
+            else:
+                m.drawparallels(np.arange(-90., 90., parallels_spacing),
+                                labels = [0, 0, 0, 0], linewidth=0.5)
+            if (k>=2):
+                m.drawmeridians(np.arange(-175., 175., meridian_spacing),
+                                labels = [0, 0, 0, 1], linewidth=0.5)
+            else:
+                m.drawmeridians(np.arange(-90., 90., meridian_spacing),
+                                labels = [0, 0, 0, 0], linewidth=0.5)
 
 
-    # add coastlines if requested (default is False)
-    if coastlines:
-        m.drawcoastlines(linewidth=0.25)
+        # add coastlines if requested (default is False)
+        if coastlines:
+            m.drawcoastlines(linewidth=0.25)
 
-    im_titles = ['a)','b)','c)','d)','e)','f)']
-    if inner_title:
-        for ax in range(0, nt):
-            t = ppt.add_inner_title(fig.axes[ax], im_titles[ax], loc=2)
-            t.patch.set_ec("none")
+        im_titles = ['a)','b)','c)','d)','e)','f)']
+        if inner_title:
+            for ax in range(0, nt):
+                t = ppt.add_inner_title(fig.axes[ax], im_titles[ax], loc=2)
+                t.patch.set_ec("none")
 
-    if drawmapscale:
-        x_c = m.llcrnrx + np.abs(m.urcrnrx - m.llcrnrx) * 0.15
-        y_c = m.llcrnry + np.abs(m.urcrnry - m.llcrnry) * 0.075
-        lon_c, lat_c = m(x_c, y_c, inverse=True)
-        ms_width = np.abs(m.urcrnrx - m.llcrnrx) * 0.2 / 1e3
-        m.drawmapscale(lon_c, lat_c, lon_0, lat_0, ms_width,
-                       units='km', fontsize=plt.rcParams['font.size'],
-            barstyle='fancy')
+        if drawmapscale:
+            x_c = m.llcrnrx + np.abs(m.urcrnrx - m.llcrnrx) * 0.15
+            y_c = m.llcrnry + np.abs(m.urcrnry - m.llcrnry) * 0.075
+            lon_c, lat_c = m(x_c, y_c, inverse=True)
+            ms_width = np.abs(m.urcrnrx - m.llcrnrx) * 0.2 / 1e3
+            m.drawmapscale(lon_c, lat_c, lon_0, lat_0, ms_width,
+                           units='km', fontsize=plt.rcParams['font.size'],
+                barstyle='fancy')
 
-    if shape_filename:
-        try:
-            m.readshapefile(shape_filename.split('.shp')[0],
-                        'my_shapefile', linewidth=1.1)
-        except:
-            m.readshapefile(shape_filename,
-                        'my_shapefile', linewidth=1.1)
+        if shape_filename:
+            try:
+                m.readshapefile(shape_filename.split('.shp')[0],
+                            'my_shapefile', linewidth=1.1)
+            except:
+                m.readshapefile(shape_filename,
+                            'my_shapefile', linewidth=1.1)
 
 
-if singlerow:
-    cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
-                                         cmap=variable.cmap,
-                                         norm=variable.norm,
-                                         extend=variable.extend,
-                                         orientation='vertical',
-                                         drawedges=False,
-                                         ticks=variable.ticks,
-                                         format=variable.format)
-elif singlecolumn:
-    cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
-                                         cmap=variable.cmap,
-                                         norm=variable.norm,
-                                         extend=variable.extend,
-                                         orientation='horizontal',
-                                         drawedges=False,
-                                         ticks=variable.ticks)
-else:
-    cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
-                                         cmap=variable.cmap,
-                                         norm=variable.norm,
-                                         extend=variable.extend,
-                                         orientation='horizontal',
-                                         drawedges=False,
-                                         ticks=variable.ticks,
-                                         format=variable.format)
-if colorbar_label:
-    cbar.set_label(variable.colorbar_label)
+    if singlerow:
+        cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
+                                             cmap=variable.cmap,
+                                             norm=variable.norm,
+                                             extend=variable.extend,
+                                             orientation='vertical',
+                                             drawedges=False,
+                                             ticks=variable.ticks,
+                                             format=variable.format)
+    elif singlecolumn:
+        cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
+                                             cmap=variable.cmap,
+                                             norm=variable.norm,
+                                             extend=variable.extend,
+                                             orientation='horizontal',
+                                             drawedges=False,
+                                             ticks=variable.ticks)
+    else:
+        cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
+                                             cmap=variable.cmap,
+                                             norm=variable.norm,
+                                             extend=variable.extend,
+                                             orientation='horizontal',
+                                             drawedges=False,
+                                             ticks=variable.ticks,
+                                             format=variable.format)
+    if colorbar_label:
+        cbar.set_label(variable.colorbar_label)
 
-print("  writing image %s ..." % out_file)
-# fig.savefig(out_file, bbox_inches='tight', pad_inches=pad_inches, dpi=out_res)
-fig.savefig(out_file, bbox_inches='tight', dpi=out_res)
+print("  writing image %s ..." % out_filename)
+# fig.savefig(out_filename, bbox_inches='tight', pad_inches=pad_inches, dpi=out_res)
+fig.savefig(out_filename, bbox_inches='tight', dpi=out_res)
 
