@@ -48,9 +48,34 @@ def draw_geotiff(self):
 
 def draw_streamlines(self):
     if streamfunction_filename is not None:
-        speed = np.sqrt(us**2 + vs**2)
-        m.streamplot(sf_lon, sf_lat, us, vs, color=speed,
-                     linewidth=2, cmap=plt.cm.autumn, latlon=True)
+        from pyproj import transform, Proj
+        from griddata import griddata
+        p1 = Proj(init='epsg:3413')
+        p2 = Proj(m.proj4string)
+        dx = 1000
+        xmin = m.llcrnrx
+        xmax = m.urcrnrx
+        ymin = m.llcrnry
+        ymax = m.urcrnry
+        M = int((xmax - xmin) / dx)
+        N = int((ymax - ymin) / dx)
+        x = np.linspace(xmin, xmax, M)
+        y = np.linspace(ymin, ymax, N)
+        X, Y = np.meshgrid(x, y)
+        int_X, int_Y = transform(p1, p2, sf_X, sf_Y)
+        sf_us = griddata(int_X.flatten(), int_Y.flatten(), us.flatten(), X, Y)
+        sf_vs = griddata(int_X.flatten(), int_Y.flatten(), vs.flatten(), X, Y)
+        if cmap is None:
+            try:
+                basedir =  ppt.__file__.split(ppt.__package__)
+                cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
+                                        '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
+                cmap = colors.LinearSegmentedColormap('my_colormap',
+            cdict)
+            except:
+                cmap = plt.cm.Blues
+        m.streamplot(X, Y, sf_us, sf_vs, color=sf_us,
+                     linewidth=2, cmap=cmap)
 
 class Variable(object):
     '''
@@ -510,6 +535,9 @@ if streamfunction_filename is not None:
     # add lat/lon values
     sf_lat = np.squeeze(ppt.permute(nc.variables['lat'], dim_order))
     sf_lon = np.squeeze(ppt.permute(nc.variables['lon'], dim_order))
+    sf_x = nc.variables[xdim][:]
+    sf_y = nc.variables[ydim][:]
+    sf_X, sf_Y = np.meshgrid(sf_x, sf_y)
 
     var = 'us'
     print(("    - reading variable %s from file %s" % (var, streamfunction_filename)))
