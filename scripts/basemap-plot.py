@@ -207,6 +207,7 @@ vars_cmb = ('climatic_mass_balance')
 vars_temp = ('ice_surface_temp', 'temppabase','temppa')
 vars_melt = ("bmelt")
 vars_div = ("divHU", "divUH", "divHU_umt", "divHU_cresis", "divHU_searise")
+vars_tempice = ("tempicethk_basal")
 
 if varname in vars_speed:
 
@@ -243,6 +244,21 @@ elif varname in vars_melt:
                  'colorbar_label')
     attr_vals = ([0.001, 0.01, 0.1, 1], cmap,
                  norm, vmin, vmax, 'max', '%3.3f', 'm a$^{-1}$')
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
+elif varname in vars_tempice:
+
+    cmap = plt.cm.OrRd
+
+    vmin = 0.1
+    vmax = 100
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
+                 'colorbar_label')
+    attr_vals = ([25, 50, 75, 100], cmap,
+                 norm, vmin, vmax, 'max', '%i', 'm')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
