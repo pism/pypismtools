@@ -199,7 +199,8 @@ def set_mode(mode, aspect_ratio=0.95):
     - onecol: width=80mm, font size=8pt. Appropriate for 1-column figures
     - twocol: width=160mm, font size=8pt. Default.
               Appropriate for 2-column figures
-    - medium: width=85mm, font size=8pt.
+    - medium: width=121mm, font size=8pt.
+    - small_font: width=121mm, font size=7pt.
     - height: height=2.5in.
     - presentation: width=85mm, font size=10pt. For presentations.
     '''
@@ -219,6 +220,7 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_size = [fig_width, fig_height]
 
         params = {'backend': 'ps',
+                  'axes.linewidth': 0.5,
                   'lines.linewidth': lw,
                   'axes.labelsize': fontsize,
                   'text.fontsize': fontsize,
@@ -247,6 +249,7 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_size = [fig_width, fig_height]
 
         params = {'backend': 'ps',
+                  'axes.linewidth': 0.65,
                   'lines.linewidth': lw,
                   'axes.labelsize': fontsize,
                   'text.fontsize': fontsize,
@@ -262,6 +265,35 @@ def set_mode(mode, aspect_ratio=0.95):
 
         return lw, 0.35
 
+    def set_small_font():
+        '''
+        Define parameters for "medium" mode and return value for pad_inches
+        '''
+
+        fontsize = 5
+        markersize = 1.25
+        lw = 0.75
+        fig_width = 3.15  # inch
+        fig_height = aspect_ratio * fig_width  # inch
+        fig_size = [fig_width, fig_height]
+
+        params = {'backend': 'ps',
+                  'axes.linewidth': 0.5,
+                  'lines.linewidth': lw,
+                  'axes.labelsize': fontsize,
+                  'text.fontsize': fontsize,
+                  'xtick.labelsize': fontsize,
+                  'ytick.labelsize': fontsize,
+                  'legend.fontsize': fontsize,
+                  'lines.linestyle': linestyle,
+                  'lines.markersize': markersize,
+                  'font.size': fontsize,
+                  'figure.figsize': fig_size}
+
+        plt.rcParams.update(params)
+
+        return lw, 0.3
+
     def set_presentation():
         '''
         Define parameters for "presentation" mode and return value
@@ -276,6 +308,7 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_size = [fig_width, fig_height]
 
         params = {'backend': 'ps',
+                  'axes.linewidth': 0.75,
                   'lines.linewidth': lw,
                   'axes.labelsize': fontsize,
                   'text.fontsize': fontsize,
@@ -304,6 +337,7 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_size = [fig_width, fig_height]
 
         params = {'backend': 'ps',
+                  'axes.linewidth': 0.65,
                   'lines.linewidth': lw,
                   'axes.labelsize': fontsize,
                   'text.fontsize': fontsize,
@@ -331,6 +365,7 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_size = [fig_width, fig_height]
 
         params = {'backend': 'ps',
+                  'axes.linewidth': 0.65,
                   'lines.linewidth': lw,
                   'axes.labelsize': fontsize,
                   'text.fontsize': fontsize,
@@ -350,6 +385,8 @@ def set_mode(mode, aspect_ratio=0.95):
         return set_onecol()
     elif (mode == "medium"):
         return set_medium()
+    elif (mode == "small_font"):
+        return set_small_font()
     elif (mode == "presentation"):
         return set_presentation()
     elif (mode == "twocol"):

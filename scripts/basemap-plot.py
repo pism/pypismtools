@@ -208,6 +208,7 @@ vars_temp = ('ice_surface_temp', 'temppabase','temppa')
 vars_melt = ("bmelt")
 vars_div = ("divHU", "divUH", "divHU_umt", "divHU_cresis", "divHU_searise")
 vars_tempice = ("tempicethk_basal")
+vars_stress = ("tauc")
 
 if varname in vars_speed:
 
@@ -243,7 +244,22 @@ elif varname in vars_melt:
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
     attr_vals = ([0.001, 0.01, 0.1, 1], cmap,
-                 norm, vmin, vmax, 'max', '%3.3f', 'm a$^{-1}$')
+                 norm, vmin, vmax, 'max', None, 'm a$^{-1}$')
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
+elif varname in vars_stress:
+
+    cmap = plt.cm.jet
+
+    vmin = 2e4
+    vmax = 1.5e7
+    norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
+                 'colorbar_label')
+    attr_vals = ([0,1e3,1e4,1e5,1e6,1e7], cmap,
+                 norm, vmin, vmax, 'both', '%1.0e', 'Pa')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
