@@ -476,9 +476,9 @@ def colorList():
     colors = ['#084594',  # dark blue
               '#FF7F00',  # orange
               '#984EA3',  # violet
-              '#377EB8',  # light blue
               '#E41A1C',  # red
               '#4DAF4A',  # green
+              '#377EB8',  # light blue
               '#FB9A99',  # light red
               '#FB9A99',  # light orange
               '#CAB2D6',  # light violet
