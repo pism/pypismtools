@@ -204,8 +204,9 @@ vars_dem = ('thk', 'usurf', 'usrf')
 vars_topo = ('topg')
 vars_dh = ('dhdt', 'climatic_mass_balance_cumulative')
 vars_cmb = ('climatic_mass_balance')
-vars_temp = ('ice_surface_temp', 'temppabase','temppa')
-vars_melt = ("bmelt")
+vars_temp = ('ice_surface_temp', 'temppabase','temppa', 'temp_pa')
+vars_melt = ('bmelt')
+vars_heat = ('bheatflx')
 vars_div = ("divHU", "divUH", "divHU_umt", "divHU_cresis", "divHU_searise")
 vars_tempice = ("tempicethk_basal")
 vars_stress = ("tauc")
@@ -245,6 +246,21 @@ elif varname in vars_melt:
                  'colorbar_label')
     attr_vals = ([0.001, 0.01, 0.1, 1], cmap,
                  norm, vmin, vmax, 'max', None, 'm a$^{-1}$')
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
+elif varname in vars_heat:
+
+    cmap = plt.cm.jet
+
+    vmin = 10
+    vmax = 150
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
+                 'colorbar_label')
+    attr_vals = (None, cmap,
+                 norm, vmin, vmax, 'both', None, 'W m$^{-2}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
