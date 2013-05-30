@@ -121,7 +121,7 @@ parser.add_argument("--relative", dest="relative", action="store_true",
 parser.add_argument("--no_rasterize", dest="rasterized", action="store_false",
                   help="Don't rasterize plot. Slow.", default=True)
 parser.add_argument("--tol", dest="tol", type=float,
-                  help="tolerance", default=0.)
+                  help="tolerance", default=None)
 parser.add_argument("--level", dest="level", type=int,
                   help="level, for 3D data only. Default = 0", default=0)
 parser.add_argument("-s", "--shaded", dest="shaded", action="store_true",
@@ -236,7 +236,8 @@ if varname in vars_speed:
 
 elif varname in vars_melt:
 
-    cmap = plt.cm.OrRd
+    if cmap is None:
+        cmap = plt.cm.OrRd
 
     vmin = 0.001
     vmax = 1
@@ -251,7 +252,8 @@ elif varname in vars_melt:
 
 elif varname in vars_heat:
 
-    cmap = plt.cm.jet
+    if cmap is None:
+        cmap = plt.cm.jet
 
     vmin = 10
     vmax = 150
@@ -266,7 +268,8 @@ elif varname in vars_heat:
 
 elif varname in vars_stress:
 
-    cmap = plt.cm.jet
+    if cmap is None:
+        cmap = plt.cm.jet
 
     vmin = 2e4
     vmax = 1.5e7
@@ -281,7 +284,8 @@ elif varname in vars_stress:
 
 elif varname in vars_tempice:
 
-    cmap = plt.cm.OrRd
+    if cmap is None:
+        cmap = plt.cm.OrRd
 
     vmin = 0.1
     vmax = 100
@@ -505,6 +509,8 @@ if obs_file is not None:
             mask = (data == fill)
         except:
             mask = np.zeros_like(data)
+            mask[data <= tol] = 1
+        if tol:
             mask[data <= tol] = 1
         obs_values = np.ma.array(data, mask = mask)
     
@@ -821,6 +827,9 @@ else:
                                          drawedges=False,
                                          ticks=variable.ticks,
                                          format=variable.format)
+
+# to prevent the pdf file having white lines
+cbar.solids.set_edgecolor("face")
 if colorbar_label:
     cbar.set_label(variable.colorbar_label)
 
