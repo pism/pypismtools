@@ -223,7 +223,7 @@ if varname in vars_speed:
         except:
             cmap = plt.cm.Blues
 
-    vmin = 3.
+    vmin = 1.
     vmax = 3e3
     norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
@@ -745,7 +745,7 @@ for k in range(0, nt):
                         labels = [0, 0, 0, 1], linewidth=0.5)
         if (k==0):
             m.drawparallels(np.arange(-90., 90., parallels_spacing),
-                            labels = [1, 0, 0, 0], linewidth=0.5)
+                            labels = [1, 0, 0, 0], linewidth=.5)
         else:
             m.drawparallels(np.arange(-90., 90., parallels_spacing),
                             labels = [0, 0, 0, 0], linewidth=0.5)
@@ -835,5 +835,5 @@ if colorbar_label:
 
 print("  writing image %s ..." % out_file)
 # fig.savefig(out_file, bbox_inches='tight', pad_inches=pad_inches, dpi=out_res)
-fig.savefig(out_file, bbox_inches='tight', dpi=out_res)
+fig.savefig(out_file, bbox_inches='tight', dpi=out_res, pad_inches=pad_inches)
 

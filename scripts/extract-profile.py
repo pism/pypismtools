@@ -330,22 +330,21 @@ for i in range(len(vars_not_copied)-2, -1, -1):
 
 
 var_name = tdim
-try:
-    var_in = nc_in.variables[tdim]
-    dimensions = var_in.dimensions
-    datatype = var_in.dtype
-    if hasattr(var_in, 'bounds'):
-        time_bounds = var_in.bounds
-    var_out = nc.createVariable(
-        var_name, datatype, dimensions=dimensions, fill_value=fill_value)
-    var_out[:] = var_in[:]
-    for att in var_in.ncattrs():
-        if att == '_FillValue':
-            continue
-        else:
-            setattr(var_out, att, getattr(var_in, att))
-except:
+var_in = nc_in.variables[tdim]
+dimensions = var_in.dimensions
+datatype = var_in.dtype
+if hasattr(var_in, 'bounds'):
+    time_bounds = var_in.bounds
+else:
     time_bounds = None
+var_out = nc.createVariable(
+    var_name, datatype, dimensions=dimensions, fill_value=fill_value)
+var_out[:] = var_in[:]
+for att in var_in.ncattrs():
+    if att == '_FillValue':
+        continue
+    else:
+        setattr(var_out, att, getattr(var_in, att))
 
 if time_bounds:
     var_name = time_bounds

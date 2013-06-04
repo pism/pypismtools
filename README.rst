@@ -90,7 +90,7 @@ will be extended to 3000m. The result should like like
 
 For a nice log-scaled colormap to show speeds, try:
 
-``qgis-colorramp.py --a 3 --log --extend 30000 Full_saturation_spectrum_CCW.cpt``
+``qgis-colorramp.py --a 3 --log --extend 0 30000 Full_saturation_spectrum_CCW.cpt``
 
 .. figure:: https://github.com/pism/pypismtools/raw/master/docs/Full_saturation_spectrum_CCW.png
    :width: 200px

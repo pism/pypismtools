@@ -51,6 +51,9 @@ A script to convert a GMT (*.cpt) colormap into q QGIS-readable color ramp.
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("--log",dest="log", action="store_true",
                   help="make a log-normalized color scale", default=False)
+parser.add_argument("-j", "--joughin", dest="joughin", action="store_true",
+                  help='''
+                  Joughin-style log''', default=False)
 parser.add_argument("-a", "--a_log", dest="a", type=float,
                   help='''
                   a * logspace(vmin, vmax, N''', default=1)
@@ -66,12 +69,13 @@ parser.add_argument("--extend", dest="extend", nargs=2, type=float,
                     default=None)
 parser.add_argument("--N", dest="N", type=int,
                   help='''
-                  a * logspace(vmin, vmax, N''', default=1024)
+                  a * logspace(vmin, vmax, N''', default=1022)
 parser.add_argument("-r", "--reverse",dest="reverse", action="store_true",
                   help="reverse color scale", default=False)
 
 options = parser.parse_args()
 args = options.FILE
+joughin = options.joughin
 a = options.a
 log = options.log
 extend = options.extend
@@ -96,16 +100,31 @@ except:
 
 
 # either log scaling or linear scaling (default)
-if log:
-	data_values = a * np.logspace(vmin, vmax, N)
-	norm = colors.LogNorm(vmin=a * (10 ** vmin), vmax = a * (10 ** vmax))
+if joughin:
+        # This is a little duck-punching to get a QGIS colormap
+        # similar to Joughin (2010)
+        vmin = 0
+        vmax = 4
+        a = 3
+        data_values = np.logspace(vmin, vmax, N)[0:889]
+        data_values[-1] = 3000
+        N = len(data_values)
+	norm = colors.LogNorm(vmin=1, vmax = 3000)
 	ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
+	ticks = [1, 3, 10, 30, 100, 1000, 3000]
+	format = '%i'
+	cb_extend = 'both'
+elif log:
+	data_values = a * np.logspace(vmin, vmax, N)
+	norm = colors.LogNorm(vmin=(10 ** vmin), vmax = a * (10 ** vmax))
+	ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
+	ticks = [1, 3, 10, 30, 100, 1000, 3000]
 	format = '%i'
 	cb_extend = 'both'
 elif log_color:
 	data_values = a * np.logspace(vmin, vmax, N)
 	norm = colors.LogNorm(vmin= (10 ** vmin) - 0.01, vmax = a * (10 ** vmax))
-	ticks = [1, 10, 100, 1000, 3000]
+	ticks = [1, 3, 10, 30, 100, 1000, 3000]
 	format = '%i'
 	cb_extend = 'both'
 else:
@@ -144,22 +163,23 @@ rgba *= 255
 
 # create an output array combining data values and rgb values
 if extend:
-        qgis_array = np.zeros((N + 1, 5))
-        for k in range(1, N):
-                qgis_array[k, 0] = data_values[k]
-                qgis_array[k, 1:4] = rgba[k, 0:3]
-                qgis_array[k, 4] = 255
+        qgis_array = np.zeros((N + 2, 5))
+        for k in range(0, N):
+                qgis_array[k+1, 0] = data_values[k]
+                qgis_array[k+1, 1:4] = rgba[k, 0:3]
+                qgis_array[k+1, 4] = 255
         # repeat first color
         qgis_array[0, 0] = extend[0]
-        qgis_array[0, 1:4] = rgba[1, 0:3]
+        qgis_array[0, 1:4] = rgba[0, 0:3]
         qgis_array[0, 4] = 255
         # repeat last color
-        qgis_array[N, 0] = extend[1]
-        qgis_array[N, 1:4] = rgba[N - 1, 0:3]
-        qgis_array[N, 4] = 255
+        qgis_array[-1, 0] = extend[1]
+        qgis_array[-1, 1:4] = rgba[-1, 0:3]
+        qgis_array[-1, 4] = 255
 else:
         qgis_array = np.zeros((N, 5))
         for k in range(N):
+                print k, data_values[k]
                 qgis_array[k, 0] = data_values[k]
                 qgis_array[k, 1:4] = rgba[k, 0:3]
                 qgis_array[k, 4] = 255
