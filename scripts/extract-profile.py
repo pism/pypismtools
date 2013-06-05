@@ -19,6 +19,86 @@ try:
 except:
     import pypismtools as ppt
 
+## {{{ http://code.activestate.com/recipes/496938/ (r1)
+"""
+A module that helps to inject time profiling code
+in other modules to measures actual execution times
+of blocks of code.
+
+"""
+
+__author__ = "Anand B. Pillai"
+__version__ = "0.1"
+
+import time
+
+def timeprofile():
+    """ A factory function to return an instance of TimeProfiler """
+
+    return TimeProfiler()
+
+class TimeProfiler:
+    """ A utility class for profiling execution time for code """
+    
+    def __init__(self):
+        # Dictionary with times in seconds
+        self.timedict = {}
+
+    def mark(self, slot=''):
+        """ Mark the current time into the slot 'slot' """
+
+        # Note: 'slot' has to be string type
+        # we are not checking it here.
+        
+        self.timedict[slot] = time.time()
+
+    def unmark(self, slot=''):
+        """ Unmark the slot 'slot' """
+        
+        # Note: 'slot' has to be string type
+        # we are not checking it here.
+
+        if self.timedict.has_key(slot):
+            del self.timedict[slot]
+
+    def lastdiff(self):
+        """ Get time difference between now and the latest marked slot """
+
+        # To get the latest slot, just get the max of values
+        return time.time() - max(self.timedict.values())
+    
+    def elapsed(self, slot=''):
+        """ Get the time difference between now and a previous
+        time slot named 'slot' """
+
+        # Note: 'slot' has to be marked previously
+        return time.time() - self.timedict.get(slot)
+
+    def diff(self, slot1, slot2):
+        """ Get the time difference between two marked time
+        slots 'slot1' and 'slot2' """
+
+        return self.timedict.get(slot2) - self.timedict.get(slot1)
+
+    def maxdiff(self):
+        """ Return maximum time difference marked """
+
+        # Difference of max time with min time
+        times = self.timedict.values()
+        return max(times) - min(times)
+    
+    def timegap(self):
+        """ Return the full time-gap since we started marking """
+
+        # Return now minus min
+        times = self.timedict.values()
+        return time.time() - min(times)
+
+    def cleanup(self):
+        """ Cleanup the dictionary of all marks """
+
+        self.timedict.clear()
+
 
 def piecewise_bilinear(x, y, fl_i, fl_j, A, B, C, D):
     '''
@@ -226,6 +306,7 @@ else:
     else:
         out_filename = args[2]
 
+
 print("Opening NetCDF file %s ..." % in_filename)
 try:
     # open netCDF file in 'read' mode
@@ -310,7 +391,7 @@ for dim_name, dim in nc_in.dimensions.iteritems():
 
 # figure out which variables not need to be copied to the new file.
 # mapplane coordinate variables
-vars_not_copied = ['lat', 'lon', xdim, ydim, tdim]
+vars_not_copied = ['lat', 'lon', xdim, ydim, tdim,'litho_temp']
 for var_name in nc_in.variables:
     var = nc_in.variables[var_name]
     if hasattr(var, 'grid_mapping'):
@@ -334,9 +415,10 @@ var_in = nc_in.variables[tdim]
 dimensions = var_in.dimensions
 datatype = var_in.dtype
 if hasattr(var_in, 'bounds'):
-    time_bounds = var_in.bounds
+    time_bounds_varname = var_in.bounds
+    has_time_bounds = True
 else:
-    time_bounds = None
+    has_time_bounds = False
 var_out = nc.createVariable(
     var_name, datatype, dimensions=dimensions, fill_value=fill_value)
 var_out[:] = var_in[:]
@@ -346,13 +428,17 @@ for att in var_in.ncattrs():
     else:
         setattr(var_out, att, getattr(var_in, att))
 
-if time_bounds:
-    var_name = time_bounds
-    var_in = nc_in.variables[var_name]
+if has_time_bounds:
+    try:
+        var_in = nc_in.variables[var_name]
+        has_time_bounds_var = True
+    except:
+        has_time_bounds_var = False
+        
+if has_time_bounds_var:
+    var_name = time_bounds_varname
     dimensions = var_in.dimensions
     datatype = var_in.dtype
-    if hasattr(var, 'bounds'):
-        time_bounds = var_in.bounds
     var_out = nc.createVariable(
         var_name, datatype, dimensions=dimensions, fill_value=fill_value)
     var_out[:] = var_in[:]
@@ -378,8 +464,13 @@ var_out[:] = fl_lat
 
 print("Copying variables")
 for var_name in nc_in.variables:
+    # Initialize profiler
+    profiler = timeprofile()
     if var_name not in vars_not_copied:
+        print("Reading variable %s" % var_name)
+        profiler.mark('read')
         var_in = nc_in.variables[var_name]
+        print("elapsed time: %s s" % profiler.elapsed('read'))
         if var_name == 'csurf':
             csurf = var_in[:]
         datatype = var_in.dtype
@@ -390,13 +481,21 @@ for var_name in nc_in.variables:
             fill_value = None
         if ((xdim in in_dimensions) and (ydim in in_dimensions) and
             (zdim in in_dimensions) and (tdim in in_dimensions)):
-            in_values = ppt.permute(var_in, dim_order)
-            dimensions = (tdim, fldim, zdim)
+            print("Permuting variable %s" % var_name)
+            profiler.mark('permute')
+            ## in_values = ppt.permute(var_in, dim_order)
+            print("elapsed time: %s s" % profiler.elapsed('permute'))
+            dimensions = var_in.dimensions
             input_order = (fldim, zdim, tdim)
             # Create variable
+            print("Creating variable %s" % var_name)
+            profiler.mark('create')
             var_out = nc.createVariable(
                 var_name, datatype, dimensions=dimensions,
                 fill_value=fill_value)
+            print("elapsed time: %s s" % profiler.elapsed('create'))
+            print("Writing and permuting variable %s" % var_name)
+            profiler.mark('wpermute')
             if bilinear:
                 A_values = dim_permute(
                     in_values[A_i,A_j,::],input_order=input_order,
@@ -413,18 +512,29 @@ for var_name in nc_in.variables:
                 var_out[:] = piecewise_bilinear(
                     x, y, fl_i, fl_j, A_values, B_values, C_values, D_values)
             else:
-                fl_values = dim_permute(
-                    in_values[fl_i,fl_j,::],input_order=input_order,
-                    output_order=dimensions)
+                ## fl_values = dim_permute(
+                ##     in_values[fl_i,fl_j,::],input_order=input_order,
+                ##     output_order=dimensions)
+                fl_values = np.transpose(
+                    in_values[fl_i,fl_j,::],[2,0,1])
                 var_out[:] = fl_values
+            print("elapsed time: %s s" % profiler.elapsed('wpermute'))
         elif ((xdim in in_dimensions) and (ydim in in_dimensions) and
               (tdim in in_dimensions)):
+            print("Permuting variable %s" % var_name)
+            profiler.mark('permute')
             in_values = ppt.permute(var_in, dim_order)
+            print("elapsed time: %s s" % profiler.elapsed('permute'))
             dimensions = (tdim, fldim)
             input_order = (fldim, tdim)
             # Create variable
+            print("Creating variable %s" % var_name)
+            profiler.mark('create')
             var_out = nc.createVariable(
                 var_name, datatype, dimensions=dimensions, fill_value=fill_value)
+            print("elapsed time: %s s" % profiler.elapsed('create'))
+            print("Writing and permuting variable %s" % var_name)
+            profiler.mark('wpermute')
             if bilinear:
                 A_values = dim_permute(
                     in_values[A_i,A_j,::], input_order=input_order,
@@ -446,14 +556,23 @@ for var_name in nc_in.variables:
                     in_values[fl_i,fl_j,::], input_order=input_order,
                     output_order=dimensions)
                 var_out[:] = fl_values
+            print("elapsed time: %s s" % profiler.elapsed('wpermute'))
         elif (xdim in in_dimensions and ydim in in_dimensions):
-            in_values = np.squeeze(ppt.permute(var_in, dim_order))
+            print("Permuting variable %s" % var_name)
+            profiler.mark('permute')
+            in_values = ppt.permute(var_in, dim_order)
+            print("elapsed time: %s s" % profiler.elapsed('permute'))
             dimensions = (fldim)
             input_order = (fldim)
             # Create variable
+            print("Creating variable %s" % var_name)
+            profiler.mark('create')
             var_out = nc.createVariable(
                 var_name, datatype, dimensions=dimensions,
                 fill_value=fill_value)
+            print("elapsed time: %s s" % profiler.elapsed('create'))
+            print("Writing and permuting variable %s" % var_name)
+            profiler.mark('wpermute')
             if bilinear:
                 A_values = in_values[A_i,A_j]
                 B_values = in_values[B_i,B_j]
@@ -464,6 +583,7 @@ for var_name in nc_in.variables:
                     C_values, D_values)
             else:
                 var_out[:] = in_values[fl_i,fl_j]
+            print("elapsed time: %s s" % profiler.elapsed('wpermute'))
         else:
             dimensions = in_dimensions
             # Create variable
