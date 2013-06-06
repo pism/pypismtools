@@ -19,6 +19,7 @@ try:
 except:
     import pypismtools as ppt
 
+
 ## {{{ http://code.activestate.com/recipes/496938/ (r1)
 """
 A module that helps to inject time profiling code
@@ -100,7 +101,53 @@ class TimeProfiler:
         self.timedict.clear()
 
 
-def piecewise_bilinear(x, y, fl_i, fl_j, A, B, C, D):
+def get_dims_from_variable(var):
+    '''
+    Gets dimensions from netcdf variable
+
+    Parameters:
+    -----------
+    var: netCDF variable
+
+    Returns:
+    --------
+    xdim, ydim, zdim, tdim: dimensions
+    '''
+        
+    ## a list of possible x-dimensions names
+    xdims = ['x','x1']
+    ## a list of possible y-dimensions names
+    ydims = ['y','y1']
+    ## a list of possible z-dimensions names
+    zdims= ['z', 'zb']
+    ## a list of possible time-dimensions names
+    tdims= ['t', 'time']
+
+    xdim = None
+    ydim = None
+    zdim = None
+    tdim = None
+    
+    ## assign x dimension
+    for dim in xdims:
+        if dim in var.dimensions:
+            xdim = dim
+    ## assign y dimension
+    for dim in ydims:
+        if dim in var.dimensions:
+            ydim = dim
+    ## assign y dimension
+    for dim in zdims:
+        if dim in var.dimensions:
+            zdim = dim
+    ## assign y dimension
+    for dim in tdims:
+        if dim in list(nc.dimensions.keys()):
+            tdim = dim
+    return xdim, ydim, zdim, tdim
+
+
+def piecewise_bilinear(x, y, profile_x, profile_y, profile_i, profile_j, A, B, C, D):
     '''
     Returns a piece-wise bilinear interpolation.
 
@@ -116,17 +163,17 @@ def piecewise_bilinear(x, y, fl_i, fl_j, A, B, C, D):
     Parameters
     ----------
     x, y: 1d coordinate arrays
-    fl_i, fl_j: 1d indices arrays
+    profile_i, profile_j: 1d indices arrays
     A, B, C, D: array_like containing corner values
 
     Returns
     -------
-    pw_linear: array with shape like fl_i containing interpolated values
+    pw_linear: array with shape like profile_i containing interpolated values
     
     '''
 
-    delta_x = fl_x - x[fl_i]
-    delta_y = fl_y - y[fl_j]
+    delta_x = profile_x - x[profile_i]
+    delta_y = profile_y - y[profile_j]
 
     alpha = 1./dx * delta_x
     beta  = 1./dy * delta_y
@@ -212,19 +259,19 @@ def create_profile_axis(filename, projection, flip):
     '''
 
     try:
-        fl_lat, fl_lon = read_shapefile(filename)
+        profile_lat, profile_lon = read_shapefile(filename)
     except:
-        fl_lat, fl_lon = read_textfile(filename)
+        profile_lat, profile_lon = read_textfile(filename)
     if flip:
-        fl_lat = fl_lat[::-1]
-        fl_lon = fl_lon[::-1]
-    fl_x, fl_y = projection(fl_lon, fl_lat)
+        profile_lat = profile_lat[::-1]
+        profile_lon = profile_lon[::-1]
+    profile_x, profile_y = projection(profile_lon, profile_lat)
 
-    x = np.zeros_like(fl_x)
-    x[1::] = np.sqrt(np.diff(fl_x)**2 + np.diff(fl_y)**2)
+    x = np.zeros_like(profile_x)
+    x[1::] = np.sqrt(np.diff(profile_x)**2 + np.diff(profile_y)**2)
     x = x.cumsum()
 
-    return x, fl_x, fl_y, fl_lon, fl_lat
+    return x, profile_x, profile_y, profile_lon, profile_lat
 
 
 def dim_permute(
@@ -319,44 +366,43 @@ except:
 
 # get the dimensions
 xdim, ydim, zdim, tdim = ppt.get_dims(nc_in)
-x = nc_in.variables[xdim][:]
-y = nc_in.variables[ydim][:]
-x0 = x[0]
-y0 = y[0]
-dx = x[1] - x[0]
-dy = y[1] - y[0]
-# set up dimension ordering
-dim_order = (xdim, ydim, zdim, tdim)
+x_coord = nc_in.variables[xdim][:]
+y_coord = nc_in.variables[ydim][:]
+x0 = x_coord[0]
+y0 = y_coord[0]
+dx = x_coord[1] - x_coord[0]
+dy = y_coord[1] - y_coord[0]
+# read projection information
 projection = ppt.get_projection_from_file(nc_in)
 
 
 # Read in profile data
-print("Reading profile from %s" % profile_filename)
-fl, fl_x, fl_y, fl_lon, fl_lat = create_profile_axis(
+print("  reading profile from %s" % profile_filename)
+profile, profile_x, profile_y, profile_lon, profile_lat = create_profile_axis(
     profile_filename, projection, flip)
 
 # indices (i,j)
-fl_i = (np.floor((fl_x-x0) / dx)).astype('int') + 1
-fl_j = (np.floor((fl_y-y0) / dy)).astype('int') + 1
+profile_i = (np.floor((profile_x-x0) / dx)).astype('int') + 1
+profile_j = (np.floor((profile_y-y0) / dy)).astype('int') + 1
 
 # Filter out double entries                                                 
-duplicates_idx = np.zeros(len(fl_i))
-for n, x_idx in enumerate(fl_i):
-    if (n+1) < len(fl_i):
-        if x_idx == fl_i[n+1] and fl_j[n] == fl_j[n+1]:
-            duplicates_idx[n] = fl_j[n]
+duplicates_idx = np.zeros(len(profile_i))
+for n, x_idx in enumerate(profile_i):
+    if (n+1) < len(profile_i):
+        if x_idx == profile_i[n+1] and profile_j[n] == profile_j[n+1]:
+            duplicates_idx[n] = profile_j[n]
 
-fl_i = fl_i[duplicates_idx == 0]
-fl_j = fl_j[duplicates_idx == 0]
-fl_x = fl_x[duplicates_idx == 0]
-fl_y = fl_y[duplicates_idx == 0]
-fl_lat = fl_lat[duplicates_idx == 0]
-fl_lon = fl_lon[duplicates_idx == 0]
+profile_i = profile_i[duplicates_idx == 0]
+profile_j = profile_j[duplicates_idx == 0]
+profile_x = profile_x[duplicates_idx == 0]
+profile_y = profile_y[duplicates_idx == 0]
+profile_lat = profile_lat[duplicates_idx == 0]
+profile_lon = profile_lon[duplicates_idx == 0]
 
-A_i, A_j = fl_i, fl_j
-B_i, B_j = fl_i, fl_j + 1
-C_i, C_j = fl_i + 1, fl_j + 1
-D_i, D_j = fl_i + 1, fl_j
+A_i, A_j = profile_i, profile_j
+B_i, B_j = profile_i, profile_j + 1
+C_i, C_j = profile_i + 1, profile_j + 1
+D_i, D_j = profile_i + 1, profile_j
 
 mapplane_dim_names = (xdim, ydim)
 
@@ -370,12 +416,12 @@ nc = NC(out_filename, 'w', format='NETCDF4')
 for attname in nc_in.ncattrs():
     setattr(nc, attname,getattr(nc_in, attname))
 # create dimensions
-fldim = "profile"    
-nc.createDimension(fldim, len(fl_x))
-var_out = nc.createVariable(fldim, 'f', dimensions=(fldim))
-fldim_values = np.zeros_like(fl_x)
-fldim_values[1::] = np.cumsum(np.sqrt(np.diff(fl_x)**2 + np.diff(fl_y)**2))
-var_out[:] = fldim_values
+profiledim = "profile"    
+nc.createDimension(profiledim, len(profile_x))
+var_out = nc.createVariable(profiledim, 'f', dimensions=(profiledim))
+profiledim_values = np.zeros_like(profile_x)
+profiledim_values[1::] = np.cumsum(np.sqrt(np.diff(profile_x)**2 + np.diff(profile_y)**2))
+var_out[:] = profiledim_values
 var_out.long_name = 'distance along profile'
 var_out.units = 'm'
 
@@ -391,7 +437,7 @@ for dim_name, dim in nc_in.dimensions.iteritems():
 
 # figure out which variables not need to be copied to the new file.
 # mapplane coordinate variables
-vars_not_copied = ['lat', 'lon', xdim, ydim, tdim,'litho_temp']
+vars_not_copied = ['lat', 'lon', xdim, ydim, tdim]
 for var_name in nc_in.variables:
     var = nc_in.variables[var_name]
     if hasattr(var, 'grid_mapping'):
@@ -428,13 +474,14 @@ for att in var_in.ncattrs():
     else:
         setattr(var_out, att, getattr(var_in, att))
 
+has_time_bounds_var = False
 if has_time_bounds:
     try:
         var_in = nc_in.variables[var_name]
         has_time_bounds_var = True
     except:
         has_time_bounds_var = False
-        
+
 if has_time_bounds_var:
     var_name = time_bounds_varname
     dimensions = var_in.dimensions
@@ -449,151 +496,107 @@ if has_time_bounds_var:
             setattr(var_out, att, getattr(var_in, att))
 
 var = 'lon'
-var_out = nc.createVariable(var, 'f', dimensions=(fldim))
+var_out = nc.createVariable(var, 'f', dimensions=(profiledim))
 var_out.units = "degrees_east";
 var_out.valid_range = -180., 180.
 var_out.standard_name = "longitude"
-var_out[:] = fl_lon
+var_out[:] = profile_lon
 
 var = 'lat'
-var_out = nc.createVariable(var, 'f', dimensions=(fldim))
+var_out = nc.createVariable(var, 'f', dimensions=(profiledim))
 var_out.units = "degrees_north";
 var_out.valid_range = -90., 90.
 var_out.standard_name = "latitude"
-var_out[:] = fl_lat
+var_out[:] = profile_lat
 
 print("Copying variables")
 for var_name in nc_in.variables:
-    # Initialize profiler
     profiler = timeprofile()
     if var_name not in vars_not_copied:
         print("Reading variable %s" % var_name)
-        profiler.mark('read')
         var_in = nc_in.variables[var_name]
-        print("elapsed time: %s s" % profiler.elapsed('read'))
-        if var_name == 'csurf':
-            csurf = var_in[:]
+        xdim, ydim, zdim, tdim = get_dims_from_variable(var_in)
+        in_dims = var_in.dimensions
         datatype = var_in.dtype
-        in_dimensions = var_in.dimensions
         if hasattr(var_in, '_FillValue'):
             fill_value = var_in._FillValue
         else:
             fill_value = None
-        if ((xdim in in_dimensions) and (ydim in in_dimensions) and
-            (zdim in in_dimensions) and (tdim in in_dimensions)):
-            print("Permuting variable %s" % var_name)
-            profiler.mark('permute')
-            ## in_values = ppt.permute(var_in, dim_order)
-            print("elapsed time: %s s" % profiler.elapsed('permute'))
-            dimensions = var_in.dimensions
-            input_order = (fldim, zdim, tdim)
-            # Create variable
-            print("Creating variable %s" % var_name)
-            profiler.mark('create')
-            var_out = nc.createVariable(
-                var_name, datatype, dimensions=dimensions,
-                fill_value=fill_value)
-            print("elapsed time: %s s" % profiler.elapsed('create'))
-            print("Writing and permuting variable %s" % var_name)
-            profiler.mark('wpermute')
-            if bilinear:
-                A_values = dim_permute(
-                    in_values[A_i,A_j,::],input_order=input_order,
-                    output_order=dimensions)
-                B_values = dim_permute(
-                    in_values[B_i,B_j,::],input_order=input_order,
-                    output_order=dimensions)
-                C_values = dim_permute(
-                    in_values[C_i,C_j,::],input_order=input_order,
-                    output_order=dimensions)
-                D_values = dim_permute(
-                    in_values[D_i,D_j,::],input_order=input_order,
-                    output_order=dimensions)
-                var_out[:] = piecewise_bilinear(
-                    x, y, fl_i, fl_j, A_values, B_values, C_values, D_values)
+        if in_dims:
+            if len(in_dims) > 1:
+                profile_dims = [x for x in in_dims if x not in mapplane_dim_names]
+                idx = []
+                for dim in mapplane_dim_names:
+                    idx.append(in_dims.index(dim))
+                loc = np.min(idx)
+                profile_dims.insert(loc, profiledim)
+                out_dims = (tdim, zdim, profiledim)
+                out_dim_order_all = (tdim, zdim, profiledim)
+                out_dim_order = [x for x in out_dim_order_all if x]
+                out_dim_ordered = [x for x in in_dims if x not in mapplane_dim_names]
+                out_dim_ordered.append(profiledim)
+                out_dim_order = filter(lambda(x): x in out_dim_order, out_dim_ordered)
+
+                if bilinear:
+                    profiler.mark('read')
+                    dim_dict = dict([(tdim, ':'), (xdim, 'A_i'), (ydim, 'A_j'), (zdim, ':')])
+                    access_str = ','.join([dim_dict[x] for x in in_dims])
+                    A_values = eval('var_in[%s]' % access_str)
+                    A_profile_values = dim_permute(A_values,
+                                                 input_order=profile_dims, output_order=out_dim_order)
+                    dim_dict = dict([(tdim, ':'), (xdim, 'B_i'), (ydim, 'B_j'), (zdim, ':')])
+                    access_str = ','.join([dim_dict[x] for x in in_dims])
+                    B_values = eval('var_in[%s]' % access_str)
+                    B_profile_values = dim_permute(B_values,
+                                                 input_order=profile_dims, output_order=out_dim_order)
+                    dim_dict = dict([(tdim, ':'), (xdim, 'C_i'), (ydim, 'C_j'), (zdim, ':')])
+                    access_str = ','.join([dim_dict[x] for x in in_dims])
+                    C_values = eval('var_in[%s]' % access_str)
+                    C_profile_values = dim_permute(C_values,
+                                                 input_order=profile_dims, output_order=out_dim_order)
+                    dim_dict = dict([(tdim, ':'), (xdim, 'D_i'), (ydim, 'D_j'), (zdim, ':')])
+                    access_str = ','.join([dim_dict[x] for x in in_dims])
+                    D_values = eval('var_in[%s]' % access_str)
+                    D_profile_values = dim_permute(D_values,
+                                                 input_order=profile_dims, output_order=out_dim_order)
+                    p_read = profiler.elapsed('read')
+                    print("    - read in %3.4f s" % p_read)
+                    profiler.mark('interp')
+                    profile_values = piecewise_bilinear(x_coord, y_coord,
+                                                        profile_x, profile_y,
+                                                        profile_i, profile_j,
+                                                        A_profile_values,
+                                                        B_profile_values,
+                                                        C_profile_values,
+                                                        D_profile_values)
+                    p_interp = profiler.elapsed('interp')
+                    print("    - interpolated in %3.4f s" % p_interp)
+                else:
+                    dim_dict = dict([(tdim, ':'), (xdim, 'profile_i'), (ydim, 'profile_j'), (zdim, ':')])
+                    access_str = ','.join([dim_dict[x] for x in in_dims])
+                    profiler.mark('read')
+                    in_values = eval('var_in[%s]' % access_str)
+                    p_read = profiler.elapsed('read')
+                    print("    - read in %3.4f s" % p_read)
+                    profiler.mark('permute')
+                    profile_values = dim_permute(in_values,
+                                                 input_order=profile_dims, output_order=out_dim_order)
+                    p_permute = profiler.elapsed('permute')
+                    print("    - permuted in %3.4f s" % p_permute)
+
+                var_out = nc.createVariable(
+                    var_name, datatype, dimensions=out_dim_order,
+                    fill_value=fill_value)
+                profiler.mark('write')
+                var_out[:] = profile_values
+                p_write = profiler.elapsed('write')
+                print("    - written in %3.4f s" % p_write)
             else:
-                ## fl_values = dim_permute(
-                ##     in_values[fl_i,fl_j,::],input_order=input_order,
-                ##     output_order=dimensions)
-                fl_values = np.transpose(
-                    in_values[fl_i,fl_j,::],[2,0,1])
-                var_out[:] = fl_values
-            print("elapsed time: %s s" % profiler.elapsed('wpermute'))
-        elif ((xdim in in_dimensions) and (ydim in in_dimensions) and
-              (tdim in in_dimensions)):
-            print("Permuting variable %s" % var_name)
-            profiler.mark('permute')
-            in_values = ppt.permute(var_in, dim_order)
-            print("elapsed time: %s s" % profiler.elapsed('permute'))
-            dimensions = (tdim, fldim)
-            input_order = (fldim, tdim)
-            # Create variable
-            print("Creating variable %s" % var_name)
-            profiler.mark('create')
-            var_out = nc.createVariable(
-                var_name, datatype, dimensions=dimensions, fill_value=fill_value)
-            print("elapsed time: %s s" % profiler.elapsed('create'))
-            print("Writing and permuting variable %s" % var_name)
-            profiler.mark('wpermute')
-            if bilinear:
-                A_values = dim_permute(
-                    in_values[A_i,A_j,::], input_order=input_order,
-                    output_order=dimensions)
-                B_values = dim_permute(
-                    in_values[B_i,B_j,::],input_order=input_order,
-                    output_order=dimensions)
-                C_values = dim_permute(
-                    in_values[C_i,C_j,::],input_order=input_order,
-                    output_order=dimensions)
-                D_values = dim_permute(
-                    in_values[D_i,D_j,::],input_order=input_order,
-                    output_order=dimensions)
-                var_out[:] = piecewise_bilinear(
-                    x, y, fl_i, fl_j, A_values, B_values, C_values,
-                    D_values)
-            else:
-                fl_values = dim_permute(
-                    in_values[fl_i,fl_j,::], input_order=input_order,
-                    output_order=dimensions)
-                var_out[:] = fl_values
-            print("elapsed time: %s s" % profiler.elapsed('wpermute'))
-        elif (xdim in in_dimensions and ydim in in_dimensions):
-            print("Permuting variable %s" % var_name)
-            profiler.mark('permute')
-            in_values = ppt.permute(var_in, dim_order)
-            print("elapsed time: %s s" % profiler.elapsed('permute'))
-            dimensions = (fldim)
-            input_order = (fldim)
-            # Create variable
-            print("Creating variable %s" % var_name)
-            profiler.mark('create')
-            var_out = nc.createVariable(
-                var_name, datatype, dimensions=dimensions,
-                fill_value=fill_value)
-            print("elapsed time: %s s" % profiler.elapsed('create'))
-            print("Writing and permuting variable %s" % var_name)
-            profiler.mark('wpermute')
-            if bilinear:
-                A_values = in_values[A_i,A_j]
-                B_values = in_values[B_i,B_j]
-                C_values = in_values[C_i,C_j]
-                D_values = in_values[D_i,D_j]
-                var_out[:] = piecewise_bilinear(
-                    x, y, fl_i, fl_j, A_values, B_values,
-                    C_values, D_values)
-            else:
-                var_out[:] = in_values[fl_i,fl_j]
-            print("elapsed time: %s s" % profiler.elapsed('wpermute'))
-        else:
-            dimensions = in_dimensions
-            # Create variable
-            var_out = nc.createVariable(
-                var_name, datatype, dimensions=dimensions,
-                fill_value=fill_value)
-            dimensions = in_dimensions
-            if (dimensions > 0):
-                in_values = nc.variables[var_name][:]
-                var_out[:] = in_values
+                var_out = nc.createVariable(
+                    var_name, datatype, dimensions=var_in.dimensions,
+                    fill_value=fill_value)
+                var_out[:] = var_in[:]
+
         for att in var_in.ncattrs():
             if att == '_FillValue':
                 continue
@@ -613,4 +616,4 @@ else:
 
 nc_in.close()
 nc.close()
-print("Done")
+print("Extracted profile to file %s" % out_filename)
