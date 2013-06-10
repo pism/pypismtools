@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-# Copyright (C) 2012 Andy Aschwanden
+# Copyright (C) 2012-2013 Andy Aschwanden
 #
 
-import time
 from argparse import ArgumentParser
 import numpy as np
 from scipy.interpolate import RectBivariateSpline
 from pyproj import Proj
-from sys import stderr
 
 try:
     from netCDF4 import Dataset as NC
@@ -308,12 +306,10 @@ def dim_permute(
 
         
 # Set up the option parser
-
 description = '''A script to extract data along a given profile using
 piece-wise constant or bilinear interpolation.
-The profile must be given in an ascii file with col(0)=lat, col(1)=lon.
-The file may have a header in row(0).'''
-
+The profile must be given as a ESRI shape file or an ascii file with
+col(0)=lat, col(1)=lon. The file may have a header in row(0).'''
 parser = ArgumentParser()
 parser.description = description
 parser.add_argument("FILE", nargs='*')
