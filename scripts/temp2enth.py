@@ -16,7 +16,7 @@ import PISM
     
 # Set up the option parser
 parser = ArgumentParser()
-parser.description = "A script to plot a variable in a netCDF file over a GeoTiff. Uses GDAL python bindings, Proj4, and Basemap. Script is fine-tuned for whole Greenland plots, but can be adapted for other needs."
+parser.description = "A script to demonstrate how to convert temperature to enthalpy."
 parser.add_argument("FILE", nargs='*')
 
 options = parser.parse_args()
