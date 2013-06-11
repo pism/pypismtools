@@ -35,7 +35,7 @@ try:
     temp = ppt.unit_converter(np.squeeze(nc.variables['temp'][:]), inunits, outunits)
 except:
     temp = np.squeeze(nc.variables['temp'][:])
-    print('''WARNING: I don't know the units of variable temp, and assume it is Kelvin''')
+    print("WARNING: I don't know the units of variable temp, and assume it is Kelvin")
 
 enthalpy_true = np.squeeze(nc.variables['enthalpy'][:])
 usurf = np.squeeze(nc.variables['usurf'][:])
