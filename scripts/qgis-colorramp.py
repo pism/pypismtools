@@ -106,6 +106,7 @@ if joughin:
         vmin = 0
         vmax = 4
         a = 3
+	extend = [0, 3e4]
         data_values = np.logspace(vmin, vmax, N)[0:889]
         data_values[-1] = 3000
         N = len(data_values)
@@ -149,6 +150,8 @@ cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
 				extend=cb_extend,
                                 spacing='proportional',
                                 orientation='horizontal')
+if joughin:
+	cb1.set_label("m a$^{-1}$")
 
 # save high-res colorbar as png
 out_file = '.'.join([prefix, 'png'])
