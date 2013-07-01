@@ -87,104 +87,104 @@ reverse = options.reverse
 log_color = False
 
 # read in CPT colormap
-cmap_file = args[0]
+for k in range(len(args)):
+    cmap_file = args[k]
 
-try:
-        cdict = plt.cm.datad[cmap_file]
-        prefix = cmap_file
-except:
-        # import and convert colormap
-        cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
-        prefix = '.'.join(cmap_file.split('.')[0:-1])
-        suffix = cmap_file.split('.')[-1]
-
-
-# either log scaling or linear scaling (default)
-if joughin:
-        # This is a little duck-punching to get a QGIS colormap
-        # similar to Joughin (2010)
-        vmin = 0
-        vmax = 4
-        a = 3
-        data_values = np.logspace(vmin, vmax, N)[0:889]
-        data_values[-1] = 3000
-        N = len(data_values)
-	norm = colors.LogNorm(vmin=1, vmax = 3000)
-	ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
-	ticks = [1, 3, 10, 30, 100, 1000, 3000]
-	format = '%i'
-	cb_extend = 'both'
-elif log:
-	data_values = a * np.logspace(vmin, vmax, N)
-	norm = colors.LogNorm(vmin=(10 ** vmin), vmax = a * (10 ** vmax))
-	ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
-	ticks = [1, 3, 10, 30, 100, 1000, 3000]
-	format = '%i'
-	cb_extend = 'both'
-elif log_color:
-	data_values = a * np.logspace(vmin, vmax, N)
-	norm = colors.LogNorm(vmin= (10 ** vmin) - 0.01, vmax = a * (10 ** vmax))
-	ticks = [1, 3, 10, 30, 100, 1000, 3000]
-	format = '%i'
-	cb_extend = 'both'
-else:
-	data_values = a * np.linspace(vmin, vmax, N)
-	norm = colors.Normalize(vmin=vmin, vmax=vmax)
-	ticks = None
-	format = None
-	cb_extend = 'both'
-
-cmap = colors.LinearSegmentedColormap('my_colormap', cdict, N)
-
-# you could apply a function to the colormap, e.g. to desaturate the colormap:
-# cmap = cmap_map(lambda x: x/2+0.5, cmap)
-
-# create the colorbar
-fig = plt.figure()
-ax1 = fig.add_axes([0.05, 0.65, 0.9, 0.05])
-cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
-                                norm = norm,
-				ticks=ticks,
-				format=format,
-				extend=cb_extend,
-                                spacing='proportional',
-                                orientation='horizontal')
-
-# save high-res colorbar as png
-out_file = '.'.join([prefix, 'png'])
-print("  writing colorbar %s ..." % out_file)
-fig.savefig(out_file, bbox_inches='tight', dpi=1200)
+    try:
+            cdict = plt.cm.datad[cmap_file]
+            prefix = cmap_file
+    except:
+            # import and convert colormap
+            cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
+            prefix = '.'.join(cmap_file.split('.')[0:-1])
+            suffix = cmap_file.split('.')[-1]
 
 
-# convert to RGBA array
-rgba = cb1.to_rgba(data_values, alpha=None)
-# QGIS wants 0..255
-rgba *= 255
+    # either log scaling or linear scaling (default)
+    if joughin:
+            # This is a little duck-punching to get a QGIS colormap
+            # similar to Joughin (2010)
+            vmin = 0
+            vmax = 4
+            a = 3
+            data_values = np.logspace(vmin, vmax, N)[0:889]
+            data_values[-1] = 3000
+            N = len(data_values)
+            norm = colors.LogNorm(vmin=1, vmax = 3000)
+            ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
+            ticks = [1, 3, 10, 30, 100, 1000, 3000]
+            format = '%i'
+            cb_extend = 'both'
+    elif log:
+        data_values = a * np.logspace(vmin, vmax, N)
+        norm = colors.LogNorm(vmin=(10 ** vmin), vmax = a * (10 ** vmax))
+        ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
+        ticks = [1, 3, 10, 30, 100, 1000, 3000]
+        format = '%i'
+        cb_extend = 'both'
+    elif log_color:
+        data_values = a * np.logspace(vmin, vmax, N)
+        norm = colors.LogNorm(vmin= (10 ** vmin) - 0.01, vmax = a * (10 ** vmax))
+        ticks = [1, 3, 10, 30, 100, 1000, 3000]
+        format = '%i'
+        cb_extend = 'both'
+    else:
+        data_values = a * np.linspace(vmin, vmax, N)
+        norm = colors.Normalize(vmin=vmin, vmax=vmax)
+        ticks = None
+        format = None
+        cb_extend = 'both'
 
-# create an output array combining data values and rgb values
-if extend:
-        qgis_array = np.zeros((N + 2, 5))
-        for k in range(0, N):
-                qgis_array[k+1, 0] = data_values[k]
-                qgis_array[k+1, 1:4] = rgba[k, 0:3]
-                qgis_array[k+1, 4] = 255
-        # repeat first color
-        qgis_array[0, 0] = extend[0]
-        qgis_array[0, 1:4] = rgba[0, 0:3]
-        qgis_array[0, 4] = 255
-        # repeat last color
-        qgis_array[-1, 0] = extend[1]
-        qgis_array[-1, 1:4] = rgba[-1, 0:3]
-        qgis_array[-1, 4] = 255
-else:
-        qgis_array = np.zeros((N, 5))
-        for k in range(N):
-                print k, data_values[k]
-                qgis_array[k, 0] = data_values[k]
-                qgis_array[k, 1:4] = rgba[k, 0:3]
-                qgis_array[k, 4] = 255
+    cmap = colors.LinearSegmentedColormap('my_colormap', cdict, N)
 
-# save as ascii file
-out_file = '.'.join([prefix, 'txt'])
-print("  writing colorramp %s ..." % out_file)
-np.savetxt(out_file, qgis_array, delimiter=',', fmt=['%10.5f', '%i', '%i', '%i', '%i,'])
+    # you could apply a function to the colormap, e.g. to desaturate the colormap:
+    # cmap = cmap_map(lambda x: x/2+0.5, cmap)
+
+    # create the colorbar
+    fig = plt.figure()
+    ax1 = fig.add_axes([0.05, 0.65, 0.9, 0.05])
+    cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
+                                    norm = norm,
+                    ticks=ticks,
+                    format=format,
+                    extend=cb_extend,
+                                    spacing='proportional',
+                                    orientation='horizontal')
+
+    # save high-res colorbar as png
+    out_file = '.'.join([prefix, 'png'])
+    print("  writing colorbar %s ..." % out_file)
+    fig.savefig(out_file, bbox_inches='tight', dpi=1200)
+
+
+    # convert to RGBA array
+    rgba = cb1.to_rgba(data_values, alpha=None)
+    # QGIS wants 0..255
+    rgba *= 255
+
+    # create an output array combining data values and rgb values
+    if extend:
+            qgis_array = np.zeros((N + 2, 5))
+            for k in range(0, N):
+                    qgis_array[k+1, 0] = data_values[k]
+                    qgis_array[k+1, 1:4] = rgba[k, 0:3]
+                    qgis_array[k+1, 4] = 255
+            # repeat first color
+            qgis_array[0, 0] = extend[0]
+            qgis_array[0, 1:4] = rgba[0, 0:3]
+            qgis_array[0, 4] = 255
+            # repeat last color
+            qgis_array[-1, 0] = extend[1]
+            qgis_array[-1, 1:4] = rgba[-1, 0:3]
+            qgis_array[-1, 4] = 255
+    else:
+            qgis_array = np.zeros((N, 5))
+            for k in range(N):
+                    qgis_array[k, 0] = data_values[k]
+                    qgis_array[k, 1:4] = rgba[k, 0:3]
+                    qgis_array[k, 4] = 255
+
+    # save as ascii file
+    out_file = '.'.join([prefix, 'txt'])
+    print("  writing colorramp %s ..." % out_file)
+    np.savetxt(out_file, qgis_array, delimiter=',', fmt=['%10.5f', '%i', '%i', '%i', '%i,'])
