@@ -16,7 +16,7 @@ import PISM
     
 # Set up the option parser
 parser = ArgumentParser()
-parser.description = "A script to plot a variable in a netCDF file over a GeoTiff. Uses GDAL python bindings, Proj4, and Basemap. Script is fine-tuned for whole Greenland plots, but can be adapted for other needs."
+parser.description = "A script to demonstrate how to convert temperature to enthalpy."
 parser.add_argument("FILE", nargs='*')
 
 options = parser.parse_args()
@@ -35,7 +35,7 @@ try:
     temp = ppt.unit_converter(np.squeeze(nc.variables['temp'][:]), inunits, outunits)
 except:
     temp = np.squeeze(nc.variables['temp'][:])
-    print('''WARNING: I don't know the units of variable temp, and assume it is Kelvin''')
+    print("WARNING: I don't know the units of variable temp, and assume it is Kelvin")
 
 enthalpy_true = np.squeeze(nc.variables['enthalpy'][:])
 usurf = np.squeeze(nc.variables['usurf'][:])
