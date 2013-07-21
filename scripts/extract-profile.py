@@ -4,7 +4,6 @@
 
 from argparse import ArgumentParser
 import numpy as np
-from scipy.interpolate import RectBivariateSpline
 from pyproj import Proj
 
 try:
@@ -480,6 +479,7 @@ if has_time_bounds:
 
 if has_time_bounds_var:
     var_name = time_bounds_varname
+    var_in = nc_in.variables[var_name]
     dimensions = var_in.dimensions
     datatype = var_in.dtype
     var_out = nc.createVariable(
