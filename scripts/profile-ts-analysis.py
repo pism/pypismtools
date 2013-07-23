@@ -115,14 +115,18 @@ nc = NC(args[0],'r')
 calendar = nc.variables["time"].calendar
 time_units = nc.variables["time"].units
 time_outunits = 'years since 1960-1-1'
+time_units_str = 'a'
 time = nc.variables['time'][:]
 t = np.squeeze(unit_converter(time, time_units, time_outunits))
 cdftime = utime(time_units, calendar)
 date = cdftime.num2date(time)
-profile = nc.variables["profile"]
-profile_units = profile.units
-profile_outunits = 'km'
-profile_axis = np.squeeze(unit_converter(profile[:], profile_units, profile_outunits))
+
+profile_var = 'profile'
+if profile_var in nc.variables.keys():
+    profile = nc.variables["profile"]
+    profile_units = profile.units
+    profile_outunits = 'km'
+    profile_axis = np.squeeze(unit_converter(profile[:], profile_units, profile_outunits))
 
 for var in variables:
     var_units = nc.variables[var].units
@@ -132,35 +136,36 @@ for var in variables:
         scale_exponent = 6
         scale = 10 ** scale_exponent
         out_units = "km3"
-        var_unit_str = ("10$^{%i}$ km$^{3}$" % scale_exponent)
+        var_units_str = ("10$^{%i}$ km$^{3}$" % scale_exponent)
+        ylabel = ("volume change [%s]" % var_units_str)
     elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
                  "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
                  "climatic_mass_balance_cumulative",
                  "effective_climatic_mass_balance_cumulative",
                  "effective_ice_discharge_cumulative"):
         out_units = "Gt"
-        var_unit_str = "Gt"
-        ylabel = ("mass change [%s]" % var_unit_str)
+        var_units_str = "Gt"
+        ylabel = ("mass change [%s]" % var_units_str)
     elif var in ("ocean_kill_flux"):
         out_units = "Gt year-1"
-        var_unit_str = "Gt a$^{-1}$"
-        ylabel = ("mass change [%s]" % var_unit_str)
+        var_units_str = "Gt a$^{-1}$"
+        ylabel = ("mass change [%s]" % var_units_str)
     elif var in ("usurf", "topg"):
         out_units = "m"
-        var_unit_str = "m a.s.l"
-        ylabel = ("elevation [%s]" % var_unit_str)
+        var_units_str = "m a.s.l"
+        ylabel = ("elevation [%s]" % var_units_str)
     elif var in ("eigen1", "eigen2"):
         out_units = "year-1"
-        var_unit_str = "a$^{-1}$"
-        ylabel = ("strain rate [%s]" % var_unit_str)
+        var_units_str = "a$^{-1}$"
+        ylabel = ("strain rate [%s]" % var_units_str)
     elif var in ("taud", "taud_mag", "taud_x", "taud_y", "bwp"):
         out_units = "Pa"
-        var_unit_str = "Pa"
-        ylabel = ("pressure [%s]" % var_unit_str)
+        var_units_str = "Pa"
+        ylabel = ("pressure [%s]" % var_units_str)
     elif var in ("csurf", "cbase", "cbar"):
         out_units = "m year-1"
-        var_unit_str = "m a$^{-1}$"
-        ylabel = ("speed [%s]" % var_unit_str)
+        var_units_str = "m a$^{-1}$"
+        ylabel = ("speed [%s]" % var_units_str)
     else:
         print("unit %s not recognized" % var_units)
     var_ylabels.append(ylabel)
@@ -178,7 +183,10 @@ for var in variables:
 
 nc.close()
 
-no_profiles = len(var_values[0][:,0])
+try:
+    no_profiles = len(var_values[0][:,0])
+except:
+    no_profiles = 1
 
 aspect_ratio = golden_mean
 
@@ -201,23 +209,32 @@ for k in range(len(variables)):
 
     lines = []
     for m in range(no_profiles):
-        y = var_values[k][m,:]
-        p = trend_estimator(t, y)
+        try:
+            y = var_values[k][m,:]
+        except:
+            y = var_values[0][:]
+        out = trend_estimator(t, y)
         colorVal = scalarMap.to_rgba(k)
         if no_profiles > len(my_colors):
             retLine, = ax.plot_date(date,y, color=colorVal)
         else:
             retLine, = ax.plot_date(date, y, color=my_colors[m])
         lines.append(retLine)
-        pe = p[0]
-        amplitude = pe[2]
-        period = pe[3]
-        label = ('%4.0f m/a' % (amplitude))
-        ax.plot_date(date, pe[0] + pe[1]*t + pe[2] * np.cos(2.0 * np.pi * (t - pe[3]) / 1.0), fmt='-', color=my_colors[m], label=label)
-        ax.plot_date(date, pe[0] + pe[1]*t, fmt=':', color=my_colors[m])
-        #    ax.set_xlabel("distance along profile [%s]" % profile_outunits)
+        p = out[0]
+        cov = out[1]
+        trend = p[1]
+        amplitude = np.abs(p[2])
+        period = p[3]
+        trend_err = np.abs(np.sqrt(cov[1][1]) * trend)
+        amplitude_err = np.abs(np.sqrt(cov[2][2]) * amplitude)
+        units_str = ('%s %s$^{-1}$' % (var_units_str, time_units_str)) 
+        label = ('%4.0f$\pm$%2.0f, %4.0f$\pm$%2.0f' % (trend, trend_err, amplitude, amplitude_err))
+        ax.plot_date(date, p[0] + p[1]*t + p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
+                     fmt='-', color=my_colors[m], label=label)
+        ax.plot_date(date, p[0] + p[1]*t, fmt=':', color=my_colors[m])
+    ax.set_xlabel("year")
     ax.set_ylabel(var_ylabels[k])
-    plt.legend(numpoints=1)
+    plt.legend(numpoints=1, title=('trend, amplitude\n (%s), (%s)' % (units_str, var_units_str)))
     if x_bounds:
         ax.set_xlim(x_bounds[0], x_bounds[1])
     if rotate_xticks:
