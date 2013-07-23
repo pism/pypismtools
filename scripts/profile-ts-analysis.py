@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2011 Andy Aschwanden
+# Copyright (C) 2013 Andy Aschwanden
 
 import numpy as np
 import pylab as plt
@@ -10,6 +10,7 @@ import matplotlib.colors as colors
 import matplotlib.cm as cmx
 
 from datetime import datetime
+import dateutil.parser
 
 from netcdftime import utime
 try:
@@ -29,7 +30,7 @@ parser.description = '''A script for profile time-series plots using pylab/matpl
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
                   help="lower and upper bound for ordinate, eg. -1 1", default=None)
-parser.add_argument("--x_bounds", dest="x_bounds", nargs=2, type=int,
+parser.add_argument("--x_bounds", dest="x_bounds", nargs=2,
                   help="lower and upper bound for abscissa, eg. 0 200", default=None)
 parser.add_argument("-l", "--labels",dest="labels",
                   help="comma-separated list with labels, put in quotes like 'label 1,label 2'",default=None)
@@ -236,7 +237,9 @@ for k in range(len(variables)):
     ax.set_ylabel(var_ylabels[k])
     plt.legend(numpoints=1, title=('trend, amplitude\n (%s), (%s)' % (units_str, var_units_str)))
     if x_bounds:
-        ax.set_xlim(x_bounds[0], x_bounds[1])
+        x_min = dateutil.parser.parse(x_bounds[0])
+        x_max = dateutil.parser.parse(x_bounds[1])
+        ax.set_xlim(x_min, x_max)
     if rotate_xticks:
         ticklabels = ax.get_xticklabels()
         for tick in ticklabels:
@@ -245,7 +248,7 @@ for k in range(len(variables)):
         ticklabels = ax.get_xticklabels()
         for tick in ticklabels:
             tick.set_rotation(0)
-    outfile = "foo"
+
     for out_format in out_formats:
         out_file = outfile + '_' + variables[k] + '.' + out_format
         print "  - writing image %s ..." % out_file
