@@ -40,6 +40,8 @@ parser.add_argument("-f", "--output_format",dest="out_formats",
                       help="Comma-separated list with output graphics suffix, default = pdf",default='pdf')
 parser.add_argument("-n", "--normalize",dest="normalize",action="store_true",
                   help="Normalize to beginning of time series, Default=False",default=False)
+parser.add_argument("-d", "--plot_detrended",dest="plot_detrended",action="store_true",
+                  help="Plot detrended time series, Default=False",default=False)
 parser.add_argument("-o", "--output_file",dest="outfile",
                   help="output file name without suffix, i.e. ts_control -> ts_control_variable",default='foo')
 parser.add_argument("-p", "--print_size",dest="print_mode",
@@ -73,6 +75,7 @@ index_i, index_j = options.index_ij[0], options.index_ij[1]
 x_bounds = options.x_bounds    
 golden_mean = get_golden_mean()
 normalize = options.normalize
+plot_detrended = options.plot_detrended
 out_res = options.out_res
 outfile = options.outfile
 out_formats = options.out_formats.split(',')
@@ -110,7 +113,7 @@ profile = []
 var_values = []
 var_ylabels = []
 var_longnames = []
-
+var_units_strings = []
 print("opening file %s" % args[0])
 nc = NC(args[0],'r')
 calendar = nc.variables["time"].calendar
@@ -121,6 +124,11 @@ time = nc.variables['time'][:]
 t = np.squeeze(unit_converter(time, time_units, time_outunits))
 cdftime = utime(time_units, calendar)
 date = cdftime.num2date(time)
+
+try:
+    profile_names = nc.variables['profile_name'][:]
+except:
+    pass
 
 profile_var = 'profile'
 if profile_var in nc.variables.keys():
@@ -159,7 +167,7 @@ for var in variables:
         out_units = "year-1"
         var_units_str = "a$^{-1}$"
         ylabel = ("strain rate [%s]" % var_units_str)
-    elif var in ("taud", "taud_mag", "taud_x", "taud_y", "bwp"):
+    elif var in ("taud", "taud_mag", "taud_x", "taud_y", "bwp", "tauc"):
         out_units = "Pa"
         var_units_str = "Pa"
         ylabel = ("pressure [%s]" % var_units_str)
@@ -170,7 +178,7 @@ for var in variables:
     else:
         print("unit %s not recognized" % var_units)
     var_ylabels.append(ylabel)
-
+    var_units_strings.append(var_units_str)
     try:
         var_vals = unit_converter(np.squeeze(permute(nc.variables[var],
                                                      output_order=output_order)),var_units, out_units)
@@ -196,7 +204,12 @@ lw, pad_inches = set_mode(print_mode, aspect_ratio=aspect_ratio)
 
 plt.rcParams['legend.fancybox'] = True
 
+
 my_colors = colorList()
+## color_converter = colors.ColorConverter()
+## for c in my_colors:
+##     rgb = color_converter.to_rgba_array(c)
+##     hsv = colors.rgb_to_hsv(rgb[0][:3])
 
 jet = cm = plt.get_cmap('jet')
 cNorm = colors.Normalize(vmin=0, vmax=len(date))
@@ -216,11 +229,6 @@ for k in range(len(variables)):
             y = var_values[0][:]
         out = trend_estimator(t, y)
         colorVal = scalarMap.to_rgba(k)
-        if no_profiles > len(my_colors):
-            retLine, = ax.plot_date(date,y, color=colorVal)
-        else:
-            retLine, = ax.plot_date(date, y, color=my_colors[m])
-        lines.append(retLine)
         p = out[0]
         cov = out[1]
         trend = p[1]
@@ -228,14 +236,25 @@ for k in range(len(variables)):
         period = p[3]
         trend_err = np.abs(np.sqrt(cov[1][1]) * trend)
         amplitude_err = np.abs(np.sqrt(cov[2][2]) * amplitude)
-        units_str = ('%s %s$^{-1}$' % (var_units_str, time_units_str)) 
-        label = ('%4.0f$\pm$%2.0f, %4.0f$\pm$%2.0f' % (trend, trend_err, amplitude, amplitude_err))
-        ax.plot_date(date, p[0] + p[1]*t + p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
-                     fmt='-', color=my_colors[m], label=label)
-        ax.plot_date(date, p[0] + p[1]*t, fmt=':', color=my_colors[m])
+        units_str = ('%s %s$^{-1}$' % (var_units_strings[k], time_units_str)) 
+        if plot_detrended:
+            label = ('%4.0f$\pm$%2.0f' % (amplitude, amplitude_err))
+            y_detrended = y - (p[0] + p[1]*t)
+            retLine, = ax.plot_date(date, y_detrended, fmt='.', color=my_colors[m], label=label)
+        else:
+            label = ('%4.0f$\pm$%2.0f, %4.0f$\pm$%2.0f' % (trend, trend_err, amplitude, amplitude_err))
+            retLine, = ax.plot_date(date, y, fmt='.', color=my_colors[m])
+            ax.plot_date(date, p[0] + p[1]*t + p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
+                         fmt='-', color=my_colors[m], label=label)
+            ax.plot_date(date, p[0] + p[1]*t, fmt='--', color=my_colors[m])
+        lines.append(retLine)
     ax.set_xlabel("year")
     ax.set_ylabel(var_ylabels[k])
-    plt.legend(numpoints=1, title=('trend, amplitude\n (%s), (%s)' % (units_str, var_units_str)))
+    if plot_detrended:
+        plt.legend(numpoints=1, title=('amplitude\n (%s)' % (var_units_strings[k])))
+    else:
+        plt.legend(numpoints=1, title=('trend, amplitude\n (%s), (%s)' % (units_str, var_units_strings[k])))
+        
     if x_bounds:
         x_min = dateutil.parser.parse(x_bounds[0])
         x_max = dateutil.parser.parse(x_bounds[1])

@@ -199,8 +199,10 @@ def read_textfile(filename):
         lat, lon = np.loadtxt(filename, usecols=(0,1), unpack=True)
     except:
         lat, lon = np.loadtxt(filename, skiprows=1, usecols=(0,1), unpack=True)
+    np = len(lat)
+    names = np.range(1, np+1)
 
-    return lat, lon
+    return lat, lon, np.array(names, 'O')
 
 def read_shapefile(filename):
     '''
@@ -230,13 +232,19 @@ def read_shapefile(filename):
     cnt = layer.GetFeatureCount()
     x = []
     y = []
+    names = []
     for pt in range(0, cnt):
         feature = layer.GetFeature(pt)
+        if feature.name:
+            name = feature.name
+        else:
+            name = pt
         geometry = feature.GetGeometryRef()
         x.append(geometry.GetX())
         y.append(geometry.GetY())
+        names.append(name)
 
-    return np.asarray(y), np.asarray(x)
+    return np.asarray(y), np.asarray(x), np.array(names, 'O')
 
 def create_profile_axis(filename, projection, flip):
     '''
@@ -256,9 +264,9 @@ def create_profile_axis(filename, projection, flip):
     '''
 
     try:
-        profile_lat, profile_lon = read_shapefile(filename)
+        profile_lat, profile_lon, profile_names = read_shapefile(filename)
     except:
-        profile_lat, profile_lon = read_textfile(filename)
+        profile_lat, profile_lon, profile_names = read_textfile(filename)
     if flip:
         profile_lat = profile_lat[::-1]
         profile_lon = profile_lon[::-1]
@@ -268,7 +276,7 @@ def create_profile_axis(filename, projection, flip):
     x[1::] = np.sqrt(np.diff(profile_x)**2 + np.diff(profile_y)**2)
     x = x.cumsum()
 
-    return x, profile_x, profile_y, profile_lon, profile_lat
+    return x, profile_x, profile_y, profile_lon, profile_lat, profile_names
 
 
 def dim_permute(
@@ -373,7 +381,7 @@ projection = ppt.get_projection_from_file(nc_in)
 
 # Read in profile data
 print("  reading profile from %s" % profile_filename)
-profile, profile_x, profile_y, profile_lon, profile_lat = create_profile_axis(
+profile, profile_x, profile_y, profile_lon, profile_lat, profile_name = create_profile_axis(
     profile_filename, projection, flip)
 
 # indices (i,j)
@@ -504,6 +512,13 @@ var_out.units = "degrees_north";
 var_out.valid_range = -90., 90.
 var_out.standard_name = "latitude"
 var_out[:] = profile_lat
+
+
+var = 'profile_name'
+var_out = nc.createVariable(var, str, dimensions=(profiledim))
+var_out.cf_role = "timeseries_id"
+var_out.long_name = "profile name"
+var_out[:] = profile_name
 
 print("Copying variables")
 for var_name in nc_in.variables:
