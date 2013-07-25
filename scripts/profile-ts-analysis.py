@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 import matplotlib.transforms as transforms
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
+import colorsys
 
 from datetime import datetime
 import dateutil.parser
@@ -138,7 +139,10 @@ if profile_var in nc.variables.keys():
     profile_axis = np.squeeze(unit_converter(profile[:], profile_units, profile_outunits))
 
 for var in variables:
-    var_units = nc.variables[var].units
+    try:
+        var_units = nc.variables[var].units
+    except:
+        var_units = "1"
     var_longname = nc.variables[var].long_name
     var_longnames.append(var_longname)
     if var in ("ivol"):
@@ -167,6 +171,14 @@ for var in variables:
         out_units = "year-1"
         var_units_str = "a$^{-1}$"
         ylabel = ("strain rate [%s]" % var_units_str)
+    elif var in ("slope_mag", "grad_h"):
+        out_units = "1"
+        var_units_str = "-"
+        ylabel = ("surface slope [%s]" % var_units_str)
+    elif var in ("usurf_float_relative"):
+        out_units = "1"
+        var_units_str = "-"
+        ylabel = ("relative flotation [%s]" % var_units_str)
     elif var in ("taud", "taud_mag", "taud_x", "taud_y", "bwp", "tauc"):
         out_units = "Pa"
         var_units_str = "Pa"
@@ -204,12 +216,14 @@ lw, pad_inches = set_mode(print_mode, aspect_ratio=aspect_ratio)
 
 plt.rcParams['legend.fancybox'] = True
 
-
 my_colors = colorList()
+## my_colors_light = []
 ## color_converter = colors.ColorConverter()
 ## for c in my_colors:
-##     rgb = color_converter.to_rgba_array(c)
-##     hsv = colors.rgb_to_hsv(rgb[0][:3])
+##     rgb = color_converter.to_rgb(c)
+##     hsv = np.asarray(colorsys.rgb_to_hsv(*rgb))
+##     rgb_light = color_converter.to_rgb(hsv)
+##     my_colors_light.append(rgb_light)
 
 jet = cm = plt.get_cmap('jet')
 cNorm = colors.Normalize(vmin=0, vmax=len(date))
@@ -221,7 +235,6 @@ for k in range(len(variables)):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    lines = []
     for m in range(no_profiles):
         try:
             y = var_values[k][m,:]
@@ -239,21 +252,26 @@ for k in range(len(variables)):
         units_str = ('%s %s$^{-1}$' % (var_units_strings[k], time_units_str)) 
         if plot_detrended:
             label = ('%4.0f$\pm$%2.0f' % (amplitude, amplitude_err))
+            label = profile_names[m]
             y_detrended = y - (p[0] + p[1]*t)
-            retLine, = ax.plot_date(date, y_detrended, fmt='.', color=my_colors[m], label=label)
+            ax.plot_date(date, y_detrended, fmt='.', color=my_colors[m], label=label)
         else:
             label = ('%4.0f$\pm$%2.0f, %4.0f$\pm$%2.0f' % (trend, trend_err, amplitude, amplitude_err))
-            retLine, = ax.plot_date(date, y, fmt='.', color=my_colors[m])
+            label = profile_names[m]
+            ax.plot_date(date, y, fmt='.', color=my_colors[m], label=label)
             ax.plot_date(date, p[0] + p[1]*t + p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
-                         fmt='-', color=my_colors[m], label=label)
-            ax.plot_date(date, p[0] + p[1]*t, fmt='--', color=my_colors[m])
-        lines.append(retLine)
+                         fmt='-', color='w')
+            ax.plot_date(date, p[0] + p[1]*t + p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
+                         fmt='-', color=my_colors[m], alpha=0.75)
+            ax.plot_date(date, p[0] + p[1]*t, fmt='--', color='w')
+            ax.plot_date(date, p[0] + p[1]*t, fmt='--', color=my_colors[m], alpha=0.75)
     ax.set_xlabel("year")
     ax.set_ylabel(var_ylabels[k])
-    if plot_detrended:
-        plt.legend(numpoints=1, title=('amplitude\n (%s)' % (var_units_strings[k])))
-    else:
-        plt.legend(numpoints=1, title=('trend, amplitude\n (%s), (%s)' % (units_str, var_units_strings[k])))
+    plt.legend(numpoints=1)
+    ## if plot_detrended:
+    ##     plt.legend(numpoints=1, title=('amplitude\n (%s)' % (var_units_strings[k])))
+    ## else:
+    ##     plt.legend(numpoints=1, title=('trend, amplitude\n (%s), (%s)' % (units_str, var_units_strings[k])))
         
     if x_bounds:
         x_min = dateutil.parser.parse(x_bounds[0])

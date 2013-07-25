@@ -270,6 +270,7 @@ def create_profile_axis(filename, projection, flip):
     if flip:
         profile_lat = profile_lat[::-1]
         profile_lon = profile_lon[::-1]
+        profile_names = profile_names[::-1]
     profile_x, profile_y = projection(profile_lon, profile_lat)
 
     x = np.zeros_like(profile_x)
@@ -385,8 +386,8 @@ profile, profile_x, profile_y, profile_lon, profile_lat, profile_name = create_p
     profile_filename, projection, flip)
 
 # indices (i,j)
-profile_i = (np.floor((profile_x-x0) / dx)).astype('int') + 1
-profile_j = (np.floor((profile_y-y0) / dy)).astype('int') + 1
+profile_i = (np.floor((profile_x-x0) / dx)).astype('int')
+profile_j = (np.floor((profile_y-y0) / dy)).astype('int')
 
 # Filter out double entries                                                 
 duplicates_idx = np.zeros(len(profile_i))
