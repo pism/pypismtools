@@ -246,7 +246,7 @@ for k in range(len(variables)):
         cov = out[1]
         trend = p[1]
         amplitude = np.abs(p[2])
-        period = p[3]
+        lag = p[3]
         trend_err = np.abs(np.sqrt(cov[1][1]) * trend)
         amplitude_err = np.abs(np.sqrt(cov[2][2]) * amplitude)
         units_str = ('%s %s$^{-1}$' % (var_units_strings[k], time_units_str)) 
@@ -255,6 +255,10 @@ for k in range(len(variables)):
             label = profile_names[m]
             y_detrended = y - (p[0] + p[1]*t)
             ax.plot_date(date, y_detrended, fmt='.', color=my_colors[m], label=label)
+            ## ax.plot_date(date, p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
+            ##              fmt='-', color='w')
+            ## ax.plot_date(date, p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
+            ##              fmt='-', color=my_colors[m], alpha=0.75)
         else:
             label = ('%4.0f$\pm$%2.0f, %4.0f$\pm$%2.0f' % (trend, trend_err, amplitude, amplitude_err))
             label = profile_names[m]
@@ -265,6 +269,7 @@ for k in range(len(variables)):
                          fmt='-', color=my_colors[m], alpha=0.75)
             ax.plot_date(date, p[0] + p[1]*t, fmt='--', color='w')
             ax.plot_date(date, p[0] + p[1]*t, fmt='--', color=my_colors[m], alpha=0.75)
+        print (lag % 1) * 365.2
     ax.set_xlabel("year")
     ax.set_ylabel(var_ylabels[k])
     plt.legend(numpoints=1)
