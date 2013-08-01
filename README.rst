@@ -1,12 +1,14 @@
 The ``pypismtools`` module
 ======================
  
-pypismtools is a collection of classes and functions to evaluate PISM studies by
-providing tools for binning and histogram plotting. It also includes
-helper functions and wrappers for things like unit conversion,
-defining figure sizes and parameters, and more. Additionally, some
-scripts are included, to plot netCDF variables over GeoTIFF files
-using basemap, to generate colorramps forQGIS, and to extract contour lines.
+pypismtools is a collection of python classes and functions to
+evaluate studies made with the Parallel Ice Sheet Model (PISM,
+http://www.pism-docs.org). pypismtools provides tools for binning and
+histogram plotting. It also includes helper functions and wrappers for
+things like unit conversion, defining figure sizes and parameters, and
+more. Additionally, some scripts are included, to plot netCDF
+variables over GeoTIFF files using basemap, to generate colorramps
+forQGIS, and to extract contour lines.
 
 Requirements
 -------------------------
@@ -17,6 +19,8 @@ The following python modules have to be installed
 - gdal (with python bindings)
 - pyproj
 - py_udunits2 (from https://github.com/ckhroulev/py_udunits2)
+- matplotlib (http://matplotlib.org/)
+- basemap (http://matplotlib.org/basemap/)
 - python imaging library (PIL), optional, needed for for some backgrounds)
 
 Installation
