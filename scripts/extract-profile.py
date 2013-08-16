@@ -200,7 +200,7 @@ def read_textfile(filename):
     except:
         lat, lon = np.loadtxt(filename, skiprows=1, usecols=(0,1), unpack=True)
     np = len(lat)
-    names = np.range(1, np+1)
+    names = [str(x) for x in np.arange(1, np+1)]
 
     return lat, lon, np.array(names, 'O')
 
@@ -235,10 +235,10 @@ def read_shapefile(filename):
     names = []
     for pt in range(0, cnt):
         feature = layer.GetFeature(pt)
-        if feature.name:
+        try:
             name = feature.name
-        else:
-            name = pt
+        except:
+            name = str(pt)
         geometry = feature.GetGeometryRef()
         x.append(geometry.GetX())
         y.append(geometry.GetY())
@@ -402,6 +402,7 @@ profile_x = profile_x[duplicates_idx == 0]
 profile_y = profile_y[duplicates_idx == 0]
 profile_lat = profile_lat[duplicates_idx == 0]
 profile_lon = profile_lon[duplicates_idx == 0]
+profile_name = profile_name[duplicates_idx == 0]
 
 A_i, A_j = profile_i, profile_j
 B_i, B_j = profile_i, profile_j + 1
@@ -620,8 +621,8 @@ for var_name in nc_in.variables:
 # writing global attributes
 script_command = ' '.join([time.ctime(), ':', __file__.split('/')[-1],
                            ' '.join([str(l) for l in args])])
-if nc.history:
-    history = nc.history
+if hasattr(nc_in, 'history'):
+    history = nc_in.history
     nc.history = script_command + '\n ' + history
 else:
     nc.history = script_command

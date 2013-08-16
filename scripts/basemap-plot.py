@@ -834,6 +834,5 @@ if colorbar_label:
     cbar.set_label(variable.colorbar_label)
 
 print("  writing image %s ..." % out_file)
-# fig.savefig(out_file, bbox_inches='tight', pad_inches=pad_inches, dpi=out_res)
 fig.savefig(out_file, bbox_inches='tight', dpi=out_res, pad_inches=pad_inches)
 

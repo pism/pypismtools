@@ -203,13 +203,13 @@ ax = fig.add_subplot(111)
 lines = []
 for idx in range(no_args):
     line = var_values[idx][:]
-    retLine, = ax.plot(profile_axis, line, color=my_colors[idx])
+    retLine, = ax.plot(profile_axis, line, color=my_colors[idx % len(my_colors)])
     lines.append(retLine)
 ax.set_xlabel("distance along profile [%s]" % profile_outunits)
 ax.set_ylabel(var_ylabels[k])
 if x_bounds:
     ax.set_xlim(x_bounds[0], x_bounds[1])
-if len(labels) < 6:
+if (labels and len(labels) < 6):
     ax.legend(labels, title=labelbar_title)
 plt.title(figure_title)
 outfile = "foo"

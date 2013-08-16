@@ -51,18 +51,21 @@ A script to convert a GMT (*.cpt) colormap into q QGIS-readable color ramp.
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("--log",dest="log", action="store_true",
                   help="make a log-normalized color scale", default=False)
-parser.add_argument("-j", "--joughin", dest="joughin", action="store_true",
+parser.add_argument("--joughin_speed", dest="joughin_speed", action="store_true",
                   help='''
                   Joughin-style log''', default=False)
+parser.add_argument("--habermann_tauc", dest="habermann_tauc", action="store_true",
+                  help='''
+                  log tauc scaling from Habermann et al (2013)''', default=False)
 parser.add_argument("-a", "--a_log", dest="a", type=float,
                   help='''
-                  a * logspace(vmin, vmax, N''', default=1)
+                  a * logspace(vmin, vmax, N)''', default=1)
 parser.add_argument("--vmin", dest="vmin", type=float,
                   help='''
-                  a * logspace(vmin, vmax, N''', default=-1)
+                  a * logspace(vmin, vmax, N)''', default=-1)
 parser.add_argument("--vmax", dest="vmax", type=float,
                   help='''
-                  a * logspace(vmin, vmax, N''', default=3)
+                  a * logspace(vmin, vmax, N)''', default=3)
 parser.add_argument("--extend", dest="extend", nargs=2, type=float,
                   help='''
                   appends color ramp by repeating first and last color for value''',
@@ -75,7 +78,8 @@ parser.add_argument("-r", "--reverse",dest="reverse", action="store_true",
 
 options = parser.parse_args()
 args = options.FILE
-joughin = options.joughin
+joughin_speed = options.joughin_speed
+habermann_tauc = options.habermann_tauc
 a = options.a
 log = options.log
 extend = options.extend
@@ -101,7 +105,7 @@ for k in range(len(args)):
 
 
     # either log scaling or linear scaling (default)
-    if joughin:
+    if joughin_speed:
             # This is a little duck-punching to get a QGIS colormap
             # similar to Joughin (2010)
             vmin = 0
@@ -113,6 +117,16 @@ for k in range(len(args)):
             norm = colors.LogNorm(vmin=1, vmax = 3000)
             ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
             ticks = [1, 3, 10, 30, 100, 1000, 3000]
+            format = '%i'
+            cb_extend = 'both'
+    if habermann_tauc:
+            # This is a little duck-punching to get a QGIS colormap
+            # similar to Joughin (2010)
+            vmin = 1e4
+            vmax = 3e5
+            data_values = np.logspace(np.log10(vmin), np.log10(vmax), N)
+            norm = colors.LogNorm(vmin=vmin, vmax = vmax)
+            ticks = [vmin, vmax]
             format = '%i'
             cb_extend = 'both'
     elif log:
@@ -143,11 +157,12 @@ for k in range(len(args)):
     # create the colorbar
     fig = plt.figure()
     ax1 = fig.add_axes([0.05, 0.65, 0.9, 0.05])
-    cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
+    cb1 = mpl.colorbar.ColorbarBase(ax1,
+				    cmap=cmap,
                                     norm = norm,
-                    ticks=ticks,
-                    format=format,
-                    extend=cb_extend,
+				    ticks=ticks,
+				    format=format,
+				    extend=cb_extend,
                                     spacing='proportional',
                                     orientation='horizontal')
 
