@@ -102,6 +102,11 @@ def get_dims(nc):
     ## a list of possible time-dimensions names
     tdims= ['t', 'time']
 
+    xdim = None
+    ydim = None
+    zdim = None
+    tdim = None
+
     ## assign x dimension
     for dim in xdims:
         if dim in list(nc.dimensions.keys()):
@@ -110,18 +115,14 @@ def get_dims(nc):
     for dim in ydims:
         if dim in list(nc.dimensions.keys()):
             ydim = dim
-    ## assign y dimension
+    ## assign z dimension
     for dim in zdims:
         if dim in list(nc.dimensions.keys()):
             zdim = dim
-        else:
-            zdim = 'z'
-    ## assign y dimension
+    ## assign time dimension
     for dim in tdims:
         if dim in list(nc.dimensions.keys()):
             tdim = dim
-        else:
-            tdim = 'time'
     return xdim, ydim, zdim, tdim
 
 

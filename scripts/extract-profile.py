@@ -460,38 +460,16 @@ for i in range(len(vars_not_copied)-2, -1, -1):
     else:
         last = vars_not_copied[i]
 
-
-var_name = tdim
-var_in = nc_in.variables[tdim]
-dimensions = var_in.dimensions
-datatype = var_in.dtype
-if hasattr(var_in, 'bounds'):
-    time_bounds_varname = var_in.bounds
-    has_time_bounds = True
-else:
-    has_time_bounds = False
-var_out = nc.createVariable(
-    var_name, datatype, dimensions=dimensions, fill_value=fill_value)
-var_out[:] = var_in[:]
-for att in var_in.ncattrs():
-    if att == '_FillValue':
-        continue
-    else:
-        setattr(var_out, att, getattr(var_in, att))
-
-has_time_bounds_var = False
-if has_time_bounds:
-    try:
-        var_in = nc_in.variables[var_name]
-        has_time_bounds_var = True
-    except:
-        has_time_bounds_var = False
-
-if has_time_bounds_var:
-    var_name = time_bounds_varname
-    var_in = nc_in.variables[var_name]
+if tdim is not None:
+    var_name = tdim
+    var_in = nc_in.variables[tdim]
     dimensions = var_in.dimensions
     datatype = var_in.dtype
+    if hasattr(var_in, 'bounds'):
+        time_bounds_varname = var_in.bounds
+        has_time_bounds = True
+    else:
+        has_time_bounds = False
     var_out = nc.createVariable(
         var_name, datatype, dimensions=dimensions, fill_value=fill_value)
     var_out[:] = var_in[:]
@@ -500,6 +478,28 @@ if has_time_bounds_var:
             continue
         else:
             setattr(var_out, att, getattr(var_in, att))
+
+    has_time_bounds_var = False
+    if has_time_bounds:
+        try:
+            var_in = nc_in.variables[var_name]
+            has_time_bounds_var = True
+        except:
+            has_time_bounds_var = False
+
+    if has_time_bounds_var:
+        var_name = time_bounds_varname
+        var_in = nc_in.variables[var_name]
+        dimensions = var_in.dimensions
+        datatype = var_in.dtype
+        var_out = nc.createVariable(
+            var_name, datatype, dimensions=dimensions, fill_value=fill_value)
+        var_out[:] = var_in[:]
+        for att in var_in.ncattrs():
+            if att == '_FillValue':
+                continue
+            else:
+                setattr(var_out, att, getattr(var_in, att))
 
 var = 'lon'
 var_out = nc.createVariable(var, 'f', dimensions=(profiledim))

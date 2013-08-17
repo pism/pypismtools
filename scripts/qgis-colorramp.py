@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 import pylab as plt
-from matplotlib import colors, mpl
+import matplotlib as mpl
 from argparse import ArgumentParser
 
 try:
@@ -41,12 +41,12 @@ def cmap_map(function, cmap):
         colorvector.sort()
         cdict[key] = colorvector
 
-    return colors.LinearSegmentedColormap('colormap',cdict,1024)
+    return mpl.colors.LinearSegmentedColormap('colormap', cdict, 1024)
 
 # Set up the option parser
 parser = ArgumentParser()
 parser.description = """
-A script to convert a GMT (*.cpt) colormap into q QGIS-readable color ramp.
+A script to convert a GMT (*.cpt) colormap or matplotlib colormap into QGIS-readable color ramp.
 """
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("--log",dest="log", action="store_true",
@@ -92,8 +92,8 @@ log_color = False
 
 # read in CPT colormap
 for k in range(len(args)):
-    cmap_file = args[k]
 
+    cmap_file = args[k]
     try:
             cdict = plt.cm.datad[cmap_file]
             prefix = cmap_file
@@ -114,42 +114,43 @@ for k in range(len(args)):
             data_values = np.logspace(vmin, vmax, N)[0:889]
             data_values[-1] = 3000
             N = len(data_values)
-            norm = colors.LogNorm(vmin=1, vmax = 3000)
+            norm = mpl.colors.LogNorm(vmin=1, vmax = 3000)
             ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
             ticks = [1, 3, 10, 30, 100, 1000, 3000]
             format = '%i'
             cb_extend = 'both'
-    if habermann_tauc:
+	    colorbar_label = 'm a$^{-1}$'
+    elif habermann_tauc:
             # This is a little duck-punching to get a QGIS colormap
             # similar to Joughin (2010)
             vmin = 1e4
             vmax = 3e5
             data_values = np.logspace(np.log10(vmin), np.log10(vmax), N)
-            norm = colors.LogNorm(vmin=vmin, vmax = vmax)
+            norm = mpl.colors.LogNorm(vmin=vmin, vmax = vmax)
             ticks = [vmin, vmax]
             format = '%i'
             cb_extend = 'both'
     elif log:
         data_values = a * np.logspace(vmin, vmax, N)
-        norm = colors.LogNorm(vmin=(10 ** vmin), vmax = a * (10 ** vmax))
+        norm = mpl.colors.LogNorm(vmin=(10 ** vmin), vmax = a * (10 ** vmax))
         ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
         ticks = [1, 3, 10, 30, 100, 1000, 3000]
         format = '%i'
         cb_extend = 'both'
     elif log_color:
         data_values = a * np.logspace(vmin, vmax, N)
-        norm = colors.LogNorm(vmin= (10 ** vmin) - 0.01, vmax = a * (10 ** vmax))
+        norm = mpl.colors.LogNorm(vmin= (10 ** vmin) - 0.01, vmax = a * (10 ** vmax))
         ticks = [1, 3, 10, 30, 100, 1000, 3000]
         format = '%i'
         cb_extend = 'both'
     else:
         data_values = a * np.linspace(vmin, vmax, N)
-        norm = colors.Normalize(vmin=vmin, vmax=vmax)
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
         ticks = None
         format = None
         cb_extend = 'both'
 
-    cmap = colors.LinearSegmentedColormap('my_colormap', cdict, N)
+    cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, N)
 
     # you could apply a function to the colormap, e.g. to desaturate the colormap:
     # cmap = cmap_map(lambda x: x/2+0.5, cmap)
@@ -165,6 +166,9 @@ for k in range(len(args)):
 				    extend=cb_extend,
                                     spacing='proportional',
                                     orientation='horizontal')
+
+    if colorbar_label:
+	    cb1.set_label(colorbar_label)
 
     # save high-res colorbar as png
     out_file = '.'.join([prefix, 'png'])
