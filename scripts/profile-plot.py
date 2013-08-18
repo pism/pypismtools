@@ -123,9 +123,9 @@ var_longnames = []
 var = variables[0]
 
 for k in range(no_args):
-
-    print("opening file %s" % args[k])
-    nc = NC(args[k],'r')
+    file_name = args[k]
+    print("opening file %s" % file_name)
+    nc = NC(file_name, 'r')
 
     profile = nc.variables["profile"]
     profile_units = profile.units
@@ -209,10 +209,9 @@ ax.set_xlabel("distance along profile [%s]" % profile_outunits)
 ax.set_ylabel(var_ylabels[k])
 if x_bounds:
     ax.set_xlim(x_bounds[0], x_bounds[1])
-if (labels and len(labels) < 6):
+if labels:
     ax.legend(labels, title=labelbar_title)
 plt.title(figure_title)
-outfile = "foo"
 for out_format in out_formats:
     out_file = outfile + '_' + var + '.' + out_format
     print "  - writing image %s ..." % out_file

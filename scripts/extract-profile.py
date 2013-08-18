@@ -357,7 +357,9 @@ else:
     else:
         out_filename = args[2]
 
-
+print("-----------------------------------------------------------------")
+print("Running script %s ..." % __file__.split('/')[-1])
+print("-----------------------------------------------------------------")
 print("Opening NetCDF file %s ..." % in_filename)
 try:
     # open netCDF file in 'read' mode
@@ -526,7 +528,7 @@ print("Copying variables")
 for var_name in nc_in.variables:
     profiler = timeprofile()
     if var_name not in vars_not_copied:
-        print("Reading variable %s" % var_name)
+        print("  Reading variable %s" % var_name)
         var_in = nc_in.variables[var_name]
         xdim, ydim, zdim, tdim = get_dims_from_variable(var_in)
         in_dims = var_in.dimensions
@@ -590,12 +592,10 @@ for var_name in nc_in.variables:
                     profiler.mark('read')
                     in_values = eval('var_in[%s]' % access_str)
                     p_read = profiler.elapsed('read')
-                    print("    - read in %3.4f s" % p_read)
                     profiler.mark('permute')
                     profile_values = dim_permute(in_values,
                                                  input_order=profile_dims, output_order=out_dim_order)
                     p_permute = profiler.elapsed('permute')
-                    print("    - permuted in %3.4f s" % p_permute)
 
                 var_out = nc.createVariable(
                     var_name, datatype, dimensions=out_dim_order,
@@ -603,7 +603,7 @@ for var_name in nc_in.variables:
                 profiler.mark('write')
                 var_out[:] = profile_values
                 p_write = profiler.elapsed('write')
-                print("    - written in %3.4f s" % p_write)
+                print('''    - read in %3.4f s, permuted in %3.4f s, written in %3.4f s''' % (p_read, p_permute, p_write))
             else:
                 var_out = nc.createVariable(
                     var_name, datatype, dimensions=var_in.dimensions,
