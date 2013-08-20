@@ -59,6 +59,8 @@ parser.add_argument("--rotate_xticks", dest="rotate_xticks", action="store_true"
 parser.add_argument("-r", "--output_resolution", dest="out_res",
                   help='''Resolution ofoutput graphics in dots per
                   inch (DPI), default = 300''', default=300)
+parser.add_argument("-s", "--split", dest="split", type=int,
+                  help='''Split data set''', default=None)
 parser.add_argument("-t", "--twinx", dest="twinx", action="store_true",
                   help='''adds a second ordinate with units mmSLE,
                   Default=False''', default=False)
@@ -92,6 +94,7 @@ dashes = ['-', '--', '-.', ':', '-', '--', '-.', ':']
 output_order = ('profile', 'time')
 # stupid CDO changes dimension names...
 output_order_cdo = ('ncells', 'time')
+split = options.split
 
 dx, dy = 4. / out_res, -4. / out_res
 
@@ -201,16 +204,25 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 
 lines = []
-for idx in range(no_args):
-    line = var_values[idx][:]
-    retLine, = ax.plot(profile_axis, line, color=my_colors[idx % len(my_colors)])
-    lines.append(retLine)
+line_styles = ['-', '-.', ':']
+if split:
+    for k in range(split):
+        for idx in range(no_args / split):
+            line = var_values[idx + k*(no_args / split)][:]
+            retLine, = ax.plot(profile_axis, line, line_styles[k],
+                               color=my_colors[idx % len(my_colors)])
+            lines.append(retLine)        
+else:
+    for idx in range(no_args):
+        line = var_values[idx][:]
+        retLine, = ax.plot(profile_axis, line, color=my_colors[idx % len(my_colors)])
+        lines.append(retLine)
 ax.set_xlabel("distance along profile [%s]" % profile_outunits)
 ax.set_ylabel(var_ylabels[k])
 if x_bounds:
     ax.set_xlim(x_bounds[0], x_bounds[1])
 if labels:
-    ax.legend(labels, title=labelbar_title)
+    ax.legend(labels, title=labelbar_title, loc='best')
 plt.title(figure_title)
 for out_format in out_formats:
     out_file = outfile + '_' + var + '.' + out_format

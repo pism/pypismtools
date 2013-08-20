@@ -57,6 +57,8 @@ parser.add_argument("--joughin_speed", dest="joughin_speed", action="store_true"
 parser.add_argument("--habermann_tauc", dest="habermann_tauc", action="store_true",
                   help='''
                   log tauc scaling from Habermann et al (2013)''', default=False)
+parser.add_argument("--colorbar_label", dest="colorbar_label",
+                  help='''Label for colorbar.''', default=None)
 parser.add_argument("-a", "--a_log", dest="a", type=float,
                   help='''
                   a * logspace(vmin, vmax, N)''', default=1)
@@ -87,6 +89,7 @@ N = options.N
 vmin = options.vmin
 vmax = options.vmax
 reverse = options.reverse
+colorbar_label = options.colorbar_label
 # experimental
 log_color = False
 
