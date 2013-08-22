@@ -653,7 +653,7 @@ elif singlecolumn:
                     axes_pad=0.05, # pad between axes in inch.
                     cbar_mode='single',
                     cbar_size=0.115,
-                    cbar_location='top',
+                    cbar_location='bottom',
                     share_all=True)
 else:
     grid = ImageGrid(fig, 111, # similar to subplot(111)
@@ -661,7 +661,7 @@ else:
                     axes_pad=0.05, # pad between axes in inch.
                     cbar_mode='single',
                     cbar_size=0.115,
-                    cbar_location='top',
+                    cbar_location='bottom',
                     share_all=True)
 
 
@@ -834,5 +834,5 @@ if colorbar_label:
     cbar.set_label(variable.colorbar_label)
 
 print("  writing image %s ..." % out_file)
-fig.savefig(out_file, bbox_inches='tight', dpi=out_res, pad_inches=pad_inches)
-
+#fig.savefig(out_file, bbox_inches='tight', dpi=out_res, pad_inches=pad_inches)
+fig.savefig(out_file, bbox_inches='tight', dpi=out_res)
