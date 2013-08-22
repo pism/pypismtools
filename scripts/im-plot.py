@@ -73,6 +73,8 @@ parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
 parser.add_argument("--boundary_tol", dest="boundary_tol", nargs=1, type=float,
                   help='''if set, color areas brown where obs <= boundary_tol but data >= boundary_tol,
                   works for difference plots only.''', default=None)
+parser.add_argument("--colorbar_position", dest="colorbar_position", choices=['bottom','right','upper','left'],
+                  help="position of the colorbar for n x m plots", default='bottom')
 parser.add_argument("--obs_file",dest="obs_file",
                   help='''
                   file with observations for difference plot,
@@ -84,8 +86,8 @@ parser.add_argument("-c", "--colorbar", dest="colorbar", action="store_true",
                   help="saves a colorbar seperately", default=False)
 parser.add_argument("--colorbar_label", dest="colorbar_label", action="store_true",
                   help="saves a colorbar seperately", default=False)
-parser.add_argument("--inner_title", dest="inner_title", action="store_true",
-                  help="add an inner title", default=False)
+parser.add_argument("--inner_titles", dest="inner_titles",
+                  help="add an inner title, give a list like --inner_title 'a),b),c)'", default=None)
 parser.add_argument("--singlerow", dest="singlerow", action="store_true",
                   help="all plots on a single row", default=False)
 parser.add_argument("--singlecolumn", dest="singlecolumn", action="store_true",
@@ -121,7 +123,7 @@ args = options.FILE
 
 nt = len(args)
 required_no_args = 0
-max_no_args = 6
+max_no_args = 12
 if (nt < required_no_args):
     print(("received $i arguments, at least %i expected"
           % (nt, required_no_args)))
@@ -141,7 +143,11 @@ boundary_tol = options.boundary_tol
 colormap = options.colormap
 colorbar = options.colorbar
 colorbar_label = options.colorbar_label
-inner_title = options.inner_title
+colorbar_position = options.colorbar_position
+if options.inner_titles != None:
+    inner_titles = options.inner_titles.split(',')
+else:
+    inner_titles = None
 level = options.level
 print_mode = options.print_mode
 obs_file = options.obs_file
@@ -582,7 +588,7 @@ elif singlecolumn:
                     axes_pad=0.05, # pad between axes in inch.
                     cbar_mode='single',
                     cbar_size=0.115,
-                    cbar_location='top',
+                    cbar_location='bottom',
                     share_all=True)
 else:
     grid = ImageGrid(fig, 111, # similar to subplot(111)
@@ -590,7 +596,7 @@ else:
                     axes_pad=0.05, # pad between axes in inch.
                     cbar_mode='single',
                     cbar_size=0.115,
-                    cbar_location='top',
+                    cbar_location=colorbar_position,
                     share_all=True)
 
 
@@ -652,10 +658,9 @@ for k in range(0, nt):
     plt.setp(ax.get_xticklabels(), visible=False)
     plt.setp(ax.get_yticklabels(), visible=False)
     
-    im_titles = ['a)','b)','c)','d)','e)','f)']
-    if inner_title:
+    if inner_titles:
         for ax in range(0, nt):
-            t = ppt.add_inner_title(fig.axes[ax], im_titles[ax], loc=2)
+            t = ppt.add_inner_title(fig.axes[ax], inner_titles[ax], loc=2)
             t.patch.set_ec("none")
 
 if singlerow:
@@ -676,11 +681,15 @@ elif singlecolumn:
                                          drawedges=False,
                                          ticks=variable.ticks)
 else:
+    if colorbar_position in ('bottom', 'upper'):
+        orientation = 'horizontal'
+    else:
+        orientation = 'vertical'
     cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
                                          cmap=variable.cmap,
                                          norm=variable.norm,
                                          extend=variable.extend,
-                                         orientation='horizontal',
+                                         orientation=orientation,
                                          drawedges=False,
                                          ticks=variable.ticks,
                                          format=variable.format)

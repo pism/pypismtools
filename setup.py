@@ -31,7 +31,7 @@ if not_installed:
     sys.exit()
 
 setup(name=PKG_NAME,
-      version='0.13',
+      version='0.14',
       description='Python tools to evaluate PISM results',
       author='Andy Aschwanden',
       author_email='aaschwanden@alaska.edu',
