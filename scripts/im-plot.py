@@ -97,8 +97,9 @@ parser.add_argument("-o", "--output_filename", dest="out_file",
 parser.add_argument("--out_unit", dest="outunit",
                   help="Output unit, default is unit in file", default=None)
 parser.add_argument("-p", "--print_size", dest="print_mode",
-              help="sets figure size and font size, available options are: \
-              'onecol','medium','twocol','presentation'", default="twocol")
+                    choices=['onecol','medium','twocol','height','presentation'],
+                    help="sets figure size and font size, available options are: \
+                    'onecol','medium','twocol','presentation'", default="twocol")
 parser.add_argument("-r", "--output_resolution", dest="out_res",
                   help='''
                   Graphics resolution in dots per inch (DPI), default

@@ -101,7 +101,7 @@ parser.add_argument("--singlerow", dest="singlerow", action="store_true",
                   help="all plots on a single row", default=False)
 parser.add_argument("--singlecolumn", dest="singlecolumn", action="store_true",
                   help="all plots on a single column", default=False)
-parser.add_argument("--map_resolution", dest="map_res",
+parser.add_argument("--map_resolution", dest="map_res", choices=['l','i','h','f'],
                   help="Resolution of boundary database (see Basemap), default = 'l' (low)", default='l')
 parser.add_argument("-o", "--output_filename", dest="out_file",
                   help="Name of the output file. Suffix defines output format", default='foo.png')
@@ -112,8 +112,9 @@ parser.add_argument("--shape_file", dest="shape_filename",
 parser.add_argument("--out_unit", dest="outunit",
                   help="Output unit, default is unit in file", default=None)
 parser.add_argument("-p", "--print_size", dest="print_mode",
-              help="sets figure size and font size, available options are: \
-              'onecol','medium','twocol','presentation'", default="twocol")
+                    choices=['onecol','medium','twocol','height','presentation'],
+                    help="sets figure size and font size, available options are: \
+                    'onecol','medium','twocol','presentation'", default="twocol")
 parser.add_argument("-r", "--output_resolution", dest="out_res",
                   help='''
                   Graphics resolution in dots per inch (DPI), default
