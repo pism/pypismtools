@@ -444,7 +444,7 @@ for dim_name, dim in nc_in.dimensions.iteritems():
 
 # figure out which variables not need to be copied to the new file.
 # mapplane coordinate variables
-vars_not_copied = ['lat', 'lon', xdim, ydim, tdim]
+vars_not_copied = ['lat', 'lat_bnds', 'lat_bounds', 'lon', 'lon_bnds', 'lon_bounds', xdim, ydim, tdim]
 for var_name in nc_in.variables:
     var = nc_in.variables[var_name]
     if hasattr(var, 'grid_mapping'):
