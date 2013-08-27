@@ -46,7 +46,7 @@ parser.add_argument("-d", "--plot_detrended",dest="plot_detrended",action="store
 parser.add_argument("-o", "--output_file",dest="outfile",
                   help="output file name without suffix, i.e. ts_control -> ts_control_variable",default='foo')
 parser.add_argument("-p", "--print_size",dest="print_mode",
-                    choices=['onecol','medium','twocol','height','presentation'],
+                    choices=['onecol','medium','twocol','height','presentation','small_font'],
                     help="sets figure size and font size.'",default="medium")
 parser.add_argument("--show",dest="show",action="store_true",
                   help="show figure (in addition to save), Default=False",default=False)

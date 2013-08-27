@@ -268,13 +268,13 @@ def set_mode(mode, aspect_ratio=0.95):
 
     def set_small_font():
         '''
-        Define parameters for "medium" mode and return value for pad_inches
+        Define parameters for "small_font" mode and return value for pad_inches
         '''
 
-        fontsize = 5
-        markersize = 1.25
-        lw = 0.75
-        fig_width = 3.15  # inch
+        fontsize = 6
+        lw = 1.2
+        markersize = 3
+        fig_width = 6.3   # inch
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 

@@ -46,9 +46,8 @@ parser.add_argument("-n", "--normalize",dest="normalize",action="store_true",
 parser.add_argument("-o", "--output_file",dest="outfile",
                   help="output file name without suffix, i.e. ts_control -> ts_control_variable",default='foo')
 parser.add_argument("-p", "--print_size",dest="print_mode",
-                    choices=['onecol','medium','twocol','height','presentation'],
-                    help="sets figure size and font size, available options are: \
-                    'onecol','publish','medium','presentation','twocol'",default="medium")
+                    choices=['onecol','medium','twocol','height','presentation','small_font'],
+                    help="sets figure size and font size. Default=medium",default="medium")
 parser.add_argument("--show",dest="show",action="store_true",
                   help="show figure (in addition to save), Default=False",default=False)
 parser.add_argument("--shadow", dest="shadow", action="store_true",
