@@ -592,18 +592,15 @@ for var_name in nc_in.variables:
                     profiler.mark('read')
                     in_values = eval('var_in[%s]' % access_str)
                     p_read = profiler.elapsed('read')
-                    profiler.mark('permute')
                     profile_values = dim_permute(in_values,
                                                  input_order=profile_dims, output_order=out_dim_order)
-                    p_permute = profiler.elapsed('permute')
-
                 var_out = nc.createVariable(
                     var_name, datatype, dimensions=out_dim_order,
                     fill_value=fill_value)
                 profiler.mark('write')
                 var_out[:] = profile_values
                 p_write = profiler.elapsed('write')
-                print('''    - read in %3.4f s, permuted in %3.4f s, written in %3.4f s''' % (p_read, p_permute, p_write))
+                print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
             else:
                 var_out = nc.createVariable(
                     var_name, datatype, dimensions=var_in.dimensions,
