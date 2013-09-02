@@ -273,11 +273,7 @@ def create_profile_axis(filename, projection, flip):
         profile_names = profile_names[::-1]
     profile_x, profile_y = projection(profile_lon, profile_lat)
 
-    x = np.zeros_like(profile_x)
-    x[1::] = np.sqrt(np.diff(profile_x)**2 + np.diff(profile_y)**2)
-    x = x.cumsum()
-
-    return x, profile_x, profile_y, profile_lon, profile_lat, profile_names
+    return profile_x, profile_y, profile_lon, profile_lat, profile_names
 
 
 def dim_permute(
@@ -384,7 +380,7 @@ projection = ppt.get_projection_from_file(nc_in)
 
 # Read in profile data
 print("  reading profile from %s" % profile_filename)
-profile, profile_x, profile_y, profile_lon, profile_lat, profile_name = create_profile_axis(
+profile_x, profile_y, profile_lon, profile_lat, profile_name = create_profile_axis(
     profile_filename, projection, flip)
 
 # indices (i,j)
@@ -405,6 +401,11 @@ profile_y = profile_y[duplicates_idx == 0]
 profile_lat = profile_lat[duplicates_idx == 0]
 profile_lon = profile_lon[duplicates_idx == 0]
 profile_name = profile_name[duplicates_idx == 0]
+
+profile = np.zeros_like(profile_x)
+profile[1::] = np.sqrt(np.diff(profile_x)**2 + np.diff(profile_y)**2)
+profile = profile.cumsum()
+
 
 A_i, A_j = profile_i, profile_j
 B_i, B_j = profile_i, profile_j + 1
