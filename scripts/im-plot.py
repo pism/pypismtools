@@ -188,7 +188,7 @@ vars_cmb = ('climatic_mass_balance')
 vars_temp = ('ice_surface_temp', 'temppabase','temppa', 'temp_pa')
 vars_melt = ('bmelt')
 vars_heat = ('bheatflx')
-vars_div = ("divQ", "divHU", "divUH", "divHU_umt", "divHU_cresis", "divHU_searise")
+vars_div = ("divQ", "divHU", "divUH", "divHU_umt", "divHU_cresis", "divHU_searise", "res_flux")
 vars_tempice = ("tempicethk_basal")
 vars_stress = ("tauc")
 
