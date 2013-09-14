@@ -218,6 +218,7 @@ def read_shapefile(filename):
     
     '''
     import ogr
+    import osr
     driver = ogr.GetDriverByName('ESRI Shapefile')
     data_source = driver.Open(filename, 0)
     layer = data_source.GetLayer(0)
@@ -225,10 +226,11 @@ def read_shapefile(filename):
     # Make sure we use lat/lon coordinates.
     # Fixme: allow reprojection onto lat/lon if needed.
     if not srs.IsGeographic():
-        print('''Spatial Reference System in % s is not lat/lon. Exiting.'''
+        print('''Spatial Reference System in % s is not lat/lon. Converting.'''
               % filename)
-        import sys
-        sys.exit(0)
+        # Create spatialReference, EPSG 4326 (lonlat)
+        srs_geo = osr.SpatialReference()
+        srs_geo.ImportFromEPSG(4326)
     cnt = layer.GetFeatureCount()
     x = []
     y = []
@@ -240,6 +242,9 @@ def read_shapefile(filename):
         except:
             name = str(pt)
         geometry = feature.GetGeometryRef()
+        # Transform to latlon if needed
+        if not srs.IsGeographic():
+            geometry.TransformTo(srs_geo)
         x.append(geometry.GetX())
         y.append(geometry.GetY())
         names.append(name)
