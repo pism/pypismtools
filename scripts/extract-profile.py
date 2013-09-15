@@ -144,7 +144,7 @@ def get_dims_from_variable(var):
     return xdim, ydim, zdim, tdim
 
 
-def piecewise_bilinear(x, y, profile_x, profile_y, profile_i, profile_j, A, B, C, D):
+def piecewise_bilinear(x, y, p_x, p_y, p_i, p_j, A, B, C, D):
     '''
     Returns a piece-wise bilinear interpolation.
 
@@ -160,17 +160,17 @@ def piecewise_bilinear(x, y, profile_x, profile_y, profile_i, profile_j, A, B, C
     Parameters
     ----------
     x, y: 1d coordinate arrays
-    profile_i, profile_j: 1d indices arrays
+    p_i, p_j: 1d indices arrays
     A, B, C, D: array_like containing corner values
 
     Returns
     -------
-    pw_linear: array with shape like profile_i containing interpolated values
+    pw_linear: array with shape like p_i containing interpolated values
     
     '''
 
-    delta_x = profile_x - x[profile_i]
-    delta_y = profile_y - y[profile_j]
+    delta_x = p_x - x[p_i]
+    delta_y = p_y - y[p_j]
 
     alpha = 1./dx * delta_x
     beta  = 1./dy * delta_y
@@ -179,106 +179,6 @@ def piecewise_bilinear(x, y, profile_x, profile_y, profile_i, profile_j, A, B, C
                    alpha * beta * C + alpha * (1-beta) * D)
 
     return pw_bilinear
-
-
-def read_textfile(filename):
-    '''
-    Reads lat / lon from an ascii file.
-
-    Paramters
-    ----------
-    filename: filename of ascii file.
-
-    Returns
-    -------
-    lat, lon: array_like coordinates
-    
-    '''
-
-    try:
-        lat, lon = np.loadtxt(filename, usecols=(0,1), unpack=True)
-    except:
-        lat, lon = np.loadtxt(filename, skiprows=1, usecols=(0,1), unpack=True)
-    np = len(lat)
-    names = [str(x) for x in np.arange(1, np+1)]
-
-    return lat, lon, np.array(names, 'O')
-
-def read_shapefile(filename):
-    '''
-    Reads lat / lon from a ESRI shape file.
-
-    Paramters
-    ----------
-    filename: filename of ESRI shape file.
-
-    Returns
-    -------
-    lat, lon: array_like coordinates
-    
-    '''
-    import ogr
-    import osr
-    driver = ogr.GetDriverByName('ESRI Shapefile')
-    data_source = driver.Open(filename, 0)
-    layer = data_source.GetLayer(0)
-    srs=layer.GetSpatialRef()
-    # Make sure we use lat/lon coordinates.
-    # Fixme: allow reprojection onto lat/lon if needed.
-    if not srs.IsGeographic():
-        print('''Spatial Reference System in % s is not lat/lon. Converting.'''
-              % filename)
-        # Create spatialReference, EPSG 4326 (lonlat)
-        srs_geo = osr.SpatialReference()
-        srs_geo.ImportFromEPSG(4326)
-    cnt = layer.GetFeatureCount()
-    x = []
-    y = []
-    names = []
-    for pt in range(0, cnt):
-        feature = layer.GetFeature(pt)
-        try:
-            name = feature.name
-        except:
-            name = str(pt)
-        geometry = feature.GetGeometryRef()
-        # Transform to latlon if needed
-        if not srs.IsGeographic():
-            geometry.TransformTo(srs_geo)
-        x.append(geometry.GetX())
-        y.append(geometry.GetY())
-        names.append(name)
-
-    return np.asarray(y), np.asarray(x), np.array(names, 'O')
-
-def create_profile_axis(filename, projection, flip):
-    '''
-    Create a profile axis.
-
-    Parameters
-    -----------
-    filename: filename of ascii file
-    projection: proj4 projection object
-
-    Returns
-    -------
-    x: array_like along-profile axis
-    lat: array_like latitudes
-    lon: array_like longitudes
-    
-    '''
-
-    try:
-        profile_lat, profile_lon, profile_names = read_shapefile(filename)
-    except:
-        profile_lat, profile_lon, profile_names = read_textfile(filename)
-    if flip:
-        profile_lat = profile_lat[::-1]
-        profile_lon = profile_lon[::-1]
-        profile_names = profile_names[::-1]
-    profile_x, profile_y = projection(profile_lon, profile_lat)
-
-    return profile_x, profile_y, profile_lon, profile_lat, profile_names
 
 
 def dim_permute(
@@ -351,7 +251,7 @@ elif (n_args > max_no_args):
     import sys.exit
     sys.exit
 else:
-    profile_filename = args[0]
+    p_filename = args[0]
     in_filename = args[1]
     if (n_args == 2):
         out_filename = 'profile.nc'
@@ -384,38 +284,38 @@ projection = ppt.get_projection_from_file(nc_in)
 
 
 # Read in profile data
-print("  reading profile from %s" % profile_filename)
-profile_x, profile_y, profile_lon, profile_lat, profile_name = create_profile_axis(
-    profile_filename, projection, flip)
+print("  reading profile from %s" % p_filename)
+p_x, p_y, p_lon, p_lat, p_name = ppt.create_p_axis(
+    p_filename, projection, flip)
 
 # indices (i,j)
-profile_i = (np.floor((profile_x-x0) / dx)).astype('int')
-profile_j = (np.floor((profile_y-y0) / dy)).astype('int')
+p_i = (np.floor((p_x-x0) / dx)).astype('int')
+p_j = (np.floor((p_y-y0) / dy)).astype('int')
 
 # Filter out double entries                                                 
-duplicates_idx = np.zeros(len(profile_i))
-for n, x_idx in enumerate(profile_i):
-    if (n+1) < len(profile_i):
-        if x_idx == profile_i[n+1] and profile_j[n] == profile_j[n+1]:
-            duplicates_idx[n] = profile_j[n]
+duplicates_idx = np.zeros(len(p_i))
+for n, x_idx in enumerate(p_i):
+    if (n+1) < len(p_i):
+        if x_idx == p_i[n+1] and p_j[n] == p_j[n+1]:
+            duplicates_idx[n] = p_j[n]
 
-profile_i = profile_i[duplicates_idx == 0]
-profile_j = profile_j[duplicates_idx == 0]
-profile_x = profile_x[duplicates_idx == 0]
-profile_y = profile_y[duplicates_idx == 0]
-profile_lat = profile_lat[duplicates_idx == 0]
-profile_lon = profile_lon[duplicates_idx == 0]
-profile_name = profile_name[duplicates_idx == 0]
+p_i = p_i[duplicates_idx == 0]
+p_j = p_j[duplicates_idx == 0]
+p_x = p_x[duplicates_idx == 0]
+p_y = p_y[duplicates_idx == 0]
+p_lat = p_lat[duplicates_idx == 0]
+p_lon = p_lon[duplicates_idx == 0]
+p_name = p_name[duplicates_idx == 0]
 
-profile = np.zeros_like(profile_x)
-profile[1::] = np.sqrt(np.diff(profile_x)**2 + np.diff(profile_y)**2)
+profile = np.zeros_like(p_x)
+profile[1::] = np.sqrt(np.diff(p_x)**2 + np.diff(p_y)**2)
 profile = profile.cumsum()
 
 
-A_i, A_j = profile_i, profile_j
-B_i, B_j = profile_i, profile_j + 1
-C_i, C_j = profile_i + 1, profile_j + 1
-D_i, D_j = profile_i + 1, profile_j
+A_i, A_j = p_i, p_j
+B_i, B_j = p_i, p_j + 1
+C_i, C_j = p_i + 1, p_j + 1
+D_i, D_j = p_i + 1, p_j
 
 mapplane_dim_names = (xdim, ydim)
 
@@ -430,10 +330,10 @@ for attname in nc_in.ncattrs():
     setattr(nc, attname,getattr(nc_in, attname))
 # create dimensions
 profiledim = "profile"    
-nc.createDimension(profiledim, len(profile_x))
+nc.createDimension(profiledim, len(p_x))
 var_out = nc.createVariable(profiledim, 'f', dimensions=(profiledim))
-profiledim_values = np.zeros_like(profile_x)
-profiledim_values[1::] = np.cumsum(np.sqrt(np.diff(profile_x)**2 + np.diff(profile_y)**2))
+profiledim_values = np.zeros_like(p_x)
+profiledim_values[1::] = np.cumsum(np.sqrt(np.diff(p_x)**2 + np.diff(p_y)**2))
 var_out[:] = profiledim_values
 var_out.long_name = 'distance along profile'
 var_out.units = 'm'
@@ -514,21 +414,21 @@ var_out = nc.createVariable(var, 'f', dimensions=(profiledim))
 var_out.units = "degrees_east";
 var_out.valid_range = -180., 180.
 var_out.standard_name = "longitude"
-var_out[:] = profile_lon
+var_out[:] = p_lon
 
 var = 'lat'
 var_out = nc.createVariable(var, 'f', dimensions=(profiledim))
 var_out.units = "degrees_north";
 var_out.valid_range = -90., 90.
 var_out.standard_name = "latitude"
-var_out[:] = profile_lat
+var_out[:] = p_lat
 
 
-var = 'profile_name'
+var = 'p_name'
 var_out = nc.createVariable(var, str, dimensions=(profiledim))
 var_out.cf_role = "timeseries_id"
 var_out.long_name = "profile name"
-var_out[:] = profile_name
+var_out[:] = p_name
 
 print("Copying variables")
 for var_name in nc_in.variables:
@@ -545,12 +445,12 @@ for var_name in nc_in.variables:
             fill_value = None
         if in_dims:
             if len(in_dims) > 1:
-                profile_dims = [x for x in in_dims if x not in mapplane_dim_names]
+                p_dims = [x for x in in_dims if x not in mapplane_dim_names]
                 idx = []
                 for dim in mapplane_dim_names:
                     idx.append(in_dims.index(dim))
                 loc = np.min(idx)
-                profile_dims.insert(loc, profiledim)
+                p_dims.insert(loc, profiledim)
                 out_dims = (tdim, zdim, profiledim)
                 out_dim_order_all = (tdim, zdim, profiledim)
                 out_dim_order = [x for x in out_dim_order_all if x]
@@ -563,48 +463,48 @@ for var_name in nc_in.variables:
                     dim_dict = dict([(tdim, ':'), (xdim, 'A_i'), (ydim, 'A_j'), (zdim, ':')])
                     access_str = ','.join([dim_dict[x] for x in in_dims])
                     A_values = eval('var_in[%s]' % access_str)
-                    A_profile_values = dim_permute(A_values,
-                                                 input_order=profile_dims, output_order=out_dim_order)
+                    A_p_values = dim_permute(A_values,
+                                                 input_order=p_dims, output_order=out_dim_order)
                     dim_dict = dict([(tdim, ':'), (xdim, 'B_i'), (ydim, 'B_j'), (zdim, ':')])
                     access_str = ','.join([dim_dict[x] for x in in_dims])
                     B_values = eval('var_in[%s]' % access_str)
-                    B_profile_values = dim_permute(B_values,
-                                                 input_order=profile_dims, output_order=out_dim_order)
+                    B_p_values = dim_permute(B_values,
+                                                 input_order=p_dims, output_order=out_dim_order)
                     dim_dict = dict([(tdim, ':'), (xdim, 'C_i'), (ydim, 'C_j'), (zdim, ':')])
                     access_str = ','.join([dim_dict[x] for x in in_dims])
                     C_values = eval('var_in[%s]' % access_str)
-                    C_profile_values = dim_permute(C_values,
-                                                 input_order=profile_dims, output_order=out_dim_order)
+                    C_p_values = dim_permute(C_values,
+                                                 input_order=p_dims, output_order=out_dim_order)
                     dim_dict = dict([(tdim, ':'), (xdim, 'D_i'), (ydim, 'D_j'), (zdim, ':')])
                     access_str = ','.join([dim_dict[x] for x in in_dims])
                     D_values = eval('var_in[%s]' % access_str)
-                    D_profile_values = dim_permute(D_values,
-                                                 input_order=profile_dims, output_order=out_dim_order)
+                    D_p_values = dim_permute(D_values,
+                                                 input_order=p_dims, output_order=out_dim_order)
                     p_read = profiler.elapsed('read')
                     print("    - read in %3.4f s" % p_read)
                     profiler.mark('interp')
-                    profile_values = piecewise_bilinear(x_coord, y_coord,
-                                                        profile_x, profile_y,
-                                                        profile_i, profile_j,
-                                                        A_profile_values,
-                                                        B_profile_values,
-                                                        C_profile_values,
-                                                        D_profile_values)
+                    p_values = piecewise_bilinear(x_coord, y_coord,
+                                                        p_x, p_y,
+                                                        p_i, p_j,
+                                                        A_p_values,
+                                                        B_p_values,
+                                                        C_p_values,
+                                                        D_p_values)
                     p_interp = profiler.elapsed('interp')
                     print("    - interpolated in %3.4f s" % p_interp)
                 else:
-                    dim_dict = dict([(tdim, ':'), (xdim, 'profile_i'), (ydim, 'profile_j'), (zdim, ':')])
+                    dim_dict = dict([(tdim, ':'), (xdim, 'p_i'), (ydim, 'p_j'), (zdim, ':')])
                     access_str = ','.join([dim_dict[x] for x in in_dims])
                     profiler.mark('read')
                     in_values = eval('var_in[%s]' % access_str)
                     p_read = profiler.elapsed('read')
-                    profile_values = dim_permute(in_values,
-                                                 input_order=profile_dims, output_order=out_dim_order)
+                    p_values = dim_permute(in_values,
+                                                 input_order=p_dims, output_order=out_dim_order)
                 var_out = nc.createVariable(
                     var_name, datatype, dimensions=out_dim_order,
                     fill_value=fill_value)
                 profiler.mark('write')
-                var_out[:] = profile_values
+                var_out[:] = p_values
                 p_write = profiler.elapsed('write')
                 print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
             else:
