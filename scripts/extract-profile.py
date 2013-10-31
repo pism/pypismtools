@@ -4,7 +4,6 @@
 
 from argparse import ArgumentParser
 import numpy as np
-from pyproj import Proj
 
 try:
     from netCDF4 import Dataset as NC
