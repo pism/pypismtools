@@ -124,7 +124,7 @@ args = options.FILE
 
 nt = len(args)
 required_no_args = 0
-max_no_args = 12
+max_no_args = 24
 if (nt < required_no_args):
     print(("received $i arguments, at least %i expected"
           % (nt, required_no_args)))
@@ -593,7 +593,7 @@ elif singlecolumn:
                     share_all=True)
 else:
     grid = ImageGrid(fig, 111, # similar to subplot(111)
-                    nrows_ncols = (2, nt/2), # creates 2 x nt/2 grid of axes
+                    nrows_ncols = (3, nt/3), # creates 3 x nt/3 grid of axes
                     axes_pad=0.05, # pad between axes in inch.
                     cbar_mode='single',
                     cbar_size=0.115,
