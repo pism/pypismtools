@@ -4,7 +4,6 @@
 # Script creates a imshow plots of a variable in a netCDF file.
 # Does a 1x2, 1x3, 2x2, 3x2 grid plots
 
-from mpl_toolkits.basemap import cm
 from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
 import pylab as plt
