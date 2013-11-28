@@ -284,7 +284,7 @@ projection = ppt.get_projection_from_file(nc_in)
 
 # Read in profile data
 print("  reading profile from %s" % p_filename)
-p_x, p_y, p_lon, p_lat, p_name = ppt.create_p_axis(
+p_x, p_y, p_lon, p_lat, p_name = ppt.create_profile_axis(
     p_filename, projection, flip)
 
 # indices (i,j)
