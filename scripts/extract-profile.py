@@ -144,8 +144,8 @@ def read_textfile(filename):
         lat, lon = np.loadtxt(filename, usecols=(0,1), unpack=True)
     except:
         lat, lon = np.loadtxt(filename, skiprows=1, usecols=(0,1), unpack=True)
-    np = len(lat)
-    names = [str(x) for x in np.arange(1, np+1)]
+    npoint = len(lat)
+    names = [str(x) for x in np.arange(1, npoint+1)]
 
     return lat, lon, np.array(names, 'O')
 
