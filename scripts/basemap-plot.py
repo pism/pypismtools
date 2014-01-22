@@ -490,6 +490,9 @@ if obs_file is not None:
     print(("    - reading variable %s from file %s" % (var, obs_file)))
     try:
         data = np.squeeze(ppt.permute(nc.variables[var], dim_order))
+        if (data.ndim == 3):
+            data = data[level,:]
+
     except:
         print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
               % (variable.var_name, obs_file)))
