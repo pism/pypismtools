@@ -136,7 +136,7 @@ for var in variables:
                  "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
                  "climatic_mass_balance_cumulative",
                  "effective_climatic_mass_balance_cumulative",
-                 "effective_ice_discharge_cumulative"):
+≈                 "effective_ice_discharge_cumulative"):
         out_units = "Gt"
         var_unit_str = "Gt"
         ylabel = ("mass change [%s]" % var_unit_str)

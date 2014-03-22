@@ -190,6 +190,7 @@ vars_heat = ('bheatflx')
 vars_div = ("divQ", "divHU", "divUH", "divHU_umt", "divHU_cresis", "divHU_searise", "res_flux")
 vars_tempice = ("tempicethk_basal")
 vars_stress = ("tauc")
+vars_hydro = ("bwat", "tillwat")
 
 if varname in vars_speed:
 
@@ -368,6 +369,22 @@ elif varname in vars_div:
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
     attr_vals = (None, cmap, norm, vmin, vmax, 'both', None, 'm a$^{-1}$')
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
+elif varname in vars_hydro:
+
+    if cmap is None:
+        cmap = plt.cm.jet
+
+    vmin = 0
+    vmax = 2
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
+                 'colorbar_label')
+    attr_vals = (None, cmap,
+                 norm, vmin, vmax, 'max', '%i', 'm')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
