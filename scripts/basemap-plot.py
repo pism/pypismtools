@@ -402,16 +402,16 @@ elif varname in vars_div:
 elif varname in vars_hydro:
 
     if cmap is None:
-        cmap = plt.cm.jet
+        cmap = plt.cm.spectral_r
 
     vmin = 0
-    vmax = 2
+    vmax = 1
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
     attr_vals = (None, cmap,
-                 norm, vmin, vmax, 'max', '%i', 'm')
+                 norm, vmin, vmax, 'max', None, 'm')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
