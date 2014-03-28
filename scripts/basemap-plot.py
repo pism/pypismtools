@@ -402,11 +402,11 @@ elif varname in vars_div:
 elif varname in vars_hydro:
 
     if cmap is None:
-        cmap = plt.cm.spectral_r
+        cmap = plt.cm.jet
 
-    vmin = 0
-    vmax = 1
-    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    vmin = 0.001
+    vmax = 10
+    norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
