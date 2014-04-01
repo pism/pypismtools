@@ -14,6 +14,8 @@ from osgeo import ogr
 parser = ArgumentParser()
 parser.description = "All values within a polygon defined by a shapefile are replaced by a scalar value."
 parser.add_argument("FILE", nargs=2)
+parser.add_argument("-i", "--invert",dest="invert", action='store_true',
+                    help="Replace all values outside of the polygon with this value",default=False)
 parser.add_argument("-s", "--scalar_value",dest="scalar_value", type=float,
                   help="Replace with this value",default=0.)
 parser.add_argument("-v", "--variables",dest="variables",
@@ -23,6 +25,7 @@ options = parser.parse_args()
 args = options.FILE
 scalar_value = options.scalar_value
 variables = options.variables.split(',')
+invert = options.invert
 
 driver = ogr.GetDriverByName('ESRI Shapefile')
 data_source = driver.Open(args[0], 0)
@@ -83,8 +86,14 @@ for var in variables:
                 y = lat[m,n]
                 wkt = "POINT(%f %f)" % (x,y)
                 point = ogr.CreateGeometryFromWkt(wkt)
-                if feature.GetGeometryRef().Contains(point):
-                    data[m,n] = scalar_value
+                if invert:
+                    if feature.GetGeometryRef().Contains(point):
+                        pass
+                    else:
+                        data[m,n] = scalar_value
+                else:
+                    if feature.GetGeometryRef().Contains(point):
+                        data[m,n] = scalar_value
                 stderr.write("\b\b\b%03d" % (100.0 * counter / max_counter))
                 counter += 1
         
@@ -100,8 +109,14 @@ for var in variables:
                     y = lat[m,n]
                     wkt = "POINT(%f %f)" % (x,y)
                     point = ogr.CreateGeometryFromWkt(wkt)
-                    if feature.GetGeometryRef().Contains(point):
-                        data[k,m,n] = scalar_value
+                    if invert:
+                        if feature.GetGeometryRef().Contains(point):
+                            pass
+                        else:
+                            data[k,m,n] = scalar_value
+                    else:
+                        if feature.GetGeometryRef().Contains(point):
+                            data[k,m,n] = scalar_value
                     stderr.write("\b\b\b%03d" % (100.0 * counter / max_counter))
                     counter += 1
     else:
