@@ -19,7 +19,7 @@ parser.add_argument("-i", "--invert",dest="invert", action='store_true',
 parser.add_argument("-s", "--scalar_value",dest="scalar_value", type=float,
                   help="Replace with this value",default=0.)
 parser.add_argument("-v", "--variables",dest="variables",
-                  help="Comma separated list of variables.",default=['bmelt'])
+                  help="Comma separated list of variables.", default=['bmelt'])
 
 options = parser.parse_args()
 args = options.FILE
