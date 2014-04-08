@@ -141,22 +141,24 @@ def get_projection_from_file(nc):
 
     from pyproj import Proj
 
-    ## First, check if we have a global attribute 'projection'
+    ## First, check if we have a global attribute 'proj4'
     ## which contains a Proj4 string:
     try:
-        p = Proj(str(nc.projection))
-        print('Found projection information in global attribute, using it')
+        p = Proj(str(nc.proj4))
+        print('Found projection information in global attribute proj4, using it')
     except:
         try:
-            ## go through variables and look for 'grid_mapping' attribute
-            for var in nc.variables.keys():
-                if hasattr(nc.variables[var], 'grid_mapping'):
-                    mappingvarname = nc.variables[var].grid_mapping
-            print('Found projection information in variable %s, using it' % mappingvarname)
-            var_mapping = nc.variables[mappingvarname]
+            p = Proj(str(nc.projection))
+            print('Found projection information in global attribute projection, using it')
+        except:
             try:
-                p = Proj(var_mapping.proj4)
-            except:
+                ## go through variables and look for 'grid_mapping' attribute
+                for var in nc.variables.keys():
+                    if hasattr(nc.variables[var], 'grid_mapping'):
+                        mappingvarname = nc.variables[var].grid_mapping
+                        print('Found projection information in variable "%s", using it' % mappingvarname)
+                        break
+                var_mapping = nc.variables[mappingvarname]
                 p = Proj(proj   = "stere",
                          ellps  = var_mapping.ellipsoid,
                          datum  = var_mapping.ellipsoid,
@@ -166,8 +168,9 @@ def get_projection_from_file(nc):
                          lon_0  = var_mapping.straight_vertical_longitude_from_pole,
                          x_0    = var_mapping.false_easting,
                          y_0    = var_mapping.false_northing)
-        except:
-            print('No mapping information found.')
+            except:
+                print('No mapping information found, exiting.')
+                sys.exit(1)
 
     return p
 
