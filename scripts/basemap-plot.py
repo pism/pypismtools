@@ -225,7 +225,7 @@ if varname in vars_speed:
         try:
             basedir =  ppt.__file__.split(ppt.__package__)
             cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
-                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
+                                    '/colormaps/Full_saturation_spectrum_CCW_orange.cpt')
             cmap = colors.LinearSegmentedColormap('my_colormap',
         cdict)
         except:
