@@ -206,7 +206,7 @@ meridian_spacing = 10
 parallels_spacing = 5
 geotiff_rasterized = True
 
-vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag')
+vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag', 'velbase_mag', 'velsurf_mag')
 vars_dem = ('thk', 'usurf', 'usrf')
 vars_topo = ('topg')
 vars_dh = ('dhdt', 'climatic_mass_balance_cumulative')
@@ -214,11 +214,11 @@ vars_cmb = ('climatic_mass_balance')
 vars_temp = ('ice_surface_temp', 'temppabase','temppa', 'temp_pa')
 vars_melt = ('bmelt')
 vars_heat = ('bheatflx')
-vars_div = ("divQ", "divHU", "divUH", "divHU_umt", "divHU_cresis", "divHU_searise", "res_flux")
-vars_tempice = ("tempicethk_basal")
-vars_stress = ("tauc")
-vars_hydro = ("tillwat")
-vars_hydro_log = ("bwat")
+vars_div = ('divQ', 'divHU', 'divUH', 'divHU_umt', 'divHU_cresis', 'divHU_searise', 'res_flux')
+vars_tempice = ('tempicethk_basal')
+vars_stress = ('tauc', 'tauc_mag', 'taub_mag')
+vars_hydro = ('tillwat')
+vars_hydro_log = ('bwat')
 
 if varname in vars_speed:
 
