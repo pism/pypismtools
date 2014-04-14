@@ -219,6 +219,7 @@ vars_tempice = ('tempicethk_basal')
 vars_stress = ('tauc', 'tauc_mag', 'taub_mag')
 vars_hydro = ('tillwat')
 vars_hydro_log = ('bwat')
+vars_rel_log = ('tau_rel')
 
 if varname in vars_speed:
 
@@ -429,6 +430,22 @@ elif varname in vars_hydro_log:
                  'colorbar_label')
     attr_vals = (None, cmap,
                  norm, vmin, vmax, 'max', None, 'm')
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
+elif varname in vars_rel_log:
+
+    if cmap is None:
+        cmap = plt.cm.gist_ncar_r
+
+    vmin = 1
+    vmax = 1000
+    norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
+                 'colorbar_label')
+    attr_vals = ([1, 10, 100, 1000], cmap,
+                 norm, vmin, vmax, 'both', '%i', '1')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
