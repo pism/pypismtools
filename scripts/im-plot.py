@@ -753,3 +753,5 @@ if colorbar_label:
 print("  writing image %s ..." % out_file)
 fig.savefig(out_file, bbox_inches='tight', dpi=out_res)
 
+plt.close()
+del fig
