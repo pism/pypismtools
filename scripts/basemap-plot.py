@@ -219,7 +219,8 @@ vars_tempice = ('tempicethk_basal')
 vars_stress = ('tauc', 'tauc_mag', 'taub_mag')
 vars_hydro = ('tillwat')
 vars_hydro_log = ('bwat')
-vars_rel_log = ('tau_rel')
+vars_rel = ('tau_rel')
+vars_rel_log = ('tau_r')
 
 if varname in vars_speed:
 
@@ -445,6 +446,22 @@ elif varname in vars_rel_log:
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
     attr_vals = ([1, 10, 100, 1000], cmap,
+                 norm, vmin, vmax, 'both', '%i', '1')
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
+elif varname in vars_rel:
+
+    if cmap is None:
+        cmap = plt.cm.PRGn
+
+    vmin = -10
+    vmax = 10
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
+                 'colorbar_label')
+    attr_vals = ([-10, -1, 0, 1, 10], cmap,
                  norm, vmin, vmax, 'both', '%i', '1')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
