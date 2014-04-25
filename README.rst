@@ -121,3 +121,9 @@ mask. Or you can extract the 2000m elevation contour:
    :width: 200px
    :alt: 2000m contour line.
 
+Examples for create_greenland_grid.py
+-------------------------
+
+create_greenland_grid.py creates a netcdf file with the SeaRISE Greenland grid with a given grid spacing. Run ``nc2cdo.py`` from pism/utils and you got a grid definition file that can be used for conservative remapping with CDO (https://code.zmaw.de/projects/cdo).
+
+``create_greenland_grid.py -g 2 searise_2km_grid.py``
