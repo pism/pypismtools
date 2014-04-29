@@ -107,7 +107,7 @@ parser.add_argument("-o", "--output_filename", dest="out_file",
                   help="Name of the output file. Suffix defines output format", default='foo.png')
 parser.add_argument("--geotiff_file", dest="geotiff_filename",
                   help="GeoTIFF filename", default=None)
-parser.add_argument("--shape_file", dest="shape_filename",
+parser.add_argument("--shape_file", dest="shape_filename", nargs='+',
                   help="Shapefile filename", default=None)
 parser.add_argument("--out_unit", dest="outunit",
                   help="Output unit, default is unit in file", default=None)
@@ -866,13 +866,14 @@ for k in range(0, nt):
                        units='km', fontsize=plt.rcParams['font.size'],
             barstyle='fancy')
 
+    countour_colors = ['white', 'black']
     if shape_filename:
-        try:
-            m.readshapefile(shape_filename.split('.shp')[0],
-                        'my_shapefile', linewidth=1.1)
-        except:
-            m.readshapefile(shape_filename,
-                        'my_shapefile', linewidth=1.1)
+        for index, shpfile in enumerate(shape_filename):
+            shpfile = shpfile.split('.shp')[0]
+            m.readshapefile(shpfile,
+                                'my_shapefile', linewidth=.75, color=countour_colors[index])
+            # m.readshapefile(shape_filename.split('.shp')[0],
+            #             'my_shapefile', linewidth=1.1)
 
 
 if singlerow:
