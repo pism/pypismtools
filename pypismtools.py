@@ -510,9 +510,16 @@ def gmtColormap(fileName, log_color=False, reverse=False):
     http://www.mail-archive.com/matplotlib-users@lists.sourceforge.net/msg09547.html
     '''
     import colorsys
+    import os
 
     try:
-        f = open(fileName)
+        try:
+            f = open(fileName)
+        except:
+            # Check if it's a colormap provided in colormaps/
+            basedir, fname = os.path.split(__file__)
+            my_file = os.path.join(basedir, 'colormaps', fileName)
+            f = open(my_file)
     except:
         print "file ", fileName, "not found"
         return None
