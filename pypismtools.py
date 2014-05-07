@@ -1190,12 +1190,12 @@ class Experiment(DataObject):
         print("  - valid cells = %i" % valid_cells)
 
         self.parameter_list = parameter_list
-        self.pism_overrides = self.nc.variables["pism_overrides"]
+        self.pism_config = self.nc.variables["pism_config"]
         self.parameter_dict = dict(
-            [(param, self.pism_overrides.getncattr(param))
+            [(param, self.pism_config.getncattr(param))
              for param in parameter_list])
         self.parameter_short_dict = dict(
-            [(abbr_dict[param], self.pism_overrides.getncattr(param))
+            [(abbr_dict[param], self.pism_config.getncattr(param))
              for param in parameter_list])
         _print_info()
 
