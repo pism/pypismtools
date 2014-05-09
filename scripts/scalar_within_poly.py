@@ -29,16 +29,17 @@ invert = options.invert
 
 driver = ogr.GetDriverByName('ESRI Shapefile')
 data_source = driver.Open(args[0], 0)
+if data_source is None:
+    print "Couldn't open file {}.\n".format(args[0])
+    sys.exit( 1 )
 layer = data_source.GetLayer(0)
 srs=layer.GetSpatialRef()
-# Make sure we use lat/lon coordinates.
-# Fixme: allow reprojection onto lat/lon if needed.
 if not srs.IsGeographic():
-    print('''Spatial Reference System in % s is not lat/lon. Exiting.'''
+    print('''Spatial Reference System in % s is not latlon. Converting.'''
           % filename)
-    import sys
-    sys.exit(0)
-feature = layer.GetFeature(0)
+    # Create spatialReference, EPSG 4326 (lonlat)
+    srs_geo = osr.SpatialReference()
+    srs_geo.ImportFromEPSG(4326)
 
 nc = NC(args[1], 'a')
 
@@ -60,25 +61,30 @@ except:
     import sys
     sys.exit()
 
+# get dimensions of first variables
+var = variables[0]
+try:
+    first_var = nc.variables[var]
+except:
+    print(("ERROR:  variable '%s' not found but needed... ending ..."
+              % var))
 
-for var in variables:
-    try:
-        data = nc.variables[var]
-    except:
-        print(("ERROR:  variable '%s' not found but needed... ending ..."
-                  % var))
-        import sys
-        sys.exit()
+for feature in layer:
+    feature = layer.GetFeature(0)
+    geometry = feature.GetGeometryRef()
+    # Transform to latlon if needed
+    if not srs.IsGeographic():
+        geometry.TransformTo(srs_geo)
 
     counter = 0
-    ndim = data.ndim
+    ndim = first_var.ndim
 
     stderr.write("\n  - Processing variable %s, precent done: " % var)
     stderr.write("000")
 
     if (ndim==2):
-        M = data.shape[0]
-        N = data.shape[1]
+        M = first_var.shape[0]
+        N = first_var.shape[1]
         max_counter = M*N
         for m in range(0, M):
             for n in range(0, N):
@@ -90,10 +96,27 @@ for var in variables:
                     if feature.GetGeometryRef().Contains(point):
                         pass
                     else:
-                        data[m,n] = scalar_value
+                        for var in variables:
+                            try:
+                                data = nc.variables[var]
+                            except:
+                                print(("ERROR:  variable '%s' not found but needed... ending ..."
+                                          % var))
+                                import sys
+                                sys.exit()
+                            data[m,n] = scalar_value
                 else:
                     if feature.GetGeometryRef().Contains(point):
-                        data[m,n] = scalar_value
+                        for var in variables:
+                            try:
+                                data = nc.variables[var]
+                            except:
+                                print(("ERROR:  variable '%s' not found but needed... ending ..."
+                                          % var))
+                                import sys
+                                sys.exit()
+                                data[m,n] = scalar_value
+
                 stderr.write("\b\b\b%03d" % (100.0 * counter / max_counter))
                 counter += 1
         
@@ -113,10 +136,27 @@ for var in variables:
                         if feature.GetGeometryRef().Contains(point):
                             pass
                         else:
-                            data[k,m,n] = scalar_value
+                            for var in variables:
+                                try:
+                                    data = nc.variables[var]
+                                except:
+                                    print(("ERROR:  variable '%s' not found but needed... ending ..."
+                                              % var))
+                                    import sys
+                                    sys.exit()
+                                data[k,m,n] = scalar_value
                     else:
                         if feature.GetGeometryRef().Contains(point):
-                            data[k,m,n] = scalar_value
+                            for var in variables:
+                                try:
+                                    data = nc.variables[var]
+                                except:
+                                    print(("ERROR:  variable '%s' not found but needed... ending ..."
+                                              % var))
+                                    import sys
+                                    sys.exit()
+                                data[k,m,n] = scalar_value
+
                     stderr.write("\b\b\b%03d" % (100.0 * counter / max_counter))
                     counter += 1
     else:
