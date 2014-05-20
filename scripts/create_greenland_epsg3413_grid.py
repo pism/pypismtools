@@ -42,8 +42,8 @@ if __name__ == "__main__":
     cell_center_shift = 75
     e0 = -638000 - buffer - cell_center_shift
     n0 = -3349600 - buffer - cell_center_shift
-    xmax = 865000 + buffer - cell_center_shift
-    ymax =-657600 + buffer - cell_center_shift
+    e1 = 865000 + buffer - cell_center_shift
+    n1 =-657600 +  buffer - cell_center_shift
 
     de = dn =  grid_spacing # m
     M = int((e1 - e0)/de) + 1
