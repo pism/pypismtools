@@ -54,6 +54,9 @@ parser.add_argument("--log",dest="log", action="store_true",
 parser.add_argument("--joughin_speed", dest="joughin_speed", action="store_true",
                   help='''
                   Joughin-style log''', default=False)
+parser.add_argument("--joughin_speed_10k", dest="joughin_speed_10k", action="store_true",
+                  help='''
+                  Joughin-style log''', default=False)
 parser.add_argument("--habermann_tauc", dest="habermann_tauc", action="store_true",
                   help='''
                   log tauc scaling from Habermann et al (2013)''', default=False)
@@ -81,6 +84,7 @@ parser.add_argument("-r", "--reverse",dest="reverse", action="store_true",
 options = parser.parse_args()
 args = options.FILE
 joughin_speed = options.joughin_speed
+joughin_speed_10k = options.joughin_speed_10k
 habermann_tauc = options.habermann_tauc
 a = options.a
 log = options.log
@@ -119,7 +123,22 @@ for k in range(len(args)):
             N = len(data_values)
             norm = mpl.colors.LogNorm(vmin=1, vmax = 3000)
             ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
-            ticks = [1, 3, 10, 30, 100, 1000, 3000]
+            ticks = [1, 3, 10, 30, 100, 300, 1000, 3000]
+            format = '%i'
+            cb_extend = 'both'
+	    colorbar_label = 'm a$^{-1}$'
+    elif joughin_speed_10k:
+            # This is a little duck-punching to get a QGIS colormap
+            # similar to Joughin (2010)
+            vmin = 0
+            vmax = 5
+            a = 1
+            data_values = np.logspace(vmin, vmax, N)[0:889]
+            data_values[-1] = 10000
+            N = len(data_values)
+            norm = mpl.colors.LogNorm(vmin=1, vmax = 3000)
+            ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
+            ticks = [1, 3, 10, 30, 100, 300, 1000, 3000, 10000]
             format = '%i'
             cb_extend = 'both'
 	    colorbar_label = 'm a$^{-1}$'
@@ -137,13 +156,13 @@ for k in range(len(args)):
         data_values = a * np.logspace(vmin, vmax, N)
         norm = mpl.colors.LogNorm(vmin=(10 ** vmin), vmax = a * (10 ** vmax))
         ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
-        ticks = [1, 3, 10, 30, 100, 1000, 3000]
+        ticks = [1, 3, 10, 30, 100, 300, 1000, 3000, 10000]
         format = '%i'
         cb_extend = 'both'
     elif log_color:
         data_values = a * np.logspace(vmin, vmax, N)
         norm = mpl.colors.LogNorm(vmin= (10 ** vmin) - 0.01, vmax = a * (10 ** vmax))
-        ticks = [1, 3, 10, 30, 100, 1000, 3000]
+        ticks = [1, 3, 10, 30, 100, 300, 1000, 3000, 10000]
         format = '%i'
         cb_extend = 'both'
     else:
