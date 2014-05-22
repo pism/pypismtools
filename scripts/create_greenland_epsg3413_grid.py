@@ -38,12 +38,11 @@ if __name__ == "__main__":
     # define output grid
 
     # Create a buffer that is a multiple of the grid resolution
-    buffer=15000
-    cell_center_shift = 75
-    e0 = -638000 - buffer - cell_center_shift
-    n0 = -3349600 - buffer - cell_center_shift
-    e1 = 865000 + buffer - cell_center_shift
-    n1 =-657600 +  buffer - cell_center_shift
+    cell_center_shift = grid_spacing / 2
+    e0 = -638000 - 22650 + cell_center_shift
+    n0 = -3349600 - 22650 + cell_center_shift
+    e1 = 864700 + 22650 - cell_center_shift
+    n1 =-657600 +  21350 - cell_center_shift
 
     de = dn =  grid_spacing # m
     M = int((e1 - e0)/de) + 1
@@ -58,7 +57,7 @@ if __name__ == "__main__":
     projection = "+init=epsg:3413"
     proj = Proj(projection)
 
-    lon,lat = proj(ee,nn,inverse=True)
+    lon, lat = proj(ee, nn, inverse=True)
 
     nc = CDF(nc_outfile,'w',format='NETCDF3_CLASSIC')
 
