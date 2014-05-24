@@ -35,14 +35,28 @@ else:
 
 if __name__ == "__main__": 
 
-    # define output grid
+    # define output grid, these are the extents of Mathieu's domain (cell corners)
+    e0 = -638000
+    n0 = -3349600
+    e1 = 864700
+    n1 =-657600
 
-    # Create a buffer that is a multiple of the grid resolution
-    cell_center_shift = grid_spacing / 2
-    e0 = -638000 - 22650 + cell_center_shift
-    n0 = -3349600 - 22650 + cell_center_shift
-    e1 = 864700 + 22650 - cell_center_shift
-    n1 =-657600 +  21350 - cell_center_shift
+    # Add a buffer on each side such that we get nice grids up to a grid spacing
+    # of 36 km.
+    
+    buffer_e = 40650
+    buffer_n = 22000
+    e0 -= buffer_e
+    n0 -= buffer_n
+    e1 += buffer_e
+    n1 += buffer_n
+
+
+    # Shift to cell centers
+    e0 += grid_spacing / 2
+    n0 += grid_spacing / 2
+    e1 -= grid_spacing / 2
+    n1 -= grid_spacing / 2
 
     de = dn =  grid_spacing # m
     M = int((e1 - e0)/de) + 1
@@ -59,7 +73,7 @@ if __name__ == "__main__":
 
     lon, lat = proj(ee, nn, inverse=True)
 
-    nc = CDF(nc_outfile,'w',format='NETCDF3_CLASSIC')
+    nc = CDF(nc_outfile,'w')
 
     nc.createDimension("x", size=easting.shape[0])
     nc.createDimension("y", size=northing.shape[0])
