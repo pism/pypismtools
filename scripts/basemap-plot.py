@@ -548,12 +548,14 @@ if obs_file is not None:
     # set up dimension ordering
     dim_order = (tdim, zdim, ydim, xdim)
 
-    if varname == 'csurf':
-        if 'csurf' in list(nc.variables.keys()):
-            var = 'csurf'
-        else:
-            var = 'magnitude'
-    else:
+    try:
+        for name in nc.variables:
+            variable = nc.variables[name]
+            if getattr(variable, "standard_name", "") == varname:
+                print("variabe {0} found by its standard_name {1}".format(varname,
+                                                                          name)
+                var = name
+    except:
         var = varname
     print(("    - reading variable %s from file %s" % (var, obs_file)))
     try:
@@ -629,12 +631,14 @@ for k in range(0, nt):
     lats.append(np.squeeze(ppt.permute(nc.variables['lat'], dim_order)))
     lons.append(np.squeeze(ppt.permute(nc.variables['lon'], dim_order)))
 
-    if varname == 'csurf':
-        if 'csurf' in list(nc.variables.keys()):
-            var = 'csurf'
-        else:
-            var = 'magnitude'
-    else:
+    try:
+        for name in nc.variables:
+            variable = nc.variables[name]
+            if getattr(variable, "standard_name", "") == varname:
+                print("variabe {0} found by its standard_name {1}".format(varname,
+                                                                          name)
+                var = name
+    except:
         var = varname
     print(("    - reading variable %s from file %s" % (var, filename)))
     try:
