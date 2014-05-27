@@ -170,6 +170,7 @@ def get_projection_from_file(nc):
                          y_0    = var_mapping.false_northing)
             except:
                 print('No mapping information found, exiting.')
+                import sys
                 sys.exit(1)
 
     return p

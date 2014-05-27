@@ -207,8 +207,8 @@ parallels_spacing = 5
 geotiff_rasterized = True
 
 vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag', 'velbase_mag', 'velsurf_mag')
-vars_dem = ('thk', 'usurf', 'usrf')
-vars_topo = ('topg')
+vars_dem = ('thk', 'usurf', 'usrf', 'surface_altitude', 'surface')
+vars_topo = ('topg', 'bedrock_altitude', 'bed')
 vars_dh = ('dhdt', 'climatic_mass_balance_cumulative')
 vars_cmb = ('climatic_mass_balance')
 vars_temp = ('ice_surface_temp', 'temppabase','temppa', 'temp_pa')
@@ -550,10 +550,10 @@ if obs_file is not None:
 
     try:
         for name in nc.variables:
-            variable = nc.variables[name]
-            if getattr(variable, "standard_name", "") == varname:
-                print("variabe {0} found by its standard_name {1}".format(varname,
-                                                                          name)
+            v = nc.variables[name]
+            if getattr(v, "standard_name", "") == varname:
+                print("variabe {0} found by its standard_name {1}".format(name,
+                                                                          varname))
                 var = name
     except:
         var = varname
@@ -633,10 +633,10 @@ for k in range(0, nt):
 
     try:
         for name in nc.variables:
-            variable = nc.variables[name]
-            if getattr(variable, "standard_name", "") == varname:
-                print("variabe {0} found by its standard_name {1}".format(varname,
-                                                                          name)
+            v = nc.variables[name]
+            if getattr(v, "standard_name", "") == varname:
+                print("variabe {0} found by its standard_name {1}".format(name,
+                                                                          varname))
                 var = name
     except:
         var = varname
