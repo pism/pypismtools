@@ -117,7 +117,6 @@ def create_profile_axes(filename, projection, flip):
     profiles = read_shapefile(filename)
     my_profiles = []
     for profile in range(len(profiles)):
-        print profile
         profile_lat, profile_lon, profile_name = profiles[profile]
         if flip:
             profile_lat = profile_lat[::-1]
@@ -409,7 +408,6 @@ var_out.standard_name = "latitude"
 
 for k in range(len(profiles)):
     profile = profiles[k]
-    print profile[5], np.squeeze(np.asarray(profiles[0][0]))
     ## We have to unlimited dimensions, so we need to assign start and stop
     ## start:stop where start=0 and stop is the length of the array
     ## or netcdf4python will bail. See
@@ -590,11 +588,11 @@ for var_name in nc_in.variables:
                     exec('var_out[%s] = p_values' % access_str)
                     p_write = profiler.elapsed('write')
                     print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
-            else:
-                var_out = nc.createVariable(
-                    var_name, datatype, dimensions=var_in.dimensions,
-                    fill_value=fill_value)
-                var_out[:] = var_in[:]
+        else:
+            var_out = nc.createVariable(
+                var_name, datatype, dimensions=var_in.dimensions,
+                fill_value=fill_value)
+            var_out[:] = var_in[:]
 
         for att in var_in.ncattrs():
             if att == '_FillValue':
