@@ -531,8 +531,8 @@ for var_name in nc_in.variables:
                     p_y = profile[2]
 
                     # indices (i,j)
-                    p_i = (np.floor((p_x-x0) / dx)).astype('int')
-                    p_j = (np.floor((p_y-y0) / dy)).astype('int')
+                    p_i = (np.floor((p_x - (x0-dx/2)) / dx)).astype('int')
+                    p_j = (np.floor((p_y - (y0-dy/2)) / dy)).astype('int')
 
                     if bilinear:
 
