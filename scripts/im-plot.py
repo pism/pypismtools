@@ -487,18 +487,16 @@ if obs_file is not None:
     # set up dimension ordering
     dim_order = (tdim, zdim, ydim, xdim)
 
+    myvar = varname
+    for name in nc.variables.keys():
+        v = nc.variables[name]
+        if getattr(v, "standard_name", "") == varname:
+            print("variabe {0} found by its standard_name {1}".format(name,
+                                                                      varname))
+            myvar = name
+    print(("    - reading variable %s from file %s" % (myvar, obs_file)))
     try:
-        for name in nc.variables:
-            v = nc.variables[name]
-            if getattr(v, "standard_name", "") == varname:
-                print("variabe {0} found by its standard_name {1}".format(name,
-                                                                          varname))
-                var = name
-    except:
-        var = varname
-    print(("    - reading variable %s from file %s" % (var, obs_file)))
-    try:
-        data = np.squeeze(ppt.permute(nc.variables[var], dim_order))
+        data = np.squeeze(ppt.permute(nc.variables[myvar], dim_order))
     except:
         print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
               % (variable.var_name, obs_file)))
@@ -559,18 +557,17 @@ for k in range(0, nt):
     xs.append(np.squeeze(ppt.permute(nc.variables[xdim], dim_order)))
     ys.append(np.squeeze(ppt.permute(nc.variables[ydim], dim_order)))
 
+    myvar = varname
+    for name in nc.variables.keys():
+        v = nc.variables[name]
+        if getattr(v, "standard_name", "") == varname:
+            print("variabe {0} found by its standard_name {1}".format(name,
+                                                                      varname))
+            myvar = name
+            pass
+    print(("    - reading variable %s from file %s" % (myvar, filename)))
     try:
-        for name in nc.variables:
-            v = nc.variables[name]
-            if getattr(v, "standard_name", "") == varname:
-                print("variabe {0} found by its standard_name {1}".format(name,
-                                                                          varname))
-                var = name
-    except:
-        var = varname
-    print(("    - reading variable %s from file %s" % (var, filename)))
-    try:
-        data = np.squeeze(ppt.permute(nc.variables[var], dim_order))
+        data = np.squeeze(ppt.permute(nc.variables[myvar], dim_order))
         if (data.ndim == 3):
             data = data[level,:]
     except:
@@ -580,10 +577,10 @@ for k in range(0, nt):
         sys.exit(1)
 
     try:
-        inunit = str(nc.variables[var].units)
+        inunit = str(nc.variables[myvar].units)
     except:
         print(("ERROR:  units not found in variable '%s' in file %s ... ending ..."
-              % (variable.var_name, filename)))
+              % (myvar, filename)))
         import sys
         sys.exit(1)
 
