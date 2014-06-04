@@ -439,7 +439,7 @@ elif varname in vars_hydro_log:
 elif varname in vars_rel:
 
     if cmap is None:
-        cmap = plt.cm.PRGn
+        cmap = plt.cm.OrRd
 
     vmin = 0
     vmax = 1
@@ -452,7 +452,7 @@ elif varname in vars_rel:
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
-elif varname in vars_rel_log:
+elif varname in vars_sliding_r:
 
     if cmap is None:
         cmap = plt.cm.gist_ncar_r
