@@ -220,7 +220,7 @@ vars_tempice = ('tempicethk_basal')
 vars_stress = ('tauc', 'tauc_mag', 'taub_mag')
 vars_hydro = ('tillwat')
 vars_hydro_log = ('bwat')
-vars_rel = ('tau_rel')
+vars_rel = ('tau_rel', 'speed_r')
 vars_rel_log = ('tau_r')
 
 if varname in vars_speed:
