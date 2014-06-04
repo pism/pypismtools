@@ -452,7 +452,7 @@ elif varname in vars_rel:
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
-elif varname in vars_sliding_r:
+elif varname in vars_ratio_1:
 
     if cmap is None:
         cmap = plt.cm.gist_ncar_r
