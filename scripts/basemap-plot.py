@@ -436,7 +436,7 @@ elif varname in vars_hydro_log:
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
-elif varname in vars_rel:
+elif varname in vars_ratio_1:
 
     if cmap is None:
         cmap = plt.cm.OrRd
@@ -452,7 +452,7 @@ elif varname in vars_rel:
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
-elif varname in vars_ratio_1:
+elif varname in vars_rel_log:
 
     if cmap is None:
         cmap = plt.cm.gist_ncar_r
