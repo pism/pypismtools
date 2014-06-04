@@ -1060,14 +1060,14 @@ class DataObject(object):
         self.valid_cells = value
 
     def _set_grid_spacing(self):
-        '''Tries to determine grid spacing in km, sets None if it fails.'''
+        '''Tries to determine grid spacing in m, sets None if it fails.'''
         try:
             x_dim = self.nc.variables["x"]
             in_units = self.nc.variables["x"].units
         except:
             x_dim = self.nc.variables["x1"]
             in_units = self.nc.variables["x1"].units
-        out_units = "km"
+        out_units = "m"
         grid_spacing = unit_converter(np.abs(x_dim[1] - x_dim[0]),
                                       in_units, out_units)
         self.grid_spacing = grid_spacing
