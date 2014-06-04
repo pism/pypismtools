@@ -206,7 +206,8 @@ meridian_spacing = 10
 parallels_spacing = 5
 geotiff_rasterized = True
 
-vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag', 'velbase_mag', 'velsurf_mag')
+vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag', 'velbase_mag', 
+              'velsurf_mag', 'velshear_mag')
 vars_dem = ('thk', 'usurf', 'usrf', 'surface_altitude', 'surface')
 vars_topo = ('topg', 'bedrock_altitude', 'bed')
 vars_dh = ('dhdt', 'climatic_mass_balance_cumulative')

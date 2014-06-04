@@ -309,12 +309,17 @@ parser.add_argument(
     "-f", "--flip",dest="flip",action="store_true",
     help='''Flip profile direction, Default=False''',
     default=False)
+parser.add_argument(
+    "-t", "--print_timing",dest="timing",action="store_true",
+    help='''Print timing information, Default=False''',
+    default=False)
 
 options = parser.parse_args()
 bilinear = options.bilinear
 args = options.FILE
 flip = options.flip
-fill_value = -2e33
+timing = options.timing
+fill_value = -2e9
 
 n_args = len(args)
 required_no_args = 2
@@ -503,7 +508,8 @@ for var_name in nc_in.variables:
         if hasattr(var_in, '_FillValue'):
             fill_value = var_in._FillValue
         else:
-            fill_value = None
+            # We need a fill value since the interpolation could produce missing values?
+            fill_value = fill_value
         if in_dims:
             if len(in_dims) > 1:
                 p_dims = [x for x in in_dims if x not in mapplane_dim_names]
@@ -563,7 +569,8 @@ for var_name in nc_in.variables:
                         D_p_values = dim_permute(D_values,
                                                      input_order=p_dims, output_order=out_dim_order)
                         p_read = profiler.elapsed('read')
-                        print("    - read in %3.4f s" % p_read)
+                        if timing:
+                            print("    - read in %3.4f s" % p_read)
                         profiler.mark('interp')
                         p_values = piecewise_bilinear(x_coord, y_coord,
                                                             p_x, p_y,
@@ -587,7 +594,8 @@ for var_name in nc_in.variables:
                     access_str = 'k,' + ','.join([':'.join(['0', str(coord)]) for coord in p_values.shape])
                     exec('var_out[%s] = p_values' % access_str)
                     p_write = profiler.elapsed('write')
-                    print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
+                    if timing:
+                        print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
         else:
             var_out = nc.createVariable(
                 var_name, datatype, dimensions=var_in.dimensions,
