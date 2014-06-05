@@ -448,7 +448,7 @@ elif varname in vars_ratio_1:
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
     attr_vals = ([-10, -1, 0, 1, 10], cmap,
-                 norm, vmin, vmax, 'both', '%i', '1')
+                 norm, vmin, vmax, 'neither', '%i', '1')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
