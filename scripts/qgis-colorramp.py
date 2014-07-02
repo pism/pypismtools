@@ -60,6 +60,9 @@ parser.add_argument("--joughin_speed_10k", dest="joughin_speed_10k", action="sto
 parser.add_argument("--habermann_tauc", dest="habermann_tauc", action="store_true",
                   help='''
                   log tauc scaling from Habermann et al (2013)''', default=False)
+parser.add_argument("--bath_topo", dest="bath_topo", action="store_true",
+                  help='''
+                  Scaling for bathymetry/topography for Greenland''', default=False)
 parser.add_argument("--colorbar_label", dest="colorbar_label",
                   help='''Label for colorbar.''', default=None)
 parser.add_argument("-a", "--a_log", dest="a", type=float,
@@ -86,6 +89,7 @@ args = options.FILE
 joughin_speed = options.joughin_speed
 joughin_speed_10k = options.joughin_speed_10k
 habermann_tauc = options.habermann_tauc
+bath_topo = options.bath_topo
 a = options.a
 log = options.log
 extend = options.extend
@@ -152,6 +156,17 @@ for k in range(len(args)):
             ticks = [vmin, vmax]
             format = '%i'
             cb_extend = 'both'
+    elif bath_topo:
+            # This is a little duck-punching to get a QGIS colormap
+            # similar to Joughin (2010)
+            vmin = -800
+            vmax = 3000
+            data_values = a * np.linspace(vmin, vmax, N)
+            norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+            ticks = None
+            format = None
+            cb_extend = 'both'
+	    colorbar_label = 'm a.s.l.'
     elif log:
         data_values = a * np.logspace(vmin, vmax, N)
         norm = mpl.colors.LogNorm(vmin=(10 ** vmin), vmax = a * (10 ** vmax))
@@ -195,7 +210,7 @@ for k in range(len(args)):
     # save high-res colorbar as png
     out_file = '.'.join([prefix, 'png'])
     print("  writing colorbar %s ..." % out_file)
-    fig.savefig(out_file, bbox_inches='tight', dpi=1200)
+    fig.savefig(out_file, bbox_inches='tight', dpi=2400)
 
 
     # convert to RGBA array
