@@ -208,9 +208,11 @@ for k in range(len(args)):
 	    cb1.set_label(colorbar_label)
 
     # save high-res colorbar as png
-    out_file = '.'.join([prefix, 'png'])
-    print("  writing colorbar %s ..." % out_file)
-    fig.savefig(out_file, bbox_inches='tight', dpi=2400)
+
+    for format in ('png', 'pdf'):
+            out_file = '.'.join([prefix, format])
+            print("  writing colorbar %s ..." % out_file)
+            fig.savefig(out_file, bbox_inches='tight', dpi=2400)
 
 
     # convert to RGBA array
