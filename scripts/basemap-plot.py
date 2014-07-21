@@ -284,8 +284,8 @@ elif varname in vars_stress:
     if cmap is None:
         cmap = plt.cm.jet
 
-    vmin = 2e4
-    vmax = 1.5e7
+    vmin = 1e4
+    vmax = 1.25e6
     norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
