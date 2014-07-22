@@ -211,7 +211,7 @@ vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag', 
 vars_dem = ('thk', 'usurf', 'usrf', 'surface_altitude', 'surface')
 vars_topo = ('topg', 'bedrock_altitude', 'bed')
 vars_dh = ('dhdt', 'climatic_mass_balance_cumulative')
-vars_cmb = ('climatic_mass_balance')
+vars_cmb = ('climatic_mass_balance', 'climatic_mass_balance_original')
 vars_temp = ('ice_surface_temp', 'temppabase','temppa', 'temp_pa')
 vars_melt = ('bmelt')
 vars_heat = ('bheatflx')
@@ -243,7 +243,7 @@ if varname in vars_speed:
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
     attr_vals = ([1, 3, 10, 30, 100, 300, 1000, 3000], cmap,
-                 norm, vmin, vmax, 'both', '%d', 'm a$^{-1}$')
+                 norm, vmin, vmax, 'both', '%d', 'm a$^{\mathregular{-1}}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -259,7 +259,7 @@ elif varname in vars_melt:
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
     attr_vals = ([0.001, 0.01, 0.1, 1], cmap,
-                 norm, vmin, vmax, 'max', None, 'm a$^{-1}$')
+                 norm, vmin, vmax, 'max', None, 'm a$^{\mathregular{-1}}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -275,7 +275,7 @@ elif varname in vars_heat:
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
     attr_vals = (None, cmap,
-                 norm, vmin, vmax, 'both', None, 'W m$^{-2}$')
+                 norm, vmin, vmax, 'both', None, 'W m$^{\mathregular{-2}}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -370,7 +370,7 @@ elif varname in vars_cmb:
 
     attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format',
                  'colorbar_label')
-    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, 'm a$^{-1}$')
+    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, 'kg m$^{\mathregular{2}}$ a$^{\mathregular{-1}}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -400,7 +400,7 @@ elif varname in vars_div:
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
-    attr_vals = (None, cmap, norm, vmin, vmax, 'both', None, 'm a$^{-1}$')
+    attr_vals = (None, cmap, norm, vmin, vmax, 'both', None, 'm a$^{\mathregular{-1}}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
