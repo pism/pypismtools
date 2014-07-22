@@ -171,9 +171,17 @@ def read_shapefile(filename):
             geometry.TransformTo(srs_geo)
         lon = []
         lat = []
-        for point in geometry.GetPoints():            
-            lon.append(point[0])
-            lat.append(point[1])
+
+        # This stopped working in gdal 1.11????
+        # for point in geometry.GetPoints():            
+        #     lon.append(point[0])
+        #     lat.append(point[1])
+        # So here's a bug fix??
+        for i in range(0, geometry.GetPointCount()):
+            # GetPoint returns a tuple not a Geometry
+            pt = geometry.GetPoint(i)
+            lon.append(pt[0])
+            lat.append(pt[1])
         profiles.append([lat, lon, name])
     return profiles
 
