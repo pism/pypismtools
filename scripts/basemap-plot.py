@@ -487,7 +487,7 @@ else:
         print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
               % filename))
         import sys
-        sys.exit()
+        sys.exit(1)
     if options.coords :
         coord_file = NC(options.coords,"r")
     else:
@@ -519,7 +519,7 @@ if obs_file is not None:
         print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
               % obs_file))
         import sys
-        sys.exit()
+        sys.exit(1)
     if options.coords :
         coord_file = NC(options.coords,"r")
     else:
