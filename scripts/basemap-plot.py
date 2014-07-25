@@ -106,6 +106,8 @@ parser.add_argument("-c", "--colorbar", dest="colorbar", action="store_true",
                   help="saves a colorbar seperately", default=False)
 parser.add_argument("--colorbar_label", dest="colorbar_label", action="store_true",
                   help="saves a colorbar seperately", default=False)
+parser.add_argument("--scale", dest="scale_factor", type=float, default=1.,
+                  help="multiply data with scaling factor when plotting")
 parser.add_argument("--drawmapscale", dest="drawmapscale", action="store_true",
                   help="draws a map scale in the lower left corner", default=False)
 parser.add_argument("--inner_titles", dest="inner_titles",
@@ -812,7 +814,7 @@ for k in range(0, nt):
     if obs_file:
         if relative:
             data = (values[k] - obs_values) / obs_values
-            cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap,
+            cs = m.pcolormesh(xx, yy, data*options.scale_factor, cmap=variable.cmap,
                               alpha=alpha, norm=variable.norm,
                               rasterized=rasterized)
         else:
@@ -823,7 +825,7 @@ for k in range(0, nt):
                     mask = mask > options.mask_threshold
                 data = np.ma.array(data,mask = (mask==False))
 
-            cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap,
+            cs = m.pcolormesh(xx, yy, data*options.scale_factor, cmap=variable.cmap,
                               alpha=alpha, norm=variable.norm,
                               rasterized=rasterized)
             if options.overlay:
@@ -843,7 +845,7 @@ for k in range(0, nt):
             cs = m.imshow(data, cmap=variable.cmap, alpha=alpha,
                           norm=variable.norm, rasterized=rasterized)
         else:
-            cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap, alpha=alpha,
+            cs = m.pcolormesh(xx, yy, data*options.scale_factor, cmap=variable.cmap, alpha=alpha,
                           norm=variable.norm, rasterized=rasterized)
         if options.overlay:
             ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5,levels=xrange(0,2500,250)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
