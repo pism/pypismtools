@@ -245,7 +245,8 @@ parallels_spacing = .5
 geotiff_rasterized = True
 
 vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag')
-vars_dem = ('thk', 'usurf', 'usrf')
+vars_dem = ('usurf', 'usrf')
+vars_thk = ('thk',)
 vars_topo = ('topg')
 vars_dh = ('dhdt', 'climatic_mass_balance_cumulative')
 vars_cmb = ('climatic_mass_balance')
@@ -262,19 +263,27 @@ if varname in vars_speed:
         try:
             basedir =  ppt.__file__.split(ppt.__package__)
             cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
-                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
+#                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
+                                    '/colormaps/GMT_haxby.cpt')
             cmap = colors.LinearSegmentedColormap('my_colormap',
         cdict)
         except:
             cmap = plt.cm.Blues
-
+    if numcol != 0  :
+        if numcol == -1:
+            numcol = 32
     vmin = 1.
-    vmax = 3e3
+    vmax = 1e4
     norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+    vmin = 1.
+    vmax = 1000.
+    norm = colors.LogNorm(vmin=vmin, vmax=vmax)# Normalize(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
-    attr_vals = ([1, 3, 10, 30, 100, 300, 1000, 3000], cmap,
+    attr_vals = ([1, 3, 10, 30, 100, 300, 1000, 3000, 10000], cmap,
+                 norm, vmin, vmax, 'both', '%d', 'm a$^{-1}$')
+    attr_vals = (None, cmap,
                  norm, vmin, vmax, 'both', '%d', 'm a$^{-1}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
@@ -346,28 +355,54 @@ elif varname in vars_tempice:
 elif varname in vars_dem:
 
     if cmap is None:
-        cmap = plt.cm.Blues
+        cmap = plt.cm.YlOrBr_r
 
     vmin = 0.1
-    vmax = None
+    vmax = 2250
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
-
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
     attr_vals = (None, cmap, norm, vmin, vmax, 'max', '%d', 'm')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
-elif varname in vars_topo:
+elif varname in vars_thk:
 
     if cmap is None:
         cmap = plt.cm.Blues
 
+    vmin = 0.1
+    vmax = None
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    if numcol == -1:
+        numcol=10
+
+    attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
+                 'colorbar_label')
+    if options.obs_file:
+        attr_vals = (None, cmap, norm, vmin, vmax, 'both', '%d', 'm')
+    else:
+        attr_vals = (None, cmap, norm, vmin, vmax, 'max', '%d', 'm')
+
+    var_dict = dict(list(zip(attr_keys, attr_vals)))
+    variable = Variable(varname, var_dict)
+
+elif varname in vars_topo:
+
+    if cmap is None:
+        basedir =  ppt.__file__.split(ppt.__package__)
+        cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
+                                #                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
+                                '/colormaps/GMT_haxby.cpt')
+        cmap = colors.LinearSegmentedColormap('my_colormap',
+                                              cdict)
+#         cmap = plt.cm. # YlOrBr_r # Blues
+
     ## vmin = -5000
     ## vmax = 1400
-    vmin = -1000
-    vmax = 2100
-    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    vmin = -500
+    vmax = 2500
+    norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
@@ -396,9 +431,13 @@ elif varname in vars_cmb:
     if cmap is None:
         cmap = plt.cm.RdBu
         
-    vmin = None
-    vmax = None
-    norm = None
+    vmin = -4000
+    vmax = 4000
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    if numcol != 0  :
+        if numcol == -1:
+            numcol = 10
+
 
     attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format',
                  'colorbar_label')
@@ -409,7 +448,7 @@ elif varname in vars_cmb:
 elif varname in vars_temp:
 
     if cmap is None:
-        cmap = plt.cm.gist_rainbow_r
+        cmap = plt.cm.RdBu_r
         
     vmin = None
     vmax = None
@@ -439,8 +478,13 @@ elif varname in vars_div:
 else:
 
     if cmap is None:
-        cmap = plt.cm.gist_ncar
-
+#        cmap = plt.cm.gist_ncar
+        basedir =  ppt.__file__.split(ppt.__package__)
+        cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
+                                #                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
+                                '/colormaps/GMT_haxby.cpt')
+        cmap = colors.LinearSegmentedColormap('my_colormap',
+                                              cdict)
     vmin = None
     vmax = None
     norm = None
@@ -481,6 +525,12 @@ if obs_file is not None:
                                      vmax=variable.vmax)
     variable.ticks = None
     if colormap is None:
+        basedir =  ppt.__file__.split(ppt.__package__)
+        cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
+                            #                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
+                            '/colormaps/GMT_haxby.cpt')
+        variable.cmap = colors.LinearSegmentedColormap('my_colormap',
+                                                   cdict)
     if numcol > 0 :
         variable.cmap = variable.stepify_colorbar(variable.cmap, numcol, centergray=options.centergray)
 
