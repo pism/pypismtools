@@ -88,6 +88,8 @@ parser.add_argument("--background",dest="background",
                   help="Draw a background (bluemarble, etopo, shadedrelief", default=None)
 parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
                   help="lower and upper bound for colorbar, eg. -1 1", default=None)
+parser.add_argument("--levels", dest="levels",
+                  help="levels to use for plotting", default=None)
 parser.add_argument("--boundary_tol", dest="boundary_tol", nargs=1, type=float,
                   help='''if set, color areas brown where obs <= boundary_tol but data >= boundary_tol,
                   works for difference plots only.''', default=None)
@@ -461,6 +463,14 @@ if bounds is not None:
     variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
     if options.log_norm:
         variable.norm = colors.LogNorm(vmin=variable.vmin, vmax=variable.vmax)
+if options.levels:
+    level_bounds = [ float (x) for x in options.levels.split(",")]
+    variable.norm = colors.BoundaryNorm(level_bounds, len(level_bounds) + 1)
+    bounds_min = level_bounds[0]
+    bounds_max = level_bounds[-1]
+    variable.vmin = bounds_min
+    variable.vmax = bounds_max
+
 
 if obs_file is not None:
     variable.vmin = bounds_min
@@ -770,6 +780,14 @@ if bounds:
 if options.bounds and options.numcol >0 and not options.log_norm:
     step=(bounds_max-bounds_min)/numcol
     variable.ticks=np.arange(bounds_min,bounds_max+step/2.,step)
+
+if options.levels:
+    level_bounds = [ float (x) for x in options.levels.split(",")]
+    variable.norm = colors.BoundaryNorm(level_bounds, len(level_bounds)+1)
+    bounds_min = level_bounds[0]
+    bounds_max = level_bounds[-1]
+    variable.vmin = bounds_min
+    variable.vmax = bounds_max
 
 if options.colorbar_ticks:
     variable.ticks = [float (x) for x in options.colorbar_ticks.split(",")]
