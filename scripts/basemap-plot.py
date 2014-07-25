@@ -441,7 +441,7 @@ elif varname in vars_cmb:
 
     attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format',
                  'colorbar_label')
-    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, 'm a$^{-1}$')
+    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, 'mm WE a$^{-1}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
