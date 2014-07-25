@@ -1031,7 +1031,7 @@ else:
 
 # to prevent the pdf file having white lines
 cbar.solids.set_edgecolor("face")
-if colorbar_label:
+if colorbar_label and hasattr(variable, "colorbar_label"):
     cbar.set_label(variable.colorbar_label)
 
 print("  writing image %s ..." % out_file)
