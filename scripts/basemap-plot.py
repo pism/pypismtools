@@ -104,6 +104,8 @@ parser.add_argument("--colormap",dest="colormap",
                   e.g. Blues''', default=None)
 parser.add_argument("--coastlines", dest="coastlines", action="store_true",
                   help="adds a coastlines", default=False)
+parser.add_argument("--countries", dest="countries", action="store_true",
+                  help="adds country boundaries", default=False)
 parser.add_argument("-c", "--colorbar", dest="colorbar", action="store_true",
                   help="saves a colorbar seperately", default=False)
 parser.add_argument("--colorbar_label", dest="colorbar_label", action="store_true",
@@ -974,6 +976,9 @@ for k in range(0, nt):
     # add coastlines if requested (default is False)
     if coastlines:
         m.drawcoastlines(linewidth=0.25)
+
+    if options.countries:
+        m.drawcountries()
 
     if inner_titles:
         for ax in range(0, nt):
