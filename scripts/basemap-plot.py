@@ -165,6 +165,8 @@ parser.add_argument("-C", "--numcol", dest="numcol", type=int,
                   help='''Number of colors to use 0 = full palette''', default=-1)
 parser.add_argument("--centergray", dest="centergray",
                   help='''Set center of color map to gray''', action="store_true")
+parser.add_argument("-a", "--alaska_albers", dest="alaska_albers",
+                  help='''Use Alaska Albers Projection''', action = "store_true")
 parser.add_argument("--coords",
                   help='''file with coordinate variables''', default = None)
 parser.add_argument("--log_norm",
@@ -514,8 +516,19 @@ else:
 
     center_x = (x_var[0]+x_var[-1]) / 2
     center_y = (y_var[0]+y_var[-1]) / 2
-    nc_projection = ppt.get_projection_from_file(nc)
-    lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
+    if  options.alaska_albers:
+        flo_lon = np.squeeze(coord_file.variables["lon"][:])
+        flo_lat = np.squeeze(coord_file.variables["lat"][:])
+        llcrnrlon = flo_lon[0,0] # flo_lon.min()
+        llcrnrlat = flo_lat[0,0] # .min()
+        urcrnrlon = flo_lon[-1,-1] # .max()
+        urcrnrlat = flo_lat[-1,-1] # .max()
+        flo_lon = None
+        flo_lat = None
+    else:
+        nc_projection = ppt.get_projection_from_file(nc)
+        lon_0, lat_0 = nc_projection(center_x, center_y, inverse=True)
+
     width = 1.2 * (np.max(x_var)-np.min(x_var))
     height = 1.0 * (np.max(y_var)-np.min(y_var))
     
@@ -599,7 +612,13 @@ if obs_file is not None:
 
 
 print("  creating Basemap ...")
-m = Basemap(width=width,
+
+if options.alaska_albers:
+    # ! FLO - Alaska albers projection
+    print ("ll = (%f, %f)\nur = (%f, %f)\n"%( llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat))
+    m = Basemap(projection = "aea", lat_0 = 50 , lon_0 = -154 , lat_1=55 , lat_2=65, llcrnrlon = llcrnrlon, llcrnrlat = llcrnrlat, urcrnrlon = urcrnrlon , urcrnrlat = urcrnrlat ,resolution = 'h')
+else:
+    m = Basemap(width=width,
             height=height,
             resolution=map_res,
             projection='stere',
