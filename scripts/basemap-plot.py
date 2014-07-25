@@ -120,6 +120,14 @@ parser.add_argument("-o", "--output_filename", dest="out_file",
                   help="Name of the output file. Suffix defines output format", default='foo.png')
 parser.add_argument("--geotiff_file", dest="geotiff_filename",
                   help="GeoTIFF filename", default=None)
+parser.add_argument("--mask_file", dest="mask_file",
+                  help="Mask filename", default=None)
+parser.add_argument("--mask_var", dest="mask_var",
+                  help="Mask variable name, default=mask", default="mask")
+parser.add_argument("--mask_threshold", dest="mask_threshold",
+                  help="Threshold for mask variable", default=0, type=float)
+parser.add_argument("--mask_abs", dest="mask_abs",
+                  help="Use absolute value for Masking", action="store_true")
 parser.add_argument("--shape_file", dest="shape_filename",
                   help="Shapefile filename", default=None)
 parser.add_argument("--ticks", dest="colorbar_ticks",
@@ -529,6 +537,15 @@ if obs_file is not None:
         print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
               % (variable.var_name, obs_file)))
         exit(2)
+    if (options.mask_file):
+        print "masking"
+        mask=np.squeeze(ppt.permute(NC(options.mask_file).variables[options.mask_var],dim_order)[:])
+    else:
+        mask=data
+        if (options.mask_abs):
+            mask=abs(mask)
+        mask = mask > options.mask_threshold
+        data = np.ma.array(data,mask = (mask==False))
 
     try:
         inunit = str(nc.variables[var].units)
@@ -627,6 +644,11 @@ for k in range(0, nt):
                % (options.overlay, overlay_file)))
         import sys
         sys.exit(1)
+    if (options.mask_file):
+        mask=np.squeeze(ppt.permute(NC(options.mask_file).variables[options.mask_var], dim_order)[:])
+        if mask.dtype != bool:
+            mask = mask > options.mask_threshold
+        data = np.ma.array(data,mask = (mask==False))
 
     try:
         inunit = str(nc.variables[var].units)
@@ -785,6 +807,12 @@ for k in range(0, nt):
                               rasterized=rasterized)
         else:
             data = values[k] - obs_values
+            if (options.mask_abs and not options.mask_file):
+                mask=abs(data)  # FLO MASKING XXXXXXXXXX
+                if mask.dtype != bool:
+                    mask = mask > options.mask_threshold
+                data = np.ma.array(data,mask = (mask==False))
+
             cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap,
                               alpha=alpha, norm=variable.norm,
                               rasterized=rasterized)
