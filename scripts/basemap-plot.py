@@ -118,6 +118,8 @@ parser.add_argument("--geotiff_file", dest="geotiff_filename",
                   help="GeoTIFF filename", default=None)
 parser.add_argument("--shape_file", dest="shape_filename",
                   help="Shapefile filename", default=None)
+parser.add_argument("--ticks", dest="colorbar_ticks",
+                  help="Colorbar ticks", default=None)
 parser.add_argument("--out_unit", dest="outunit",
                   help="Output unit, default is unit in file", default=None)
 parser.add_argument("-p", "--print_size", dest="print_mode",
