@@ -240,8 +240,8 @@ if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
     sys.exit
 
 # set constants and other stuff
-meridian_spacing = 10
-parallels_spacing = 5
+meridian_spacing = .5
+parallels_spacing = .5
 geotiff_rasterized = True
 
 vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag')
