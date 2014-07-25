@@ -161,6 +161,8 @@ parser.add_argument("-C", "--numcol", dest="numcol", type=int,
                   help='''Number of colors to use 0 = full palette''', default=-1)
 parser.add_argument("--centergray", dest="centergray",
                   help='''Set center of color map to gray''', action="store_true")
+parser.add_argument("--coords",
+                  help='''file with coordinate variables''', default = None)
 parser.add_argument("--log_norm",
                   help='''use log norm''', action="store_true")
 options = parser.parse_args()
@@ -486,6 +488,10 @@ else:
               % filename))
         import sys
         sys.exit()
+    if options.coords :
+        coord_file = NC(options.coords,"r")
+    else:
+        coord_file = nc
         
     xdim, ydim, zdim, tdim = ppt.get_dims(nc)
 
@@ -514,6 +520,10 @@ if obs_file is not None:
               % obs_file))
         import sys
         sys.exit()
+    if options.coords :
+        coord_file = NC(options.coords,"r")
+    else:
+        coord_file = nc
         
     # get the dimensions
     xdim, ydim, zdim, tdim = ppt.get_dims(nc)
@@ -610,8 +620,8 @@ for k in range(0, nt):
     # set up dimension ordering
     dim_order = (tdim, zdim, ydim, xdim)
     # add lat/lon values
-    lats.append(np.squeeze(ppt.permute(nc.variables['lat'], dim_order)))
-    lons.append(np.squeeze(ppt.permute(nc.variables['lon'], dim_order)))
+    lats.append(np.squeeze(ppt.permute(coord_file.variables['lat'], dim_order)))
+    lons.append(np.squeeze(ppt.permute(coord_file.variables['lon'], dim_order)))
 
     if varname == 'csurf':
         if 'csurf' in list(nc.variables.keys()):
