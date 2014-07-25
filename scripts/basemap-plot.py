@@ -65,6 +65,15 @@ class Variable(object):
         if 'colorbar_label' in kwargsdict:
             self.colorbar_label = kwargsdict['colorbar_label']
 
+    def stepify_colorbar(self, cmap, numcol, centergray=True):
+        points = ((np.arange(numcol)*(cmap.N-1)/1./(numcol-1)).round().astype(int)).tolist()
+        colors=[cmap(i) for i in points]
+        if centergray:
+            colors[len(colors)/2]=(.97, .97, .97, 1.)
+        cmap = cmap.from_list("spaced",colors, numcol)
+        return cmap
+
+
 # Set up the option parser
 parser = ArgumentParser()
 parser.description = "A script to plot a variable in a netCDF file over a GeoTiff. Uses GDAL python bindings, Proj4, and Basemap. Script is fine-tuned for whole Greenland plots, but can be adapted for other needs."
@@ -134,6 +143,12 @@ parser.add_argument("-s", "--shaded", dest="shaded", action="store_true",
 parser.add_argument("-v", "--variable", dest="varname",
                   help='''Variable to plot, default = 'csurf'.''', default='csurf')
 
+parser.add_argument("-C", "--numcol", dest="numcol", type=int,
+                  help='''Number of colors to use 0 = full palette''', default=-1)
+parser.add_argument("--centergray", dest="centergray",
+                  help='''Set center of color map to gray''', action="store_true")
+parser.add_argument("--log_norm",
+                  help='''use log norm''', action="store_true")
 options = parser.parse_args()
 args = options.FILE
 
@@ -175,6 +190,7 @@ obs_file = options.obs_file
 outunit = options.outunit
 out_res = int(options.out_res)
 out_file = options.out_file
+numcol = int(options.numcol)
 shaded = options.shaded
 singlerow = options.singlerow
 singlecolumn = options.singlecolumn
@@ -412,6 +428,11 @@ else:
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
+if numcol > 0 :
+    variable.cmap = variable.stepify_colorbar(variable.cmap, numcol, centergray = options.centergray)
+    
+    
+    
 bounds_min = -1
 bounds_max = 1
 if bounds is not None:
@@ -420,6 +441,8 @@ if bounds is not None:
     variable.vmin = bounds_min
     variable.vmax = bounds_max
     variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
+    if options.log_norm:
+        variable.norm = colors.LogNorm(vmin=variable.vmin, vmax=variable.vmax)
 
 if obs_file is not None:
     variable.vmin = bounds_min
@@ -427,6 +450,9 @@ if obs_file is not None:
     variable.norm = colors.Normalize(vmin=variable.vmin,
                                      vmax=variable.vmax)
     variable.ticks = None
+    if colormap is None:
+    if numcol > 0 :
+        variable.cmap = variable.stepify_colorbar(variable.cmap, numcol, centergray=options.centergray)
 
 if geotiff_filename is not None:
     geotiff = ppt.GeoTIFF(geotiff_filename)
@@ -684,6 +710,15 @@ if bounds:
     variable.extend = 'both'
     variable.ticks = None
     variable.format = None
+    if options.log_norm:
+        variable.norm = colors.LogNorm(vmin=variable.vmin, vmax=variable.vmax)
+
+if options.bounds and options.numcol >0 and not options.log_norm:
+    step=(bounds_max-bounds_min)/numcol
+    variable.ticks=np.arange(bounds_min,bounds_max+step/2.,step)
+
+if options.colorbar_ticks:
+    variable.ticks = [float (x) for x in options.colorbar_ticks.split(",")]
 
 for k in range(0, nt):
     ax = grid[k]
