@@ -152,7 +152,7 @@ parser.add_argument("--no_rasterize", dest="rasterized", action="store_false",
                   help="Don't rasterize plot. Slow.", default=True)
 parser.add_argument("--tol", dest="tol", type=float,
                   help="tolerance", default=None)
-parser.add_argument("--level", dest="level", type=int,
+parser.add_argument("-l", "--level", dest="level", type=int,
                   help="level, for 3D data only. Default = 0", default=0)
 parser.add_argument("-s", "--shaded", dest="shaded", action="store_true",
                   help='''Shaded topography. CAREFUL, this options is experimental.
