@@ -10,7 +10,7 @@ except:
     from netCDF3 import Dataset as CDF
 
 # default values
-DXY = 2000.  # km
+DXY = 1800.  # m
 
 # set up the option parser
 parser = OptionParser()
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     lon, lat = proj(ee, nn, inverse=True)
 
-    nc = CDF(nc_outfile,'w')
+    nc = CDF(nc_outfile, 'w')
 
     nc.createDimension("x", size=easting.shape[0])
     nc.createDimension("y", size=northing.shape[0])
