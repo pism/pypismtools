@@ -78,6 +78,10 @@ class Variable(object):
 parser = ArgumentParser()
 parser.description = "A script to plot a variable in a netCDF file over a GeoTiff. Uses GDAL python bindings, Proj4, and Basemap. Script is fine-tuned for whole Greenland plots, but can be adapted for other needs."
 parser.add_argument("FILE", nargs='*')
+parser.add_argument("--overlay",dest="overlay",
+                  help="overlay variable", default=None)
+parser.add_argument("--overlay_file",dest="overlay_file",
+                  help="overlay file", default=None)
 parser.add_argument("--alpha",dest="alpha",
                   help="transparency of overlay", default=1.)
 parser.add_argument("--background",dest="background",
@@ -609,6 +613,20 @@ for k in range(0, nt):
               % (variable.var_name, filename)))
         import sys
         sys.exit(1)
+    try:
+        if (options.overlay):
+            if options.overlay_file:
+                onc = NC(options.overlay_file, 'r')
+            else:
+                onc = nc
+            overlay_data = np.squeeze(ppt.permute(onc.variables[options.overlay], dim_order))
+            if (overlay_data.ndim == 3):
+                overlay_data = overlay_data[level,:]
+    except:
+        print(("ERROR:  unknown or not-found overlay variable '%s' in file %s ... ending ..."
+               % (options.overlay, overlay_file)))
+        import sys
+        sys.exit(1)
 
     try:
         inunit = str(nc.variables[var].units)
@@ -770,6 +788,9 @@ for k in range(0, nt):
             cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap,
                               alpha=alpha, norm=variable.norm,
                               rasterized=rasterized)
+            if options.overlay:
+                ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=xrange(0,2500,250)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+                plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
     else:
         # otherwise just plot data
         data = values[k]
@@ -786,6 +807,9 @@ for k in range(0, nt):
         else:
             cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap, alpha=alpha,
                           norm=variable.norm, rasterized=rasterized)
+        if options.overlay:
+            ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5,levels=xrange(0,2500,250)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+            plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
 
     if singlerow:
         m.drawmeridians(np.arange(-175., 175., meridian_spacing),
