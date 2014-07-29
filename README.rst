@@ -85,8 +85,8 @@ To show the bathymetry around Greenland, you can use the IBCAO colormap. By runn
 
 ``qgis-colorramp.py --vmin -5000 --vmax 1400 --extend -10000 4000 ibcao.cpt``
 
-you get a linear colorramp from -5000m to 1400m, and the last color
-will be extended to 3000m. The result should like like
+and you get a linear colorramp from -5000m to 1400m, where the first and last color
+will be extended to -10000 and 4000m, respectively (in ibcao.txt). The result should like like
 
 .. figure:: https://github.com/pism/pypismtools/raw/master/docs/ibcao.png
    :width: 200px
