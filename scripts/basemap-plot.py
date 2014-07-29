@@ -202,8 +202,6 @@ if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
     sys.exit
 
 # set constants and other stuff
-meridian_spacing = 10
-parallels_spacing = 5
 geotiff_rasterized = True
 
 vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag', 'velbase_mag', 
@@ -833,6 +831,36 @@ for k in range(0, nt):
         else:
             cs = m.pcolormesh(xx, yy, data, cmap=variable.cmap, alpha=alpha,
                           norm=variable.norm, rasterized=rasterized)
+
+
+    dlat = np.abs(lat[-1,-1] - lat[0,0])
+    dlon = np.abs(lon[-1,-1] - lon[0,0])
+    print dlat, dlon
+    if (dlat > 20):
+        parallels_spacing = 5
+    elif ((dlat > 10) and (dlat <= 20)):
+        parallels_spacing = 2
+    elif ((dlat > 5) and (dlat <= 10)):
+        parallels_spacing = 1
+    elif ((dlat > 5) and (dlat <= 1)):
+        parallels_spacing = 1
+    elif ((dlat > 5) and (dlat <= 1)):
+        parallels_spacing = 1
+    else:
+        parallels_spacing = 0.25
+    if (dlon > 20):
+        meridian_spacing = 10
+    elif ((dlon > 11) and (dlon <=20)):
+        meridian_spacing = 5
+    elif ((dlon > 6) and (dlon <=11)):
+        meridian_spacing = 2
+    elif ((dlon > 2) and (dlon <=6)):
+        meridian_spacing = 1
+    elif ((dlon >0.6) and (dlon <=2)):
+        meridian_spacing = 0.5
+    else:
+        meridian_spacing = 0.25
+        
 
     if singlerow:
         m.drawmeridians(np.arange(-175., 175., meridian_spacing),

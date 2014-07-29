@@ -13,7 +13,7 @@ forQGIS, and to extract contour lines.
 Requirements
 -------------------------
 
-The following python modules have to be installed
+The following python modules have to be installed previously:
 
 - netCDF4
 - gdal (with python bindings)
@@ -21,7 +21,7 @@ The following python modules have to be installed
 - py_udunits2 (from https://github.com/ckhroulev/py_udunits2)
 - matplotlib (http://matplotlib.org/)
 - basemap (http://matplotlib.org/basemap/)
-- python imaging library (PIL), optional, needed for for some backgrounds)
+- python imaging library (PIL), optional, needed for some backgrounds)
 
 Installation
 -------------------------
@@ -126,4 +126,11 @@ Examples for create_greenland_grid.py
 
 create_greenland_grid.py creates a netcdf file with the SeaRISE Greenland grid with a given grid spacing. Run ``nc2cdo.py`` from pism/utils and you got a grid definition file that can be used for conservative remapping with CDO (https://code.zmaw.de/projects/cdo).
 
-``create_greenland_grid.py -g 2 searise_2km_grid.py``
+``create_greenland_grid.py -g 2 searise_2km_grid.nc``
+
+Examples for create_greenland_epsg3413_grid.py
+-------------------------
+
+Similar  to ``create_greenland_grid.py`` but for the EPSG:3413 projection. Expects grid spacing in meters.
+
+``create_greenland_epsg3413_grid.py -g 1800 grid_1800m_grid.nc``
