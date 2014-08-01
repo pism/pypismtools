@@ -66,11 +66,17 @@ class Variable(object):
             self.colorbar_label = kwargsdict['colorbar_label']
 
     def stepify_colorbar(self, cmap, numcol, centergray=True):
+        
+        numcol = numcol + 2
         points = ((np.arange(numcol)*(cmap.N-1)/1./(numcol-1)).round().astype(int)).tolist()
         colors=[cmap(i) for i in points]
         if centergray:
             colors[len(colors)/2]=(.97, .97, .97, 1.)
-        cmap = cmap.from_list("spaced",colors, numcol)
+        print "stepifying colormap with %i steps"%len(colors)
+        print cmap, len(colors)
+        cmap = cmap.from_list("spaced",colors[1:-1], numcol-2)
+        cmap.set_under(colors[0])
+        cmap.set_over(colors[-1])
         return cmap
 
 
@@ -215,6 +221,8 @@ outunit = options.outunit
 out_res = int(options.out_res)
 out_file = options.out_file
 numcol = int(options.numcol)
+if options.levels:
+    numcol = len(options.levels.split(","))+1
 shaded = options.shaded
 singlerow = options.singlerow
 singlecolumn = options.singlecolumn
@@ -513,7 +521,9 @@ if bounds is not None:
         variable.norm = colors.LogNorm(vmin=variable.vmin, vmax=variable.vmax)
 if options.levels:
     level_bounds = [ float (x) for x in options.levels.split(",")]
-    variable.norm = colors.BoundaryNorm(level_bounds, len(level_bounds) + 1)
+    variable.norm = colors.BoundaryNorm(level_bounds, len(level_bounds)+1)
+    print "LINE 519 norm to"
+    print norm
     bounds_min = level_bounds[0]
     bounds_max = level_bounds[-1]
     variable.vmin = bounds_min
@@ -533,8 +543,8 @@ if obs_file is not None:
                             '/colormaps/GMT_haxby.cpt')
         variable.cmap = colors.LinearSegmentedColormap('my_colormap',
                                                    cdict)
-    if numcol > 0 :
-        variable.cmap = variable.stepify_colorbar(variable.cmap, numcol, centergray=options.centergray)
+#    if numcol > 0 :
+#        variable.cmap = variable.stepify_colorbar(variable.cmap, numcol, centergray=options.centergray)
 
 if geotiff_filename is not None:
     geotiff = ppt.GeoTIFF(geotiff_filename)
@@ -840,7 +850,7 @@ if variable.var_name not in (vars_speed, vars_dem, vars_topo) and (bounds is Non
     variable.vmin = data.min()
     variable.vmax = data.max()
 
-if bounds:
+if bounds and not options.levels:
     variable.norm = colors.Normalize(vmin=variable.vmin, vmax=variable.vmax)
     variable.extend = 'both'
     variable.ticks = None
@@ -853,12 +863,12 @@ if options.bounds and options.numcol >0 and not options.log_norm:
     variable.ticks=np.arange(bounds_min,bounds_max+step/2.,step)
 
 if options.levels:
-    level_bounds = [ float (x) for x in options.levels.split(",")]
-    variable.norm = colors.BoundaryNorm(level_bounds, len(level_bounds)+1)
-    bounds_min = level_bounds[0]
-    bounds_max = level_bounds[-1]
-    variable.vmin = bounds_min
-    variable.vmax = bounds_max
+     level_bounds = [ float (x) for x in options.levels.split(",")]
+     variable.norm = colors.BoundaryNorm(level_bounds, len(level_bounds)+1)
+     bounds_min = level_bounds[0]
+     bounds_max = level_bounds[-1]
+     variable.vmin = bounds_min
+     variable.vmax = bounds_max
 
 if options.colorbar_ticks:
     variable.ticks = [float (x) for x in options.colorbar_ticks.split(",")]
