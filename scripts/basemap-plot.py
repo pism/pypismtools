@@ -188,12 +188,12 @@ max_no_args = 24
 if (nt < required_no_args):
     print(("received $i arguments, at least %i expected"
           % (nt, required_no_args)))
-    import sys.exit
+    import sys
     sys.exit
 elif (nt > max_no_args):
     print(("received $i arguments, no more thant %i accepted"
           % (nt, max_no_args)))
-    import sys.exit
+    import sys
     sys.exit
 else:
     pass
@@ -246,7 +246,7 @@ suffix = out_file.split('.')[-1]
 if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
     print(('Requested output format %s not supported, try png, pdf, svg, ps, eps'
           % suffix))
-    import sys.exit
+    import sys
     sys.exit
 
 # set constants and other stuff
