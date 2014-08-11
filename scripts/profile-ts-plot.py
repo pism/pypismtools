@@ -136,7 +136,7 @@ for var in variables:
                  "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
                  "climatic_mass_balance_cumulative",
                  "effective_climatic_mass_balance_cumulative",
-≈                 "effective_ice_discharge_cumulative"):
+                 "effective_ice_discharge_cumulative"):
         out_units = "Gt"
         var_unit_str = "Gt"
         ylabel = ("mass change [%s]" % var_unit_str)
@@ -156,7 +156,7 @@ for var in variables:
         out_units = "Pa"
         var_unit_str = "Pa"
         ylabel = ("pressure [%s]" % var_unit_str)
-    elif var in ("csurf", "cbase", "cbar"):
+    elif var in ("csurf", "cbase", "cbar", "velsurf_mag", "velbase_mag"):
         out_units = "m year-1"
         var_unit_str = "m a$^{-1}$"
         ylabel = ("speed [%s]" % var_unit_str)

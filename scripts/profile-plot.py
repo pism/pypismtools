@@ -142,39 +142,44 @@ for k in range(no_args):
         scale_exponent = 6
         scale = 10 ** scale_exponent
         out_units = "km3"
-        var_unit_str = ("10$^{%i}$ km$^{3}$" % scale_exponent)
+        var_units_str = ("10$^{%i}$ km$^{3}$" % scale_exponent)
+        ylabel = ("volume change [%s]" % var_units_str)
     elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
                  "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
                  "climatic_mass_balance_cumulative",
                  "effective_climatic_mass_balance_cumulative",
                  "effective_ice_discharge_cumulative"):
         out_units = "Gt"
-        var_unit_str = "Gt"
-        ylabel = ("mass change [%s]" % var_unit_str)
+        var_units_str = "Gt"
+        ylabel = ("mass change [%s]" % var_units_str)
     elif var in ("ocean_kill_flux"):
         out_units = "Gt year-1"
-        var_unit_str = "Gt a$^{-1}$"
-        ylabel = ("mass change [%s]" % var_unit_str)
+        var_units_str = "Gt a$^{-1}$"
+        ylabel = ("mass change [%s]" % var_units_str)
     elif var in ("usurf", "topg"):
         out_units = "m"
-        var_unit_str = "m a.s.l"
-        ylabel = ("elevation [%s]" % var_unit_str)
-    elif var in ("thk"):
-        out_units = "m"
-        var_unit_str = "m"
-        ylabel = ("ice thickness [%s]" % var_unit_str)
+        var_units_str = "m a.s.l"
+        ylabel = ("elevation [%s]" % var_units_str)
     elif var in ("eigen1", "eigen2"):
         out_units = "year-1"
-        var_unit_str = "a$^{-1}$"
-        ylabel = ("strain rate [%s]" % var_unit_str)
-    elif var in ("taud", "taud_mag", "taud_x", "taud_y", "bwp"):
+        var_units_str = "a$^{-1}$"
+        ylabel = ("strain rate [%s]" % var_units_str)
+    elif var in ("slope_mag", "grad_h"):
+        out_units = "1"
+        var_units_str = "-"
+        ylabel = ("surface slope [%s]" % var_units_str)
+    elif var in ("usurf_float_relative"):
+        out_units = "1"
+        var_units_str = "-"
+        ylabel = ("relative flotation [%s]" % var_units_str)
+    elif var in ("taud", "taud_mag", "taud_x", "taud_y", "bwp", "tauc"):
         out_units = "Pa"
-        var_unit_str = "Pa"
-        ylabel = ("pressure [%s]" % var_unit_str)
-    elif var in ("csurf", "cbase", "cbar"):
+        var_units_str = "Pa"
+        ylabel = ("pressure [%s]" % var_units_str)
+    elif var in ("csurf", "cbase", "cbar", "velsurf_mag", "velsurf_base"):
         out_units = "m year-1"
-        var_unit_str = "m a$^{-1}$"
-        ylabel = ("speed [%s]" % var_unit_str)
+        var_units_str = "m a$^{-1}$"
+        ylabel = ("speed [%s]" % var_units_str)
     else:
         print("unit %s not recognized" % var_units)
     var_ylabels.append(ylabel)
