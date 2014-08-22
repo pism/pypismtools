@@ -928,7 +928,7 @@ for k in range(0, nt):
                               alpha=alpha, norm=variable.norm,
                               rasterized=rasterized)
             if options.overlay:
-                ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=xrange(0,2500,250)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+                ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=xrange(0,2500,500)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
                 plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
     else:
         # otherwise just plot data
@@ -947,7 +947,7 @@ for k in range(0, nt):
             cs = m.pcolormesh(xx, yy, data*options.scale_factor, cmap=variable.cmap, alpha=alpha,
                           norm=variable.norm, rasterized=rasterized)
         if options.overlay:
-            ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5,levels=xrange(0,2500,250)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+            ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5,levels=xrange(0,2500,500)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
             plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
 
     if singlerow:
