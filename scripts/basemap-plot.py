@@ -390,9 +390,9 @@ elif varname in vars_thk:
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
     if options.obs_file:
-        attr_vals = (None, cmap, norm, vmin, vmax, 'both', '%d', 'm')
+        attr_vals = (None, cmap, norm, vmin, vmax, 'both', None, 'm')
     else:
-        attr_vals = (None, cmap, norm, vmin, vmax, 'max', '%d', 'm')
+        attr_vals = (None, cmap, norm, vmin, vmax, 'max', None, 'm')
 
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
