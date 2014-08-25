@@ -281,7 +281,7 @@ if varname in vars_speed:
             cmap = plt.cm.Blues
     if numcol != 0  :
         if numcol == -1:
-            numcol = 32
+            numcol = 9
     vmin = 1.
     vmax = 1e4
     norm = colors.LogNorm(vmin=vmin, vmax=vmax)
