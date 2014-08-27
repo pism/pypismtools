@@ -758,6 +758,27 @@ def get_rmse(a, b, N, relative=False):
         return np.sqrt(np.linalg.norm(np.ma.compressed(c), 2) ** 2.0 / N)
     else:
         return np.sqrt(np.linalg.norm(c, 2) ** 2.0 / N)
+
+def get_wrmse(a, b, w, N):
+    '''
+    Returns the weighted root mean square error of differences between a and b.
+
+    Parameters
+    ----------
+    a,b,w : array_like
+    N : number of values
+
+    Returns
+    -------
+    wrmse : scalar
+    '''
+
+    c = a.ravel() - b.ravel()
+
+    if isinstance(c,np.ma.MaskedArray):
+        return np.sqrt(np.linalg.norm(np.ma.compressed(c), 2) ** 2.0 / np.linalg.norm(np.ma.compressed(w.ravel()), 2) ** 2.0 / N)
+    else:
+        return np.sqrt(np.linalg.norm(c, 2) ** 2.0 / np.linalg.norm(w.ravel(), 2) ** 2.0 / N)
     
 def get_avg(a, b, N, relative=False):
     '''
@@ -1092,6 +1113,10 @@ class DataObject(object):
     def set_rmse(self, rmse):
         '''Set root mean square error (RMSE).'''
         self.rmse = rmse
+
+    def set_wrmse(self, wrmse):
+        '''Set weighted root mean square error (WRMSE).'''
+        self.wrmse = wrmse
 
     def set_avg(self, avg):
         '''Set average (avg).'''
