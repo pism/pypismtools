@@ -109,7 +109,7 @@ parser.add_argument("--colormap",dest="colormap",
                   help='''path to a cpt colormap, or a pylab colormap,
                   e.g. Blues''', default=None)
 parser.add_argument("--coastlines", dest="coastlines", action="store_true",
-                  help="adds a coastlines", default=False)
+                  help="adds coastlines", default=False)
 parser.add_argument("--countries", dest="countries", action="store_true",
                   help="adds country boundaries", default=False)
 parser.add_argument("-c", "--colorbar", dest="colorbar", action="store_true",
@@ -179,6 +179,9 @@ parser.add_argument("--coords",
                   help='''file with coordinate variables''', default = None)
 parser.add_argument("--log_norm",
                   help='''use log norm''', action="store_true")
+
+parser.add_argument("--outline_thk", help="draw an outline at thk=10m", action="store_true")
+
 options = parser.parse_args()
 args = options.FILE
 
@@ -733,6 +736,14 @@ for k in range(0, nt):
               % (variable.var_name, filename)))
         import sys
         sys.exit(1)
+    if options.outline_thk:
+        try:
+            thk = np.squeeze(ppt.permute(nc.variables["thk"], dim_order))
+        except:
+            print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
+                % ("thk", filename)))
+            import sys
+            sys.exit(1)
     try:
         if (options.overlay):
             if options.overlay_file:
@@ -930,6 +941,9 @@ for k in range(0, nt):
             if options.overlay:
                 ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=xrange(0,2500,500)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
                 plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
+            if options.outline_thk:
+                ot = m.contour(xx, yy, thk, colors='0.', linewidths=1.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+                ot = m.contour(xx, yy, thk, colors='1.', linewidths=.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
     else:
         # otherwise just plot data
         data = values[k]
@@ -949,6 +963,9 @@ for k in range(0, nt):
         if options.overlay:
             ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5,levels=xrange(0,2500,500)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
             plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
+        if options.outline_thk:
+            ot = m.contour(xx, yy, thk, colors='0.', linewidths=1.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+            ot = m.contour(xx, yy, thk, colors='1.', linewidths=.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
 
     if singlerow:
         m.drawmeridians(np.arange(-175., 175., meridian_spacing),
