@@ -939,7 +939,7 @@ for k in range(0, nt):
                               alpha=alpha, norm=variable.norm,
                               rasterized=rasterized)
             if options.overlay:
-                ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=xrange(0,2500,500)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+                ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=(1,500,1000,1500,2000,2500)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
                 plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
             if options.outline_thk:
                 ot = m.contour(xx, yy, thk, colors='0.', linewidths=1.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
@@ -961,7 +961,7 @@ for k in range(0, nt):
             cs = m.pcolormesh(xx, yy, data*options.scale_factor, cmap=variable.cmap, alpha=alpha,
                           norm=variable.norm, rasterized=rasterized)
         if options.overlay:
-            ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5,levels=xrange(0,2500,500)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+            ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=(1,500,1000,1500,2000,2500)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
             plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
         if options.outline_thk:
             ot = m.contour(xx, yy, thk, colors='0.', linewidths=1.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
