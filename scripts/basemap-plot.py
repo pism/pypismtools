@@ -749,8 +749,8 @@ elif singlecolumn:
                     share_all=True)
 else:
     grid = ImageGrid(fig, 111, # similar to subplot(111)
-                    nrows_ncols = (3, nt/3), # creates 2 x nt/2 grid of axes
-                    axes_pad=0.05, # pad between axes in inch.
+                    nrows_ncols = (nt/3, 3), # creates 2 x nt/2 grid of axes
+                    axes_pad=0.1, # pad between axes in inch.
                     cbar_mode='single',
                     cbar_size=0.115,
                     cbar_location=colorbar_position,
@@ -879,13 +879,13 @@ for k in range(0, nt):
             m.drawmeridians(np.arange(-175., 175., meridian_spacing),
                             labels = [0, 0, 0, 0], linewidth=0.5)
     else:
-        if (k==0) or (k==2):
+        if (k==0) or (k==3):
             m.drawparallels(np.arange(-90., 90., parallels_spacing),
                             labels = [1, 0, 0, 0], linewidth=0.5)
         else:
             m.drawparallels(np.arange(-90., 90., parallels_spacing),
                             labels = [0, 0, 0, 0], linewidth=0.5)
-        if (k>=2):
+        if (k>=3):
             m.drawmeridians(np.arange(-175., 175., meridian_spacing),
                             labels = [0, 0, 0, 1], linewidth=0.5)
         else:
