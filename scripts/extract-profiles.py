@@ -321,6 +321,12 @@ parser.add_argument(
     "-t", "--print_timing",dest="timing",action="store_true",
     help='''Print timing information, Default=False''',
     default=False)
+parser.add_argument("-v", "--variable",dest="variables",
+                  help="comma-separated list with variables",default='x,y,thk,velsurf_mag,flux_mag')
+parser.add_argument(
+    "-a", "--all_variables",dest="all_vars",action="store_true",
+    help='''Process all variables, overwrite -v/--variable''',
+    default=False)
 
 options = parser.parse_args()
 bilinear = options.bilinear
@@ -328,7 +334,8 @@ args = options.FILE
 flip = options.flip
 timing = options.timing
 fill_value = -2e9
-
+variables = options.variables.split(',')
+all_vars = options.all_vars
 n_args = len(args)
 required_no_args = 2
 max_no_args = 3
@@ -505,7 +512,11 @@ if tdim is not None:
 
 
 print("Copying variables")
-for var_name in nc_in.variables:
+if all_vars:
+    vars_list = nc_in.variables
+else:
+    vars_list = variables
+for var_name in vars_list:
     profiler = timeprofile()
     if var_name not in vars_not_copied:
         print("  Reading variable %s" % var_name)

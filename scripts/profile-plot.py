@@ -65,7 +65,7 @@ parser.add_argument("-t", "--twinx", dest="twinx", action="store_true",
                   help='''adds a second ordinate with units mmSLE,
                   Default=False''', default=False)
 parser.add_argument("-v", "--variable",dest="variables",
-                  help="comma-separated list with variables",default='csurf')
+                  help="comma-separated list with variables",default='velsurf_mag')
 
 options = parser.parse_args()
 args = options.FILE
