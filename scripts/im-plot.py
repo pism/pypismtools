@@ -181,7 +181,7 @@ if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
 
 vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag', 'velbase_mag', 
               'velsurf_mag', 'velshear_mag')
-vars_dem = ('thk', 'usurf', 'usrf', 'surface_altitude', 'surface')
+vars_dem = ('thk', 'usurf', 'usrf', 'surface_altitude', 'surface', 'land_ice_thickness')
 vars_topo = ('topg', 'bedrock_altitude', 'bed')
 vars_dh = ('dhdt', 'climatic_mass_balance_cumulative')
 vars_cmb = ('climatic_mass_balance', 'climatic_mass_balance_original')
