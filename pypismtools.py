@@ -207,6 +207,7 @@ def set_mode(mode, aspect_ratio=0.95):
     - medium: width=121mm, font size=8pt.
     - small_font: width=121mm, font size=7pt.
     - height: height=2.5in.
+    - small: width=80mm, font size=6pt
     - presentation: width=85mm, font size=10pt. For presentations.
     '''
 
@@ -241,20 +242,50 @@ def set_mode(mode, aspect_ratio=0.95):
 
         return lw, 0.30
 
+    def set_small():
+        '''
+        Define parameters for "publish" mode and return value for pad_inches
+        '''
+
+        fontsize = 6
+        lw = 0.5
+        markersize = 2
+        fig_width = 3.15  # inch
+        fig_height = aspect_ratio * fig_width  # inch
+        fig_size = [fig_width, fig_height]
+
+        params = {'backend': 'ps',
+                  'axes.linewidth': 0.5,
+                  'lines.linewidth': lw,
+                  'axes.labelsize': fontsize,
+                  'text.fontsize': fontsize,
+                  'xtick.labelsize': fontsize,
+                  'ytick.labelsize': fontsize,
+                  'legend.fontsize': fontsize,
+                  'lines.linestyle': linestyle,
+                  'lines.markersize': markersize,
+                  'lines.markeredgewidth': 0.2,
+                  'font.size': fontsize,
+                  'figure.figsize': fig_size}
+
+        plt.rcParams.update(params)
+
+        return lw, 0.20
+
     def set_medium():
         '''
         Define parameters for "medium" mode and return value for pad_inches
         '''
 
-        fontsize = 8
-        markersize = 2
-        lw = 1
-        fig_width = 4.8  # inch
+        fontsize = 6
+        markersize = 3
+        lw = 0.75
+        fig_width = 3.15  # inch
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
         params = {'backend': 'ps',
-                  'axes.linewidth': 0.65,
+                  'axes.linewidth': 0.5,
                   'lines.linewidth': lw,
                   'axes.labelsize': fontsize,
                   'text.fontsize': fontsize,
@@ -268,7 +299,7 @@ def set_mode(mode, aspect_ratio=0.95):
 
         plt.rcParams.update(params)
 
-        return lw, 0.35
+        return lw, 0.20
 
     def set_small_font():
         '''
@@ -388,6 +419,8 @@ def set_mode(mode, aspect_ratio=0.95):
 
     if (mode == "onecol"):
         return set_onecol()
+    elif (mode == "small"):
+        return set_small()
     elif (mode == "medium"):
         return set_medium()
     elif (mode == "small_font"):
