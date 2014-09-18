@@ -769,50 +769,30 @@ def fftsmooth(x, window_len=11, window='hanning'):
     y = fftconvolve(w / w.sum(), s, mode='same')
     return y[window_len - 1:-window_len + 1]
 
-
-def get_rmse(a, b, N, relative=False):
+def get_rmse(a, b, N, w=None):
     '''
-    Returns the root mean square error of differences between a and b.
+    Returns the (weighted) root mean square error of differences between a and b.
 
     Parameters
     ----------
-    a,b : array_like
-    N : number of values
+    a, b : array_like
+    N : number of valid values
+    w : weights
 
     Returns
     -------
     rmse : scalar
     '''
-    if relative is False:
-        c = a.ravel() - b.ravel()
-    else:
-        c = (a.ravel() - b.ravel() / b.ravel())
-    if isinstance(c,np.ma.MaskedArray):
+
+    if w is None:
+        w = np.ones_like(a)
+    c = (a.ravel() - b.ravel()) / w.ravel()
+    if isinstance(c, np.ma.MaskedArray):
         return np.sqrt(np.linalg.norm(np.ma.compressed(c), 2) ** 2.0 / N)
     else:
         return np.sqrt(np.linalg.norm(c, 2) ** 2.0 / N)
 
-def get_wrmse(a, b, w, N):
-    '''
-    Returns the weighted root mean square error of differences between a and b.
 
-    Parameters
-    ----------
-    a,b,w : array_like
-    N : number of values
-
-    Returns
-    -------
-    wrmse : scalar
-    '''
-
-    c = a.ravel() - b.ravel()
-
-    if isinstance(c,np.ma.MaskedArray):
-        return np.sqrt(np.linalg.norm(np.ma.compressed(c), 2) ** 2.0 / np.linalg.norm(np.ma.compressed(w.ravel()), 2) ** 2.0 / N)
-    else:
-        return np.sqrt(np.linalg.norm(c, 2) ** 2.0 / np.linalg.norm(w.ravel(), 2) ** 2.0 / N)
-    
 def get_avg(a, b, N, relative=False):
     '''
     Returns the average difference between a and b.
@@ -1025,15 +1005,6 @@ def print_info(experiment):
 def print_overall_statistics(experiments):
     '''Prints some statistics'''
     print("\nOverall statistics:\n")
-
-    avgs = [n.avg for n in experiments]
-    avg_min = filter(lambda(x): x.avg == min(avgs), experiments)
-    avg_max = filter(lambda(x): x.avg == max(avgs), experiments)
-
-    print("    - smallest avg = %3.2f" % avg_min[0].avg)
-    print_info(avg_min[0])
-    print("    - largest avg = %3.2f" % avg_max[0].avg)
-    print_info(avg_max[0])
 
     rmses = [n.rmse for n in experiments]
     rmse_min = filter(lambda(x): x.rmse == min(rmses), experiments)
