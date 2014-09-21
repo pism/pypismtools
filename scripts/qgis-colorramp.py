@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
+import matplotlib
 import pylab as plt
 import matplotlib as mpl
 from argparse import ArgumentParser
@@ -192,9 +193,11 @@ for k in range(len(args)):
     # you could apply a function to the colormap, e.g. to desaturate the colormap:
     # cmap = cmap_map(lambda x: x/2+0.5, cmap)
 
+    matplotlib.rc("font", **{"sans-serif": ["Arial"]}) # "size": fontsize}
+    matplotlib.rc("font", **{"size": 14})
     # create the colorbar
     fig = plt.figure()
-    ax1 = fig.add_axes([0.05, 0.65, 0.9, 0.05])
+    ax1 = fig.add_axes([0.05, 0.65, 0.65, 0.05])
     cb1 = mpl.colorbar.ColorbarBase(ax1,
 				    cmap=cmap,
                                     norm = norm,
@@ -208,7 +211,6 @@ for k in range(len(args)):
 	    cb1.set_label(colorbar_label)
 
     # save high-res colorbar as png
-
     for format in ('png', 'pdf'):
             out_file = '.'.join([prefix, format])
             print("  writing colorbar %s ..." % out_file)
