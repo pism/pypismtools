@@ -204,7 +204,7 @@ def set_mode(mode, aspect_ratio=0.95):
     - onecol: width=80mm, font size=8pt. Appropriate for 1-column figures
     - twocol: width=160mm, font size=8pt. Default.
               Appropriate for 2-column figures
-    - medium: width=121mm, font size=8pt.
+    - medium: width=121mm, font size=7pt.
     - small_font: width=121mm, font size=7pt.
     - height: height=2.5in.
     - small: width=80mm, font size=6pt
@@ -277,7 +277,7 @@ def set_mode(mode, aspect_ratio=0.95):
         Define parameters for "medium" mode and return value for pad_inches
         '''
 
-        fontsize = 7
+        fontsize = 6
         markersize = 3
         lw = 0.75
         fig_width = 3.15  # inch

@@ -58,6 +58,9 @@ parser.add_argument("--joughin_speed", dest="joughin_speed", action="store_true"
 parser.add_argument("--joughin_speed_10k", dest="joughin_speed_10k", action="store_true",
                   help='''
                   Joughin-style log''', default=False)
+parser.add_argument("--joughin_speed_1k", dest="joughin_speed_1k", action="store_true",
+                  help='''
+                  Joughin-style log''', default=False)
 parser.add_argument("--habermann_tauc", dest="habermann_tauc", action="store_true",
                   help='''
                   log tauc scaling from Habermann et al (2013)''', default=False)
@@ -89,6 +92,7 @@ options = parser.parse_args()
 args = options.FILE
 joughin_speed = options.joughin_speed
 joughin_speed_10k = options.joughin_speed_10k
+joughin_speed_1k = options.joughin_speed_1k
 habermann_tauc = options.habermann_tauc
 bath_topo = options.bath_topo
 a = options.a
@@ -120,29 +124,32 @@ for k in range(len(args)):
     if joughin_speed:
             # This is a little duck-punching to get a QGIS colormap
             # similar to Joughin (2010)
-            vmin = 0
-            vmax = 4
-            a = 3
             data_values = np.logspace(vmin, vmax, N)[0:889]
             data_values[-1] = 3000
             N = len(data_values)
             norm = mpl.colors.LogNorm(vmin=1, vmax = 3000)
-            ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
             ticks = [1, 3, 10, 30, 100, 300, 1000, 3000]
+            format = '%i'
+            cb_extend = 'both'
+	    colorbar_label = 'm yr$^{\mathregular{-1}}$'
+    elif joughin_speed_1k:
+            # This is a little duck-punching to get a QGIS colormap
+            # similar to Joughin (2010)
+            data_values = np.logspace(vmin, vmax, N)[0:889]
+            data_values[-1] = 1000
+            N = len(data_values)
+            norm = mpl.colors.LogNorm(vmin=1, vmax = 1000)
+            ticks = [1, 3, 10, 30, 100, 300, 1000]
             format = '%i'
             cb_extend = 'both'
 	    colorbar_label = 'm yr$^{\mathregular{-1}}$'
     elif joughin_speed_10k:
             # This is a little duck-punching to get a QGIS colormap
             # similar to Joughin (2010)
-            vmin = 0
-            vmax = 5
-            a = 1
             data_values = np.logspace(vmin, vmax, N)[0:889]
             data_values[-1] = 10000
             N = len(data_values)
-            norm = mpl.colors.LogNorm(vmin=1, vmax = 3000)
-            ticks = np.hstack((np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
+            norm = mpl.colors.LogNorm(vmin=1, vmax = 10000)
             ticks = [1, 3, 10, 30, 100, 300, 1000, 3000, 10000]
             format = '%i'
             cb_extend = 'both'
