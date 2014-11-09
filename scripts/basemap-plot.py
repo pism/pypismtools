@@ -84,6 +84,8 @@ class Variable(object):
 parser = ArgumentParser()
 parser.description = "A script to plot a variable in a netCDF file over a GeoTiff. Uses GDAL python bindings, Proj4, and Basemap. Script is fine-tuned for whole Greenland plots, but can be adapted for other needs."
 parser.add_argument("FILE", nargs='*')
+
+parser.add_argument("--overlay_precip_scaling", help="draw JIF precip scaling as overlay", default=None)
 parser.add_argument("--overlay",dest="overlay",
                   help="overlay variable", default=None)
 parser.add_argument("--overlay_file",dest="overlay_file",
@@ -941,6 +943,11 @@ for k in range(0, nt):
             if options.overlay:
                 ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=(1,500,1000,1500,2000,2500)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
                 plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
+            if options.overlay_precip_scaling:
+                scaling_overlay=np.squeeze(NC(options.overlay_precip_scaling).variables['gradient'][:])
+                precover = m.contour(xx, yy, scaling_overlay, colors='red', linewidths=1, levels=(0.1,1,2,3)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+                plt.clabel(precover, inline=True, fontsize=4,  linewidths=.5, fmt='%1.1f')
+
             if options.outline_thk:
                 ot = m.contour(xx, yy, thk, colors='0.', linewidths=1.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
                 ot = m.contour(xx, yy, thk, colors='1.', linewidths=.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
@@ -963,6 +970,10 @@ for k in range(0, nt):
         if options.overlay:
             ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=(1,500,1000,1500,2000,2500)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
             plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
+        if options.overlay_precip_scaling:
+                scaling_overlay=np.squeeze(NC(options.overlay_precip_scaling).variables['gradient'][:])
+                precover = m.contour(xx, yy, scaling_overlay, colors='red', linewidths=1, levels=(0.101,0.5,1,1.5,2,2.5,3)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+                plt.clabel(precover, inline=True, fontsize=12,  linewidths=1, fmt='%1.1f')
         if options.outline_thk:
             ot = m.contour(xx, yy, thk, colors='0.', linewidths=1.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
             ot = m.contour(xx, yy, thk, colors='1.', linewidths=.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))

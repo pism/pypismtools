@@ -319,7 +319,7 @@ The profile must be given as a ESRI shape file or an ascii file with
 col(0)=lat, col(1)=lon. The file may have a header in row(0).'''
 parser = ArgumentParser()
 parser.description = description
-parser.add_argument("FILE", nargs='*')
+parser.add_argument("FILE", nargs='*', help="FILE1 is the profile shapefile/ascii, FILE2 is the netcdf, [FILE3 is the output file, else: profile.nc]")
 parser.add_argument(
     "-b", "--bilinear",dest="bilinear",action="store_true",
     help='''Piece-wise bilinear interpolation, Default=False''',
