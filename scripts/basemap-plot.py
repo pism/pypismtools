@@ -71,7 +71,7 @@ class Variable(object):
         points = ((np.arange(numcol)*(cmap.N-1)/1./(numcol-1)).round().astype(int)).tolist()
         colors=[cmap(i) for i in points]
         if centergray:
-            colors[len(colors)/2]=(.97, .97, .97, 1.)
+            colors[len(colors)/2]=(.9, .9, .9, 1.)
         print "stepifying colormap with %i steps"%len(colors)
         print cmap, len(colors)
         cmap = cmap.from_list("spaced",colors[1:-1], numcol-2)
@@ -84,10 +84,14 @@ class Variable(object):
 parser = ArgumentParser()
 parser.description = "A script to plot a variable in a netCDF file over a GeoTiff. Uses GDAL python bindings, Proj4, and Basemap. Script is fine-tuned for whole Greenland plots, but can be adapted for other needs."
 parser.add_argument("FILE", nargs='*')
+parser.add_argument("--fontsize",dest="fontsize",
+                  help="font size", default=16, type=float)
 parser.add_argument("--overlay",dest="overlay",
                   help="overlay variable", default=None)
 parser.add_argument("--overlay_file",dest="overlay_file",
                   help="overlay file", default=None)
+parser.add_argument("--overlay_levels",dest="overlay_levels",
+                  help="overlay levels", default=None)
 parser.add_argument("--alpha",dest="alpha",
                   help="transparency of overlay", default=1.)
 parser.add_argument("--background",dest="background",
@@ -215,6 +219,8 @@ if options.inner_titles != None:
     inner_titles = options.inner_titles.split(',')
 else:
     inner_titles = None
+fontsize = options.fontsize
+plt.rcParams['font.size'] = fontsize
 level = options.level
 map_res = options.map_res
 geotiff_filename = options.geotiff_filename
@@ -226,6 +232,11 @@ out_file = options.out_file
 numcol = int(options.numcol)
 if options.levels:
     numcol = len(options.levels.split(","))+1
+if options.overlay_levels:
+    overlay_levels = [float(x) for x in options.overlay_levels.split(",")]
+else:
+    overlay_levels = (10,500,1000,1500,2000,2500)
+
 shaded = options.shaded
 singlerow = options.singlerow
 singlecolumn = options.singlecolumn
@@ -382,7 +393,15 @@ elif varname in vars_dem:
 elif varname in vars_thk:
 
     if cmap is None:
-        cmap = plt.cm.Blues
+            basedir =  ppt.__file__.split(ppt.__package__)
+            cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
+#                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
+                                    '/colormaps/GMT_haxby.cpt')
+            cmap = colors.LinearSegmentedColormap('my_colormap',
+        cdict)
+
+#         cmap = plt.cm.Blues ## HAXBY haxby = ~/Apps/pypismtools/colormaps/GMT_haxby.cpt
+
 
     vmin = 0.1
     vmax = None
@@ -415,7 +434,7 @@ elif varname in vars_topo:
     ## vmax = 1400
     vmin = -500
     vmax = 2500
-    norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
@@ -557,7 +576,7 @@ if geotiff_filename is not None:
     lon_0 = geotiff.lon_0
     lat = geotiff.lat
     lon = geotiff.lon
-else:
+if True:
     filename = args[0]
     print("  opening NetCDF file %s ..." % filename)
     try:
@@ -570,6 +589,7 @@ else:
     if options.coords :
         coord_file = NC(options.coords,"r")
     else:
+        print "opening coord file"
         coord_file = nc
         
     xdim, ydim, zdim, tdim = ppt.get_dims(nc)
@@ -710,6 +730,10 @@ for k in range(0, nt):
               % filename))
         import sys
         sys.exit(1)
+    if options.coords :
+        coord_file = NC(options.coords,"r")
+    else:
+        coord_file = nc
 
     # get the dimensions
     xdim, ydim, zdim, tdim = ppt.get_dims(nc)
@@ -939,11 +963,11 @@ for k in range(0, nt):
                               alpha=alpha, norm=variable.norm,
                               rasterized=rasterized)
             if options.overlay:
-                ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=(1,500,1000,1500,2000,2500)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
-                plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
+                ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=overlay_levels) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+#                plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
             if options.outline_thk:
-                ot = m.contour(xx, yy, thk, colors='0.', linewidths=1.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
-                ot = m.contour(xx, yy, thk, colors='1.', linewidths=.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+                ot = m.contour(xx, yy, thk, colors='0.', linewidths=2.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+                ot = m.contour(xx, yy, thk, colors='1.', linewidths=1., levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
     else:
         # otherwise just plot data
         data = values[k]
@@ -961,21 +985,21 @@ for k in range(0, nt):
             cs = m.pcolormesh(xx, yy, data*options.scale_factor, cmap=variable.cmap, alpha=alpha,
                           norm=variable.norm, rasterized=rasterized)
         if options.overlay:
-            ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=(1,500,1000,1500,2000,2500)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
-            plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
+            ocs = m.contour(xx, yy, overlay_data, colors='.5', linewidths=.5, levels=overlay_levels) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+#            plt.clabel(ocs, inline=False, fontsize=4,  linewidths=.5, fmt='%1.0f')
         if options.outline_thk:
-            ot = m.contour(xx, yy, thk, colors='0.', linewidths=1.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
-            ot = m.contour(xx, yy, thk, colors='1.', linewidths=.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+            ot = m.contour(xx, yy, thk, colors='0.', linewidths=2.5, levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
+            ot = m.contour(xx, yy, thk, colors='1.', linewidths=1., levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
 
     if singlerow:
         m.drawmeridians(np.arange(-175., 175., meridian_spacing),
-                        labels = [0, 0, 0, 1], linewidth=0.5)
+                        labels = [0, 0, 0, 1], linewidth=0.5, fontsize=fontsize)
         if (k==0):
             m.drawparallels(np.arange(-90., 90., parallels_spacing),
-                            labels = [1, 0, 0, 0], linewidth=.5)
+                            labels = [1, 0, 0, 0], linewidth=.5, fontsize=fontsize)
         else:
             m.drawparallels(np.arange(-90., 90., parallels_spacing),
-                            labels = [0, 0, 0, 0], linewidth=0.5)
+                            labels = [0, 0, 0, 0], linewidth=0.5, fontsize=fontsize)
     elif singlecolumn:
         m.drawparallels(np.arange(-90., 90., parallels_spacing),
                         labels = [1, 0, 0, 0], linewidth=0.5)
@@ -1047,6 +1071,7 @@ elif singlecolumn:
                                          orientation='horizontal',
                                          drawedges=False,
                                          ticks=variable.ticks)
+
 else:
     if colorbar_position in ('bottom', 'upper'):
         orientation = 'horizontal'
@@ -1060,6 +1085,9 @@ else:
                                          drawedges=False,
                                          ticks=variable.ticks,
                                          format=variable.format)
+
+cl = plt.getp(cbar.ax, 'ymajorticklabels') 
+plt.setp(cl, fontsize=fontsize) 
 
 # to prevent the pdf file having white lines
 cbar.solids.set_edgecolor("face")
