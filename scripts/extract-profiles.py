@@ -126,8 +126,13 @@ def create_profile_axes(filename, projection, flip):
         profile = np.zeros_like(profile_x)
         profile[1::] = np.sqrt(np.diff(profile_x)**2 + np.diff(profile_y)**2)
         profile = profile.cumsum()
+        p = np.vstack((profile_x, profile_y)).T
+        ns = compute_normals(p)
+        profile_nx = ns[:,0]
+        profile_ny = ns[:,1]
 
-        my_profiles.append([profile, profile_x, profile_y, profile_lon, profile_lat, profile_name])
+        my_profiles.append([profile, profile_x, profile_y, profile_nx, profile_ny,
+                            profile_lon, profile_lat, profile_name])
     return my_profiles
 
 
@@ -302,28 +307,41 @@ def dim_permute(
         return values  # so that it does not break processing "mapping"
 
     
-def calculate_normal_vector(profile):
+def normal(p0, p1):
     '''
-    Calculate normal vectors are flux gate points.
-
-    Using standard vector calculus we compute the right-hand side normal
-    vector from:
-
+    Compute the unit normal vector orthogonal to (p1-p0), pointing 'to the
+    right' of (p1-p0).
     '''
 
-    x = profile[1]
-    y = profile[2]
+    a = p0 - p1
+    if a[1] != 0.0:
+        n = np.array([1.0, - a[0] / a[1]])
+        n = n / np.linalg.norm(n) # normalize
+    else:
+        n = np.array([0,1])
 
-    nx = np.zeros_like(x)
-    ny = np.zeros_like(y)
+    # flip direction if needed:
+    if np.cross(a, n) < 0:
+        n = -1.0 * n
 
-    for point in range(1, len(nx)-1):
-        nx[point] = x[point-1] - 2 * x[point] + x[point+1]
-        ny[point] = y[point-1] - 2 * y[point] + y[point+1]
-    # Make unit length
-    abs_n = sqrt(nx**2 + ny**2)
-    nx, ny = 1/abs_n * nx, 1/abs_n * ny
-    print nx, ny
+    return n
+
+
+def compute_normals(p):
+    '''
+    Compute normals to a flux gate described by 'p'. Normals point 'to
+    the right' of the path.
+    '''
+
+    ns = np.zeros_like(p)
+    ns[0] = normal(p[0], p[1])
+    for j in range(1, len(p) - 1):
+        ns[j] = normal(p[j-1], p[j+1])
+
+    ns[-1] = normal(p[-2], p[-1])
+
+    return ns
+
 
     
 # Set up the option parser
@@ -452,11 +470,11 @@ var_out.standard_name = "latitude"
 
 var = 'nx'
 var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
-var_out.long_name = "x-component of the outward-pointing normal vector"
+var_out.long_name = "x-component of the right-hand--pointing normal vector"
 
 var = 'ny'
 var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
-var_out.long_name = "y-component of the outward-pointing normal vector"
+var_out.long_name = "y-component of the right-hand-pointing normal vector"
 
 for k in range(len(profiles)):
     profile = profiles[k]
@@ -466,9 +484,11 @@ for k in range(len(profiles)):
     ## https://code.google.com/p/netcdf4-python/issues/detail?id=76
     pl = len(profile[0])
     nc.variables['profile'][k,0:pl] = np.squeeze(profile[0])
-    nc.variables['lon'][k,0:pl] = np.squeeze(profile[3])
-    nc.variables['lat'][k,0:pl] = np.squeeze(profile[4])   
-    nc.variables['profile_name'][k] = profile[5]
+    nc.variables['nx'][k,0:pl] = np.squeeze(profile[3])
+    nc.variables['ny'][k,0:pl] = np.squeeze(profile[4])
+    nc.variables['lon'][k,0:pl] = np.squeeze(profile[5])
+    nc.variables['lat'][k,0:pl] = np.squeeze(profile[6])   
+    nc.variables['profile_name'][k] = profile[7]
 
 
 for dim_name, dim in nc_in.dimensions.iteritems():
@@ -582,7 +602,7 @@ for var_name in vars_list:
                     fill_value=fill_value)
 
                 for k in range(len(profiles)):
-                    print("    - processing profile {0}".format(profile[5]))
+                    print("    - processing profile {0}".format(profile[7]))
                     profile = profiles[k]
                     p_x = profile[1]
                     p_y = profile[2]
@@ -604,21 +624,29 @@ for var_name in vars_list:
                         A_values = eval('var_in[%s]' % access_str)
                         A_p_values = dim_permute(A_values,
                                                      input_order=p_dims, output_order=out_dim_order)
+                        if isinstance(A_p_values, np.ma.MaskedArray):
+                            A_p_values = A_p_values.filled(0)
                         dim_dict = dict([(tdim, ':'), (xdim, 'B_i'), (ydim, 'B_j'), (zdim, ':')])
                         access_str = ','.join([dim_dict[x] for x in in_dims])
                         B_values = eval('var_in[%s]' % access_str)
                         B_p_values = dim_permute(B_values,
                                                      input_order=p_dims, output_order=out_dim_order)
+                        if isinstance(B_p_values, np.ma.MaskedArray):
+                            B_p_values = B_p_values.filled(0)
                         dim_dict = dict([(tdim, ':'), (xdim, 'C_i'), (ydim, 'C_j'), (zdim, ':')])
                         access_str = ','.join([dim_dict[x] for x in in_dims])
                         C_values = eval('var_in[%s]' % access_str)
                         C_p_values = dim_permute(C_values,
                                                      input_order=p_dims, output_order=out_dim_order)
+                        if isinstance(C_p_values, np.ma.MaskedArray):
+                            C_p_values = C_p_values.filled(0)                        
                         dim_dict = dict([(tdim, ':'), (xdim, 'D_i'), (ydim, 'D_j'), (zdim, ':')])
                         access_str = ','.join([dim_dict[x] for x in in_dims])
                         D_values = eval('var_in[%s]' % access_str)
                         D_p_values = dim_permute(D_values,
                                                      input_order=p_dims, output_order=out_dim_order)
+                        if isinstance(D_p_values, np.ma.MaskedArray):
+                            D_p_values = D_p_values.filled(0)
                         p_read = profiler.elapsed('read')
                         if timing:
                             print("    - read in %3.4f s" % p_read)

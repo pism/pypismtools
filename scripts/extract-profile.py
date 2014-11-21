@@ -122,8 +122,12 @@ def create_profile_axis(filename, projection, flip):
         profile_lon = profile_lon[::-1]
         profile_names = profile_names[::-1]
     profile_x, profile_y = projection(profile_lon, profile_lat)
+    p = np.vstack((profile_x, profile_y)).T
+    ns = compute_normals(p)
+    profile_nx = ns[:,0]
+    profile_ny = ns[:,1]
 
-    return profile_x, profile_y, profile_lon, profile_lat, profile_names
+    return profile_x, profile_y, profile_nx, profile_ny, profile_lon, profile_lat, profile_names
 
 
 def read_textfile(filename):
@@ -311,7 +315,42 @@ def dim_permute(
     else:
         return values  # so that it does not break processing "mapping"
 
-        
+def normal(p0, p1):
+    '''
+    Compute the unit normal vector orthogonal to (p1-p0), pointing 'to the
+    right' of (p1-p0).
+    '''
+
+    a = p0 - p1
+    if a[1] != 0.0:
+        n = np.array([1.0, - a[0] / a[1]])
+        n = n / np.linalg.norm(n) # normalize
+    else:
+        n = np.array([0,1])
+
+    # flip direction if needed:
+    if np.cross(a, n) < 0:
+        n = -1.0 * n
+
+    return n
+
+
+def compute_normals(p):
+    '''
+    Compute normals to a flux gate described by 'p'. Normals point 'to
+    the right' of the path.
+    '''
+
+    ns = np.zeros_like(p)
+    ns[0] = normal(p[0], p[1])
+    for j in range(1, len(p) - 1):
+        ns[j] = normal(p[j-1], p[j+1])
+
+    ns[-1] = normal(p[-2], p[-1])
+
+    return ns
+
+
 # Set up the option parser
 description = '''A script to extract data along a given profile using
 piece-wise constant or bilinear interpolation.
@@ -383,7 +422,7 @@ projection = ppt.get_projection_from_file(nc_in)
 
 # Read in profile data
 print("  reading profile from %s" % p_filename)
-p_x, p_y, p_lon, p_lat, p_name = create_profile_axis(
+p_x, p_y, p_nx, p_ny, p_lon, p_lat, p_name = create_profile_axis(
     p_filename, projection, flip)
 
 # indices (i,j)
@@ -521,12 +560,22 @@ var_out.valid_range = -90., 90.
 var_out.standard_name = "latitude"
 var_out[:] = p_lat
 
-
 var = 'p_name'
 var_out = nc.createVariable(var, str, dimensions=(profiledim))
 var_out.cf_role = "timeseries_id"
 var_out.long_name = "profile name"
 var_out[:] = p_name
+
+var = 'nx'
+var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
+var_out.long_name = "x-component of the right-hand--pointing normal vector"
+var_out[:] = p_nx
+
+var = 'ny'
+var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
+var_out.long_name = "y-component of the right-hand-pointing normal vector"
+var_out[:] = p_ny
+
 
 print("Copying variables")
 for var_name in nc_in.variables:
@@ -563,21 +612,29 @@ for var_name in nc_in.variables:
                     A_values = eval('var_in[%s]' % access_str)
                     A_p_values = dim_permute(A_values,
                                                  input_order=p_dims, output_order=out_dim_order)
+                    if isinstance(A_p_values, np.ma.MaskedArray):
+                            A_p_values = A_p_values.filled(0)
                     dim_dict = dict([(tdim, ':'), (xdim, 'B_i'), (ydim, 'B_j'), (zdim, ':')])
                     access_str = ','.join([dim_dict[x] for x in in_dims])
                     B_values = eval('var_in[%s]' % access_str)
                     B_p_values = dim_permute(B_values,
                                                  input_order=p_dims, output_order=out_dim_order)
+                    if isinstance(B_p_values, np.ma.MaskedArray):
+                            B_p_values = B_p_values.filled(0)
                     dim_dict = dict([(tdim, ':'), (xdim, 'C_i'), (ydim, 'C_j'), (zdim, ':')])
                     access_str = ','.join([dim_dict[x] for x in in_dims])
                     C_values = eval('var_in[%s]' % access_str)
                     C_p_values = dim_permute(C_values,
                                                  input_order=p_dims, output_order=out_dim_order)
+                    if isinstance(C_p_values, np.ma.MaskedArray):
+                            C_p_values = C_p_values.filled(0)
                     dim_dict = dict([(tdim, ':'), (xdim, 'D_i'), (ydim, 'D_j'), (zdim, ':')])
                     access_str = ','.join([dim_dict[x] for x in in_dims])
                     D_values = eval('var_in[%s]' % access_str)
                     D_p_values = dim_permute(D_values,
                                                  input_order=p_dims, output_order=out_dim_order)
+                    if isinstance(D_p_values, np.ma.MaskedArray):
+                            D_p_values = D_p_values.filled(0)
                     p_read = profiler.elapsed('read')
                     print("    - read in %3.4f s" % p_read)
                     profiler.mark('interp')
