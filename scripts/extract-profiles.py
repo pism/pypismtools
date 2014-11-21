@@ -364,7 +364,7 @@ parser.add_argument(
     help='''Print timing information, Default=False''',
     default=False)
 parser.add_argument("-v", "--variable",dest="variables",
-                  help="comma-separated list with variables",default='x,y,thk,velsurf_mag,flux_mag,pism_config,pism_overrides,run_stats')
+                    help="comma-separated list with variables",default='x,y,thk,velsurf_mag,flux_mag,uflux,vflux,pism_config,pism_overrides,run_stats')
 parser.add_argument(
     "-a", "--all_variables",dest="all_vars",action="store_true",
     help='''Process all variables, overwrite -v/--variable''',
