@@ -301,7 +301,31 @@ def dim_permute(
     else:
         return values  # so that it does not break processing "mapping"
 
-        
+    
+def calculate_normal_vector(profile):
+    '''
+    Calculate normal vectors are flux gate points.
+
+    Using standard vector calculus we compute the right-hand side normal
+    vector from:
+
+    '''
+
+    x = profile[1]
+    y = profile[2]
+
+    nx = np.zeros_like(x)
+    ny = np.zeros_like(y)
+
+    for point in range(1, len(nx)-1):
+        nx[point] = x[point-1] - 2 * x[point] + x[point+1]
+        ny[point] = y[point-1] - 2 * y[point] + y[point+1]
+    # Make unit length
+    abs_n = sqrt(nx**2 + ny**2)
+    nx, ny = 1/abs_n * nx, 1/abs_n * ny
+    print nx, ny
+
+    
 # Set up the option parser
 description = '''A script to extract data along (possibly multiple) profile using
 piece-wise constant or bilinear interpolation.
@@ -426,16 +450,24 @@ var_out.units = "degrees_north";
 var_out.valid_range = -90., 90.
 var_out.standard_name = "latitude"
 
+var = 'nx'
+var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
+var_out.long_name = "x-component of the outward-pointing normal vector"
+
+var = 'ny'
+var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
+var_out.long_name = "y-component of the outward-pointing normal vector"
+
 for k in range(len(profiles)):
     profile = profiles[k]
-    ## We have to unlimited dimensions, so we need to assign start and stop
+    ## We have two unlimited dimensions, so we need to assign start and stop
     ## start:stop where start=0 and stop is the length of the array
     ## or netcdf4python will bail. See
     ## https://code.google.com/p/netcdf4-python/issues/detail?id=76
     pl = len(profile[0])
     nc.variables['profile'][k,0:pl] = np.squeeze(profile[0])
     nc.variables['lon'][k,0:pl] = np.squeeze(profile[3])
-    nc.variables['lat'][k,0:pl] = np.squeeze(profile[4])
+    nc.variables['lat'][k,0:pl] = np.squeeze(profile[4])   
     nc.variables['profile_name'][k] = profile[5]
 
 

@@ -911,12 +911,12 @@ for k in range(0, nt):
                        units='km', fontsize=plt.rcParams['font.size'],
             barstyle='fancy')
 
-    countour_colors = ['white', 'black']
+    contour_colors = ['white', 'black']
     if shape_filename:
         for index, shpfile in enumerate(shape_filename):
             shpfile = shpfile.split('.shp')[0]
             m.readshapefile(shpfile,
-                                'my_shapefile', linewidth=.75, color=countour_colors[index])
+                                'my_shapefile', linewidth=.75, color=contour_colors[index])
             # m.readshapefile(shape_filename.split('.shp')[0],
             #             'my_shapefile', linewidth=1.1)
 
