@@ -87,6 +87,8 @@ parser.add_argument("--N", dest="N", type=int,
                   a * logspace(vmin, vmax, N''', default=1022)
 parser.add_argument("-r", "--reverse",dest="reverse", action="store_true",
                   help="reverse color scale", default=False)
+parser.add_argument("--orientation", dest="orientation", choices=['horizontal','vertical'],
+                  help="Orientation, default = 'horizontal", default='horizontal')
 
 options = parser.parse_args()
 args = options.FILE
@@ -105,6 +107,7 @@ reverse = options.reverse
 colorbar_label = options.colorbar_label
 # experimental
 log_color = False
+orientation = options.orientation
 
 # read in CPT colormap
 for k in range(len(args)):
@@ -204,7 +207,10 @@ for k in range(len(args)):
     matplotlib.rc("font", **{"size": 14})
     # create the colorbar
     fig = plt.figure()
-    ax1 = fig.add_axes([0.05, 0.65, 0.65, 0.05])
+    if orientation == 'horizontal':
+        ax1 = fig.add_axes([0.05, 0.65, 0.65, 0.04])
+    else:
+        ax1 = fig.add_axes([0.05, 0.05, 0.03, 0.65])
     cb1 = mpl.colorbar.ColorbarBase(ax1,
 				    cmap=cmap,
                                     norm = norm,
@@ -212,7 +218,7 @@ for k in range(len(args)):
 				    format=format,
 				    extend=cb_extend,
                                     spacing='proportional',
-                                    orientation='horizontal')
+                                    orientation=orientation)
 
     if colorbar_label:
 	    cb1.set_label(colorbar_label)
