@@ -659,7 +659,8 @@ for var_name in vars_list:
                                                             C_p_values,
                                                             D_p_values)
                         p_interp = profiler.elapsed('interp')
-                        print("    - interpolated in %3.4f s" % p_interp)
+                        if timing:
+                            print("    - interpolated in %3.4f s" % p_interp)
                     else:
                         dim_dict = dict([(tdim, ':'), (xdim, 'p_i'), (ydim, 'p_j'), (zdim, ':')])
                         access_str = ','.join([dim_dict[x] for x in in_dims])

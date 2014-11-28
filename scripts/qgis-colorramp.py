@@ -145,7 +145,7 @@ for k in range(len(args)):
             ticks = [1, 3, 10, 30, 100, 300, 1000]
             format = '%i'
             cb_extend = 'both'
-	    colorbar_label = 'm yr$^{\mathregular{-1}}$'
+	    # colorbar_label = 'm yr$^{\mathregular{-1}}$'
     elif joughin_speed_10k:
             # This is a little duck-punching to get a QGIS colormap
             # similar to Joughin (2010)
