@@ -67,6 +67,8 @@ parser.add_argument("--habermann_tauc", dest="habermann_tauc", action="store_tru
 parser.add_argument("--bath_topo", dest="bath_topo", action="store_true",
                   help='''
                   Scaling for bathymetry/topography for Greenland''', default=False)
+parser.add_argument("--colorbar_extend", dest="cb_extend",
+                    help='''Extend of colorbar. Default='both'.''', default='both')
 parser.add_argument("--colorbar_label", dest="colorbar_label",
                   help='''Label for colorbar.''', default=None)
 parser.add_argument("-a", "--a_log", dest="a", type=float,
@@ -105,6 +107,7 @@ vmin = options.vmin
 vmax = options.vmax
 reverse = options.reverse
 colorbar_label = options.colorbar_label
+cb_extend = options.cb_extend
 # experimental
 log_color = False
 orientation = options.orientation
@@ -194,9 +197,9 @@ for k in range(len(args)):
     else:
         data_values = a * np.linspace(vmin, vmax, N)
         norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-        ticks = None
+        ticks = range(0, 1200, 100)
         format = None
-        cb_extend = 'both'
+        cb_extend = cb_extend
 
     cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, N)
 
