@@ -833,8 +833,8 @@ for k in range(0, nt):
                           norm=variable.norm, rasterized=rasterized)
 
 
-    dlat = np.abs(lat[-1,-1] - lat[0,0])
-    dlon = np.abs(lon[-1,-1] - lon[0,0])
+    dlat = np.abs(lats[k][-1,-1] - lats[k][0,0])
+    dlon = np.abs(lons[k][-1,-1] - lons[k][0,0])
     if (dlat > 20):
         parallels_spacing = 5
     elif ((dlat > 10) and (dlat <= 20)):
