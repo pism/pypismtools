@@ -117,7 +117,7 @@ def create_profile_axes(filename, projection, flip):
     profiles = read_shapefile(filename)
     my_profiles = []
     for profile in range(len(profiles)):
-        profile_lat, profile_lon, profile_name = profiles[profile]
+        profile_lat, profile_lon, profile_name, profile_clat, profile_clon  = profiles[profile]
         if flip:
             profile_lat = profile_lat[::-1]
             profile_lon = profile_lon[::-1]
@@ -132,7 +132,7 @@ def create_profile_axes(filename, projection, flip):
         profile_ny = ns[:,1]
 
         my_profiles.append([profile, profile_x, profile_y, profile_nx, profile_ny,
-                            profile_lon, profile_lat, profile_name])
+                            profile_lon, profile_lat, profile_name, profile_clon, profile_clat])
     return my_profiles
 
 
@@ -170,6 +170,14 @@ def read_shapefile(filename):
             name = feature.name
         except:
             name = str(pt)
+        try:
+            clon = feature.clon
+        except:
+            clon = str(pt)
+        try:
+            clat = feature.clat
+        except:
+            clat = str(pt)
         geometry = feature.GetGeometryRef()
         # Transform to latlon if needed
         if not srs.IsGeographic():
@@ -187,7 +195,7 @@ def read_shapefile(filename):
             pt = geometry.GetPoint(i)
             lon.append(pt[0])
             lat.append(pt[1])
-        profiles.append([lat, lon, name])
+        profiles.append([lat, lon, name, clat, clon])
     return profiles
 
 
@@ -456,6 +464,18 @@ var_out = nc.createVariable('profile', 'f', dimensions=(stationdim, profiledim))
 var_out.long_name = 'distance along profile'
 var_out.units = 'm'
 
+var = 'clon'
+var_out = nc.createVariable(var, 'f', dimensions=(stationdim))
+var_out.long_name = "center longitude of profile"
+var_out.units = "degrees_east";
+var_out.valid_range = -180., 180.
+
+var = 'clat'
+var_out = nc.createVariable(var, 'f', dimensions=(stationdim))
+var_out.long_name = "center latitude of profile"
+var_out.units = "degrees_north";
+var_out.valid_range = -90., 90.
+
 var = 'lon'
 var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
 var_out.units = "degrees_east";
@@ -489,7 +509,8 @@ for k in range(len(profiles)):
     nc.variables['lon'][k,0:pl] = np.squeeze(profile[5])
     nc.variables['lat'][k,0:pl] = np.squeeze(profile[6])   
     nc.variables['profile_name'][k] = profile[7]
-
+    nc.variables['clon'][k] = profile[8]
+    nc.variables['clat'][k] = profile[9]
 
 for dim_name, dim in nc_in.dimensions.iteritems():
     if dim_name not in (mapplane_dim_names or nc.dimensions):
