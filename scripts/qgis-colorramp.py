@@ -197,7 +197,7 @@ for k in range(len(args)):
     else:
         data_values = a * np.linspace(vmin, vmax, N)
         norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-        ticks = range(0, 1200, 100)
+        ticks = np.arange(-2.25,2.5,0.5)
         format = None
         cb_extend = cb_extend
 

@@ -205,7 +205,7 @@ def set_mode(mode, aspect_ratio=0.95):
     - twocol: width=160mm, font size=8pt. Default.
               Appropriate for 2-column figures
     - medium: width=121mm, font size=7pt.
-    - small_font: width=121mm, font size=7pt.
+    - small_font: width=121mm, font size=6pt.
     - height: height=2.5in.
     - small: width=80mm, font size=6pt
     - presentation: width=85mm, font size=10pt. For presentations.
@@ -307,9 +307,9 @@ def set_mode(mode, aspect_ratio=0.95):
         '''
 
         fontsize = 6
-        lw = 1.2
         markersize = 3
-        fig_width = 6.3   # inch
+        lw = 0.75
+        fig_width = 3.15  # inch
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
@@ -328,7 +328,7 @@ def set_mode(mode, aspect_ratio=0.95):
 
         plt.rcParams.update(params)
 
-        return lw, 0.3
+        return lw, 0.20
 
     def set_presentation():
         '''
