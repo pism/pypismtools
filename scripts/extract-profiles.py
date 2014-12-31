@@ -602,7 +602,7 @@ for var_name in vars_list:
         else:
             # We need a fill value since the interpolation could produce missing values?
             fill_value = fill_value
-        if in_dims:
+        if var_name in in_dims:
             if len(in_dims) > 1:
                 p_dims = [x for x in in_dims if x not in mapplane_dim_names]
                 idx = []
@@ -697,6 +697,11 @@ for var_name in vars_list:
                     p_write = profiler.elapsed('write')
                     if timing:
                         print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
+            else:
+                var_out = nc.createVariable(
+                    var_name, datatype, dimensions=var_in.dimensions,
+                fill_value=fill_value)
+                var_out[:] = var_in[:]
         else:
             var_out = nc.createVariable(
                 var_name, datatype, dimensions=var_in.dimensions,
