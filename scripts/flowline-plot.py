@@ -32,48 +32,36 @@ parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
                   help="lower and upper bound for ordinate, eg. -1 1", default=None)
 parser.add_argument("--x_bounds", dest="x_bounds", nargs=2, type=int,
                   help="lower and upper bound for abscissa, eg. 0 200", default=None)
+parser.add_argument("--y_bounds", dest="y_bounds", nargs=2, type=int,
+                  help="lower and upper bound for ordinate, eg. 0 200", default=None)
 parser.add_argument("--colormap",dest="colormap",
                   help='''path to a cpt colormap, or a pylab colormap,
-                  e.g. Blues''', default='Paired')
-parser.add_argument("-l", "--labels",dest="labels",
-                  help="comma-separated list with labels, put in quotes like 'label 1,label 2'",default=None)
-parser.add_argument("--labelbar_title",dest="labelbar_title",
-                  help='''Label bar title''',default=None)
-parser.add_argument("--figure_title",dest="figure_title",
-                  help='''Figure title''',default=None)
+                  e.g. Blues''', default='jet')
 parser.add_argument("-f", "--output_format",dest="out_formats",
                       help="Comma-separated list with output graphics suffix, default = pdf",default='pdf')
 parser.add_argument("-o", "--output_file",dest="outfile",
                   help="output file name without suffix, i.e. ts_control -> ts_control_variable",default='foo')
 parser.add_argument("-p", "--print_size",dest="print_mode",
                     choices=['onecol','medium','twocol','height','presentation','small_font'],
-                    help="sets figure size and font size. Default=medium",default="medium")
-parser.add_argument("-s", "--simple", dest="simple", action="store_true",
-                    help='''Just draw line''', default=False)
+                    help="sets figure size and font size. Default=small_font",default="small_font")
 parser.add_argument("-r", "--output_resolution", dest="out_res",
                   help='''Resolution ofoutput graphics in dots per
                   inch (DPI), default = 300''', default=300)
 parser.add_argument("-v", "--variable",dest="variables",
-                  help="comma-separated list with variables",default='csurf')
+                  help="comma-separated list with variables",default='temp_pa')
 
 options = parser.parse_args()
 args = options.FILE
 no_args = len(args)
-if options.labels != None:
-    labels = options.labels.split(',')
-else:
-    labels = None
 bounds = options.bounds
-figure_title = options.figure_title
-x_bounds = options.x_bounds    
+x_bounds = options.x_bounds
+y_bounds = options.y_bounds
 colormap = options.colormap
 golden_mean = get_golden_mean()
-labelbar_title = options.labelbar_title
 out_res = options.out_res
 outfile = options.outfile
 out_formats = options.out_formats.split(',')
 print_mode = options.print_mode
-simple = options.simple
 variables = options.variables.split(',')
 dashes = ['-', '--', '-.', ':', '-', '--', '-.', ':']
 output_order = ('profile', 'time')
@@ -110,8 +98,6 @@ cNorm = colors.Normalize(vmin=0, vmax=ne)
 scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cmap)
 
 
-
-
 profile_axis_o_units = 'm'
 
 filename = args[0]
@@ -130,8 +116,8 @@ nc0.close()
 for in_varname in variables:
 
     if in_varname in ('age'):
-        o_units = 'yr'
-        o_units_str = 'yr'
+        o_units = '1000 yr'
+        o_units_str = 'kyr'
     else:
         print("variable {} not supported".format(in_varname))
 
@@ -164,16 +150,19 @@ for in_varname in variables:
 
             profile_axis = nc.variables['profile'][profile_id]
             profile_axis_units = nc.variables['profile'].units
+            profile_axis_name = nc.variables['profile'].long_name
 
-            profile_axis_o_units = 'm'
-            profile_axis = np.squeeze(unit_converter(profile_axis[:], profile_axis_units, profile_axis_o_units))
+            profile_axis_out_units = 'km'
+            profile_axis = np.squeeze(unit_converter(profile_axis[:], profile_axis_units, profile_axis_out_units))
 
             z = np.squeeze(nc.variables['z'][:])
             b = np.squeeze(nc.variables['topg'][:])
             s = np.squeeze(nc.variables['usurf'][:])
             ss = np.tile(s, [len(z), 1]).transpose()
             my_var = nc.variables[varname]
+            my_var_units = my_var.units
             data = np.squeeze(my_var[profile_id, 0, Ellipsis])
+            data = unit_converter(data, my_var_units, o_units)
             # time is second, for now only time=0
 
             ## stuff needed for contour plots
@@ -183,5 +172,37 @@ for in_varname in variables:
 
             mask = zz > ss
             data_ma = np.ma.array(data=data, mask=mask)
-            ax.pcolor(xx, zz, data_ma)
-       # plt.close()
+            c = ax.pcolormesh(xx, zz, data_ma, cmap=cmap)
+
+            hvel = np.ma.array(data=np.squeeze(nc.variables['uvel'][:]), mask=mask)
+            wvel = np.ma.array(data=np.squeeze(nc.variables['wvel'][:]), mask=mask)
+
+            ax.quiver(xx, zz, hvel, wvel)
+
+        if x_bounds:
+            ax.set_xlim(x_bounds[0], x_bounds[-1])
+        else:
+            xmin = np.min(x)
+            xmax = np.max(x)
+            ax.set_xlim(xmin, xmax)
+
+        if y_bounds:
+            ax.set_ylim(y_bounds[0], y_bounds[-1])
+        
+        xlabel = "{0} ({1})".format(profile_axis_name, profile_axis_out_units)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel('altitude (m a.s.l)')
+
+        cbar = plt.colorbar(c, orientation='vertical', pad=0.025)
+        cbar.solids.set_edgecolor("face")
+        cbar.set_label(o_units_str)
+        
+        for out_format in out_formats:
+
+            profile_name = '_'.join(['profile', unidecode(profile_name), varname])
+            out_name = '.'.join([profile_name, out_format]).replace(' ', '_')
+            print "  - writing image %s ..." % out_name
+            fig.tight_layout()
+            fig.savefig(out_name, bbox_inches='tight', dpi=out_res)
+
+        plt.close()
