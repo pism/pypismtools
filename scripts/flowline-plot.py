@@ -28,8 +28,8 @@ from udunits2 import Converter, System, Unit
 parser = ArgumentParser()
 parser.description = "A script for profile plots using pylab/matplotlib."
 parser.add_argument("FILE", nargs='*')
-parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
-                  help="lower and upper bound for ordinate, eg. -1 1", default=None)
+parser.add_argument("-c", "--pcolor_mesh", dest="pc", action="store_true",
+                  help="use pcolormesh instead of contourf. Much slower. Default=False", default=False)
 parser.add_argument("--x_bounds", dest="x_bounds", nargs=2, type=int,
                   help="lower and upper bound for abscissa, eg. 0 200", default=None)
 parser.add_argument("--y_bounds", dest="y_bounds", nargs=2, type=int,
@@ -53,7 +53,7 @@ parser.add_argument("-v", "--variable",dest="variables",
 options = parser.parse_args()
 args = options.FILE
 no_args = len(args)
-bounds = options.bounds
+pc = options.pc
 x_bounds = options.x_bounds
 y_bounds = options.y_bounds
 colormap = options.colormap
@@ -64,11 +64,10 @@ out_formats = options.out_formats.split(',')
 print_mode = options.print_mode
 variables = options.variables.split(',')
 dashes = ['-', '--', '-.', ':', '-', '--', '-.', ':']
-output_order = ('profile', 'time')
+output_order = ('station', 'time', 'profile', 'z')
 alpha = 0.5
 my_colors = colorList()
 
-dx, dy = 4. / out_res, -4. / out_res
 
 try:
     cdict = plt.cm.datad[colormap]
@@ -118,66 +117,80 @@ for in_varname in variables:
     if in_varname in ('age'):
         o_units = '1000 yr'
         o_units_str = 'kyr'
+        V = np.linspace(0, 125, 26)
+    elif in_varname in ('temp_pa'):
+        o_units = 'deg_C'
+        o_units_str = u'\u00B0C'
+        V = np.linspace(-30, 0, 31)
+    elif in_varname in ('liqfrac'):
+        o_units = '1'
+        o_units_str = '1'
+        V = np.linspace(0, 2, 11)
     else:
         print("variable {} not supported".format(in_varname))
 
+    filename = args[0]
+    print("  opening NetCDF file %s ..." % filename)
+    try:
+        nc = NC(filename, 'r')
+    except:
+        print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
+              % filename))
+        import sys
+        sys.exit(1)
+
+    for name in nc.variables:
+        v = nc.variables[name]
+        if getattr(v, "standard_name", "") == in_varname:
+            print("variabe {0} found by its standard_name {1}".format(name,
+                                                                      in_varname))
+            varname = name
+        else:
+            varname = in_varname
 
     for profile_id, profile_name in enumerate(profile_names):
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
-        for file_no, filename in enumerate(args):
+        profile_axis = nc.variables['profile'][profile_id]
+        profile_axis_units = nc.variables['profile'].units
+        profile_axis_name = nc.variables['profile'].long_name
 
-            print("  opening NetCDF file %s ..." % filename)
-            try:
-                nc = NC(filename, 'r')
-            except:
-                print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
-                      % filename))
-                import sys
-                sys.exit(1)
+        profile_axis_out_units = 'km'
+        profile_axis = np.squeeze(unit_converter(profile_axis[:], profile_axis_units, profile_axis_out_units))
 
-            for name in nc.variables:
-                v = nc.variables[name]
-                if getattr(v, "standard_name", "") == in_varname:
-                    print("variabe {0} found by its standard_name {1}".format(name,
-                                                                              in_varname))
-                    varname = name
-                else:
-                    varname = in_varname
+        z = np.squeeze(nc.variables['z'][:])
+        b = np.squeeze(nc.variables['topg'][:])
+        s = np.squeeze(nc.variables['usurf'][:])
+        ss = np.tile(s, [len(z), 1]).transpose()
+        my_var = nc.variables[varname]
+        my_var_units = my_var.units
+        my_var_p = permute(my_var, output_order=output_order)
+        data = np.squeeze(my_var_p[profile_id, 0, Ellipsis])
+        data = unit_converter(data, my_var_units, o_units)
+        # time is second, for now only time=0
 
+        ## stuff needed for contour plots
+        x = profile_axis
+        xx = np.squeeze(np.tile(x,[len(z),1])).transpose()
+        zz = np.squeeze((np.tile(z,[len(x),1])).transpose() + b).transpose()
 
-            profile_axis = nc.variables['profile'][profile_id]
-            profile_axis_units = nc.variables['profile'].units
-            profile_axis_name = nc.variables['profile'].long_name
+        mask = zz > ss
+        data_ma = np.ma.array(data=data, mask=mask)
+        if pc:
+            c = ax.pcolormesh(xx, zz, data_ma, cmap=cmap, edgecolors='face')
+        else:
+            c = ax.contourf(xx, zz, data_ma, V, cmap=cmap)
 
-            profile_axis_out_units = 'km'
-            profile_axis = np.squeeze(unit_converter(profile_axis[:], profile_axis_units, profile_axis_out_units))
+        # load horizontal component, permute
+        hdata_p = permute(nc.variables['uvel'], output_order=output_order)
+        # load vertical component, permute
+        vdata_p = permute(nc.variables['vvel'], output_order=output_order)
+        hvel = np.ma.array(data=np.squeeze(hdata_p[profile_id, 0, Ellipsis]), mask=mask)
+        wvel = np.ma.array(data=np.squeeze(vdata_p[profile_id, 0, Ellipsis]), mask=mask)
 
-            z = np.squeeze(nc.variables['z'][:])
-            b = np.squeeze(nc.variables['topg'][:])
-            s = np.squeeze(nc.variables['usurf'][:])
-            ss = np.tile(s, [len(z), 1]).transpose()
-            my_var = nc.variables[varname]
-            my_var_units = my_var.units
-            data = np.squeeze(my_var[profile_id, 0, Ellipsis])
-            data = unit_converter(data, my_var_units, o_units)
-            # time is second, for now only time=0
-
-            ## stuff needed for contour plots
-            x = profile_axis
-            xx = np.squeeze(np.tile(x,[len(z),1])).transpose()
-            zz = np.squeeze((np.tile(z,[len(x),1])).transpose() + b).transpose()
-
-            mask = zz > ss
-            data_ma = np.ma.array(data=data, mask=mask)
-            c = ax.pcolormesh(xx, zz, data_ma, cmap=cmap)
-
-            hvel = np.ma.array(data=np.squeeze(nc.variables['uvel'][:]), mask=mask)
-            wvel = np.ma.array(data=np.squeeze(nc.variables['wvel'][:]), mask=mask)
-
-            ax.quiver(xx, zz, hvel, wvel)
+        # ax.quiver(xx, zz, hvel, wvel)
 
         if x_bounds:
             ax.set_xlim(x_bounds[0], x_bounds[-1])
@@ -206,3 +219,4 @@ for in_varname in variables:
             fig.savefig(out_name, bbox_inches='tight', dpi=out_res)
 
         plt.close()
+    nc.close()
