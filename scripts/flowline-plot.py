@@ -191,6 +191,9 @@ for in_varname in variables:
         wvel = np.ma.array(data=np.squeeze(vdata_p[profile_id, 0, Ellipsis]), mask=mask)
 
         # ax.quiver(xx, zz, hvel, wvel)
+        density_x, density_z = np.array([len(x), len(z)]) / 100.
+        # ax.streamplot(x, z, hvel.transpose(), wvel.transpose(), density=[density_x, density_z],
+        #               color='k', linewidth=0.25)
 
         if x_bounds:
             ax.set_xlim(x_bounds[0], x_bounds[-1])
