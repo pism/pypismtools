@@ -330,6 +330,35 @@ def set_mode(mode, aspect_ratio=0.95):
 
         return lw, 0.20
 
+    def set_large_font():
+        '''
+        Define parameters for "large_font" mode and return value for pad_inches
+        '''
+
+        fontsize = 10
+        markersize = 9
+        lw = 0.75
+        fig_width = 6.2  # inch
+        fig_height = aspect_ratio * fig_width  # inch
+        fig_size = [fig_width, fig_height]
+
+        params = {'backend': 'ps',
+                  'axes.linewidth': 0.5,
+                  'lines.linewidth': lw,
+                  'axes.labelsize': fontsize,
+                  'font.size': fontsize,
+                  'xtick.labelsize': fontsize,
+                  'ytick.labelsize': fontsize,
+                  'legend.fontsize': fontsize,
+                  'lines.linestyle': linestyle,
+                  'lines.markersize': markersize,
+                  'font.size': fontsize,
+                  'figure.figsize': fig_size}
+
+        plt.rcParams.update(params)
+
+        return lw, 0.20
+
     def set_presentation():
         '''
         Define parameters for "presentation" mode and return value
@@ -425,6 +454,8 @@ def set_mode(mode, aspect_ratio=0.95):
         return set_medium()
     elif (mode == "small_font"):
         return set_small_font()
+    elif (mode == "large_font"):
+        return set_large_font()
     elif (mode == "presentation"):
         return set_presentation()
     elif (mode == "twocol"):
