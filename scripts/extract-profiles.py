@@ -372,7 +372,7 @@ parser.add_argument(
     help='''Print timing information, Default=False''',
     default=False)
 parser.add_argument("-v", "--variable",dest="variables",
-                    help="comma-separated list with variables",default='x,y,thk,velsurf_mag,flux_mag,uflux,vflux,pism_config,pism_overrides,run_stats,uvelsurf,vvelsurf')
+                    help="comma-separated list with variables",default='x,y,thk,velsurf_mag,flux_mag,uflux,vflux,pism_config,pism_overrides,run_stats,uvelsurf,vvelsurf,topg,usurf,tillphi,tauc')
 parser.add_argument(
     "-a", "--all_variables",dest="all_vars",action="store_true",
     help='''Process all variables, overwrite -v/--variable''',
@@ -587,8 +587,10 @@ if tdim is not None:
 print("Copying variables")
 if all_vars:
     vars_list = nc_in.variables
+    vars_not_found = ()
 else:
-    vars_list = variables
+    vars_list = filter(lambda(x): x in nc_in.variables, variables)
+    vars_not_found =  filter(lambda(x): x not in nc_in.variables, variables)
 for var_name in vars_list:
     profiler = timeprofile()
     if var_name not in vars_not_copied:
@@ -772,6 +774,8 @@ for var_name in vars_list:
                 setattr(var_out, att, getattr(var_in, att))
         print("  - done with %s" % var_name)
 
+print("The following variables were not copied because they could not be found in {}:".format(in_filename))
+print vars_not_found
 
 # writing global attributes
 script_command = ' '.join([time.ctime(), ':', __file__.split('/')[-1],
