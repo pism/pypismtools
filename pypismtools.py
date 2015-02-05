@@ -301,6 +301,36 @@ def set_mode(mode, aspect_ratio=0.95):
 
         return lw, 0.20
 
+    def set_50mm():
+        '''
+        Define parameters for "72mm" mode and return value for pad_inches
+        '''
+
+        fontsize = 5
+        markersize = 2.5
+        lw = 0.6
+        fig_width = 2.  # inch
+        fig_height = aspect_ratio * fig_width  # inch
+        fig_size = [fig_width, fig_height]
+
+        params = {'backend': 'ps',
+                  'axes.linewidth': 0.3,
+                  'lines.linewidth': lw,
+                  'axes.labelsize': fontsize,
+                  'font.size': fontsize,
+                  'xtick.labelsize': fontsize,
+                  'ytick.labelsize': fontsize,
+                  'legend.fontsize': fontsize,
+                  'lines.linestyle': linestyle,
+                  'lines.markersize': markersize,
+                  'font.size': fontsize,
+                  'figure.figsize': fig_size}
+
+        plt.rcParams.update(params)
+
+        return lw, 0.10
+
+    
     def set_medium():
         '''
         Define parameters for "medium" mode and return value for pad_inches
@@ -328,7 +358,8 @@ def set_mode(mode, aspect_ratio=0.95):
 
         plt.rcParams.update(params)
 
-        return lw, 0.20
+        return lw, 0.10
+    
 
     def set_small_font():
         '''
@@ -357,7 +388,8 @@ def set_mode(mode, aspect_ratio=0.95):
 
         plt.rcParams.update(params)
 
-        return lw, 0.20
+        return lw, 0.10
+    
 
     def set_large_font():
         '''
@@ -387,6 +419,7 @@ def set_mode(mode, aspect_ratio=0.95):
         plt.rcParams.update(params)
 
         return lw, 0.20
+    
 
     def set_presentation():
         '''
@@ -417,6 +450,7 @@ def set_mode(mode, aspect_ratio=0.95):
         plt.rcParams.update(params)
 
         return lw, 0.2
+    
 
     def set_twocol():
         '''
@@ -446,6 +480,7 @@ def set_mode(mode, aspect_ratio=0.95):
         plt.rcParams.update(params)
 
         return lw, 0.35
+    
 
     def set_height():
         '''
@@ -453,9 +488,9 @@ def set_mode(mode, aspect_ratio=0.95):
         '''
         fontsize = 8
         lw = 1.1
-        markersize = 2
+        markersize = 1.5
         fig_height = 2.5   # inch
-        fig_width =fig_height / aspect_ratio  # inch
+        fig_width = fig_height / aspect_ratio  # inch
         fig_size = [fig_width, fig_height]
 
         params = {'backend': 'ps',
@@ -474,6 +509,7 @@ def set_mode(mode, aspect_ratio=0.95):
         plt.rcParams.update(params)
 
         return lw, 0.025
+    
 
     if (mode == "onecol"):
         return set_onecol()
@@ -483,6 +519,8 @@ def set_mode(mode, aspect_ratio=0.95):
         return set_medium()
     elif (mode == "72mm"):
         return set_72mm()
+    elif (mode == "50mm"):
+        return set_50mm()
     elif (mode == "small_font"):
         return set_small_font()
     elif (mode == "large_font"):
