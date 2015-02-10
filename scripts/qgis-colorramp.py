@@ -135,6 +135,7 @@ for k in range(len(args)):
             N = len(data_values)
             norm = mpl.colors.LogNorm(vmin=1, vmax = 3000)
             ticks = [1, 3, 10, 30, 100, 300, 1000, 3000]
+            ticks = [1, 10,  100,  1000, 10000]
             format = '%i'
             cb_extend = 'both'
 	    colorbar_label = 'm yr$^{\mathregular{-1}}$'
@@ -211,7 +212,10 @@ for k in range(len(args)):
     # create the colorbar
     fig = plt.figure()
     if orientation == 'horizontal':
-        ax1 = fig.add_axes([0.05, 0.65, 0.65, 0.04])
+            if joughin_speed:
+                ax1 = fig.add_axes([0.05, 0.4, 0.4, 0.04])
+            else:
+                ax1 = fig.add_axes([0.05, 0.65, 0.65, 0.04])
     else:
         ax1 = fig.add_axes([0.05, 0.05, 0.03, 0.65])
     cb1 = mpl.colorbar.ColorbarBase(ax1,
@@ -227,7 +231,7 @@ for k in range(len(args)):
 	    cb1.set_label(colorbar_label)
 
     # save high-res colorbar as png
-    for format in ('png', 'pdf'):
+    for format in ['png']:
             out_file = '.'.join([prefix, format])
             print("  writing colorbar %s ..." % out_file)
             fig.savefig(out_file, bbox_inches='tight', dpi=2400)
