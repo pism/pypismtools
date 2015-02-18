@@ -452,8 +452,52 @@ def dim_permute(values,
     else:
         return values  # so that it does not break processing "mapping"
 
-    
+def create_variables(nc, profiledim, stationdim):
+    # create dimensions
+    nc.createDimension(profiledim)
 
+    nc.createDimension(stationdim)
+
+    var = 'profile_name'
+    var_out = nc.createVariable(var, str, dimensions=(stationdim))
+    var_out.cf_role = "timeseries_id"
+    var_out.long_name = "profile name"
+
+    var_out = nc.createVariable('profile', 'f', dimensions=(stationdim, profiledim))
+    var_out.long_name = 'distance along profile'
+    var_out.units = 'm'
+
+    var = 'clon'
+    var_out = nc.createVariable(var, 'f', dimensions=(stationdim))
+    var_out.long_name = "center longitude of profile"
+    var_out.units = "degrees_east";
+    var_out.valid_range = -180., 180.
+
+    var = 'clat'
+    var_out = nc.createVariable(var, 'f', dimensions=(stationdim))
+    var_out.long_name = "center latitude of profile"
+    var_out.units = "degrees_north";
+    var_out.valid_range = -90., 90.
+
+    var = 'lon'
+    var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
+    var_out.units = "degrees_east";
+    var_out.valid_range = -180., 180.
+    var_out.standard_name = "longitude"
+
+    var = 'lat'
+    var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
+    var_out.units = "degrees_north";
+    var_out.valid_range = -90., 90.
+    var_out.standard_name = "latitude"
+
+    var = 'nx'
+    var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
+    var_out.long_name = "x-component of the right-hand--pointing normal vector"
+
+    var = 'ny'
+    var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
+    var_out.long_name = "y-component of the right-hand-pointing normal vector"
 
 if __name__ == "__main__":
     # Set up the option parser
@@ -551,53 +595,10 @@ if __name__ == "__main__":
     # copy global attributes
     for attname in nc_in.ncattrs():
         setattr(nc, attname, getattr(nc_in, attname))
-    # create dimensions
+
     profiledim = 'profile'
-    nc.createDimension(profiledim)
-
     stationdim = 'station'
-    nc.createDimension(stationdim)
-
-    var = 'profile_name'
-    var_out = nc.createVariable(var, str, dimensions=(stationdim))
-    var_out.cf_role = "timeseries_id"
-    var_out.long_name = "profile name"
-
-    var_out = nc.createVariable('profile', 'f', dimensions=(stationdim, profiledim))
-    var_out.long_name = 'distance along profile'
-    var_out.units = 'm'
-
-    var = 'clon'
-    var_out = nc.createVariable(var, 'f', dimensions=(stationdim))
-    var_out.long_name = "center longitude of profile"
-    var_out.units = "degrees_east";
-    var_out.valid_range = -180., 180.
-
-    var = 'clat'
-    var_out = nc.createVariable(var, 'f', dimensions=(stationdim))
-    var_out.long_name = "center latitude of profile"
-    var_out.units = "degrees_north";
-    var_out.valid_range = -90., 90.
-
-    var = 'lon'
-    var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
-    var_out.units = "degrees_east";
-    var_out.valid_range = -180., 180.
-    var_out.standard_name = "longitude"
-
-    var = 'lat'
-    var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
-    var_out.units = "degrees_north";
-    var_out.valid_range = -90., 90.
-    var_out.standard_name = "latitude"
-
-    var = 'nx'
-    var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
-    var_out.long_name = "x-component of the right-hand--pointing normal vector"
-
-    var = 'ny'
-    var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
-    var_out.long_name = "y-component of the right-hand-pointing normal vector"
+    create_variables(nc, profiledim, stationdim)
 
     for k, profile in enumerate(profiles):
         ## We have two unlimited dimensions, so we need to assign start and stop
