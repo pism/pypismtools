@@ -96,6 +96,63 @@ class TimeProfiler:
 
         self.timedict.clear()
 
+def normal(p0, p1):
+    '''
+    Compute the unit normal vector orthogonal to (p1-p0), pointing 'to the
+    right' of (p1-p0).
+    '''
+
+    a = p0 - p1
+    if a[1] != 0.0:
+        n = np.array([1.0, - a[0] / a[1]])
+        n = n / np.linalg.norm(n) # normalize
+    else:
+        n = np.array([0,1])
+
+    # flip direction if needed:
+    if np.cross(a, n) < 0:
+        n = -1.0 * n
+
+    return n
+
+class Profile:
+    def __init__(self, name, lat, lon, center_lat, center_lon, projection, flip=False):
+        self.name = name
+        self.center_lat = center_lat
+        self.center_lon = center_lon
+        if flip:
+            self.lat = lat[::-1]
+            self.lon = lon[::-1]
+        else:
+            self.lat = lat
+            self.lon = lon
+        self.x, self.y = projection(lon, lat)
+
+        self.distance_from_start = self._distance_from_start()
+        self.nx, self.ny = self._compute_normals()
+
+    def _compute_normals(self):
+        '''
+        Compute normals to a flux gate described by 'p'. Normals point 'to
+        the right' of the path.
+        '''
+
+        p = np.vstack((self.x, self.y)).T
+
+        ns = np.zeros_like(p)
+        ns[0] = normal(p[0], p[1])
+        for j in range(1, len(p) - 1):
+            ns[j] = normal(p[j-1], p[j+1])
+
+        ns[-1] = normal(p[-2], p[-1])
+
+        return ns[:, 0], ns[:, 1]
+
+    def _distance_from_start(self):
+        result = np.zeros_like(self.x)
+        result[1::] = np.sqrt(np.diff(self.x)**2 + np.diff(self.y)**2)
+        return result.cumsum()
+
 def create_profile_axes(filename, projection, flip):
     '''
     Create a profile axis.
@@ -114,24 +171,9 @@ def create_profile_axes(filename, projection, flip):
     
     '''
 
-    profiles = read_shapefile(filename)
     my_profiles = []
-    for profile in range(len(profiles)):
-        profile_lat, profile_lon, profile_name, profile_clat, profile_clon  = profiles[profile]
-        if flip:
-            profile_lat = profile_lat[::-1]
-            profile_lon = profile_lon[::-1]
-        profile_x, profile_y = projection(profile_lon, profile_lat)
-        profile = np.zeros_like(profile_x)
-        profile[1::] = np.sqrt(np.diff(profile_x)**2 + np.diff(profile_y)**2)
-        profile = profile.cumsum()
-        p = np.vstack((profile_x, profile_y)).T
-        ns = compute_normals(p)
-        profile_nx = ns[:,0]
-        profile_ny = ns[:,1]
-
-        my_profiles.append([profile, profile_x, profile_y, profile_nx, profile_ny,
-                            profile_lon, profile_lat, profile_name, profile_clon, profile_clat])
+    for lat, lon, name, clat, clon in read_shapefile(filename):
+        my_profiles.append(Profile(name, lat, lon, clat, clon, projection, flip))
     return my_profiles
 
 
@@ -314,40 +356,8 @@ def dim_permute(
         return values  # so that it does not break processing "mapping"
 
     
-def normal(p0, p1):
-    '''
-    Compute the unit normal vector orthogonal to (p1-p0), pointing 'to the
-    right' of (p1-p0).
-    '''
-
-    a = p0 - p1
-    if a[1] != 0.0:
-        n = np.array([1.0, - a[0] / a[1]])
-        n = n / np.linalg.norm(n) # normalize
-    else:
-        n = np.array([0,1])
-
-    # flip direction if needed:
-    if np.cross(a, n) < 0:
-        n = -1.0 * n
-
-    return n
 
 
-def compute_normals(p):
-    '''
-    Compute normals to a flux gate described by 'p'. Normals point 'to
-    the right' of the path.
-    '''
-
-    ns = np.zeros_like(p)
-    ns[0] = normal(p[0], p[1])
-    for j in range(1, len(p) - 1):
-        ns[j] = normal(p[j-1], p[j+1])
-
-    ns[-1] = normal(p[-2], p[-1])
-
-    return ns
 
 
     
@@ -433,8 +443,7 @@ projection = ppt.get_projection_from_file(nc_in)
 
 # Read in profile data
 print("  reading profile from %s" % p_filename)
-profiles  = create_profile_axes(
-    p_filename, projection, flip)
+profiles  = create_profile_axes(p_filename, projection, flip)
 
 mapplane_dim_names = (xdim, ydim)
 
@@ -495,21 +504,20 @@ var = 'ny'
 var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
 var_out.long_name = "y-component of the right-hand-pointing normal vector"
 
-for k in range(len(profiles)):
-    profile = profiles[k]
+for k, profile in enumerate(profiles):
     ## We have two unlimited dimensions, so we need to assign start and stop
     ## start:stop where start=0 and stop is the length of the array
     ## or netcdf4python will bail. See
     ## https://code.google.com/p/netcdf4-python/issues/detail?id=76
-    pl = len(profile[0])
-    nc.variables['profile'][k,0:pl] = np.squeeze(profile[0])
-    nc.variables['nx'][k,0:pl] = np.squeeze(profile[3])
-    nc.variables['ny'][k,0:pl] = np.squeeze(profile[4])
-    nc.variables['lon'][k,0:pl] = np.squeeze(profile[5])
-    nc.variables['lat'][k,0:pl] = np.squeeze(profile[6])   
-    nc.variables['profile_name'][k] = profile[7]
-    nc.variables['clon'][k] = profile[8]
-    nc.variables['clat'][k] = profile[9]
+    pl = len(profile.distance_from_start)
+    nc.variables['profile'][k,0:pl] = np.squeeze(profile.distance_from_start)
+    nc.variables['nx'][k,0:pl] = np.squeeze(profile.nx)
+    nc.variables['ny'][k,0:pl] = np.squeeze(profile.ny)
+    nc.variables['lon'][k,0:pl] = np.squeeze(profile.lon)
+    nc.variables['lat'][k,0:pl] = np.squeeze(profile.lat)   
+    nc.variables['profile_name'][k] = profile.name
+    nc.variables['clat'][k] = profile.center_lat
+    nc.variables['clon'][k] = profile.center_lon
 
 for dim_name, dim in nc_in.dimensions.iteritems():
     if dim_name not in (mapplane_dim_names or nc.dimensions):
@@ -624,10 +632,10 @@ for var_name in vars_list:
                     fill_value=fill_value)
 
                 for k in range(len(profiles)):
-                    print("    - processing profile {0}".format(profile[7]))
+                    print("    - processing profile {0}".format(profile.name))
                     profile = profiles[k]
-                    p_x = profile[1]
-                    p_y = profile[2]
+                    p_x = profile.x
+                    p_y = profile.y
 
                     # indices (i,j)
                     p_i = (np.floor((p_x - (x0-dx/2)) / dx)).astype('int')
