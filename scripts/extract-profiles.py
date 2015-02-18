@@ -169,7 +169,7 @@ def compute_interpolation_matrix(x, y, px, py, mask=None):
     def row(Y):
         return int(np.floor((Y - y[0]) / dy))
 
-    N = len(px)
+    n_points = len(px)
 
     c_min = column(px.min())
     c_max = column(px.max()) + 1
@@ -183,13 +183,15 @@ def compute_interpolation_matrix(x, y, px, py, mask=None):
 
     def matrix_column(r, c):
         """Compute the interpolation matrix column corresponding to row,column
-        of the array.
+        of the array. This is the same as the linear index within the
+        subset needed for interpolation.
+
         """
         return n_cols * r + c
 
-    A = scipy.sparse.lil_matrix((N, n_rows * n_cols))
+    A = scipy.sparse.lil_matrix((n_points, n_rows * n_cols))
 
-    for k in xrange(N):
+    for k in xrange(n_points):
         x_k = px[k]
         y_k = py[k]
 
@@ -208,7 +210,7 @@ def compute_interpolation_matrix(x, y, px, py, mask=None):
         A[k, matrix_column(r,     c + 1)] = alpha * (1.0 - beta)
         A[k, matrix_column(r + 1, c + 1)] = alpha * beta
 
-    return A.tocsr(), (r_min, r_max), (c_min, c_max)
+    return A, (r_min, r_max), (c_min, c_max)
 
 def interpolation_test():
     """Test interpolation by recovering values of a linear function."""
@@ -244,7 +246,7 @@ def interpolation_test():
     subset = z[r_min:r_max+1, c_min:c_max+1]
 
     # interpolate
-    z_interpolated = A * subset.flatten()
+    z_interpolated = A.tocsr() * subset.flatten()
 
     assert np.max(np.fabs(z_interpolated - Z(px, py))) < 1e-12
 
@@ -691,6 +693,7 @@ if __name__ == "__main__":
     else:
         vars_list = filter(lambda(x): x in nc_in.variables, variables)
         vars_not_found =  filter(lambda(x): x not in nc_in.variables, variables)
+
     for var_name in vars_list:
         profiler = timeprofile()
         if var_name not in vars_not_copied:
