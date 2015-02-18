@@ -117,7 +117,7 @@ def create_profile_axes(filename, projection, flip):
     profiles = read_shapefile(filename)
     my_profiles = []
     for profile in range(len(profiles)):
-        profile_lat, profile_lon, profile_name, profile_clat, profile_clon  = profiles[profile]
+        profile_lat, profile_lon, profile_name, profile_clat, profile_clon, profile_on_flightline  = profiles[profile]
         if flip:
             profile_lat = profile_lat[::-1]
             profile_lon = profile_lon[::-1]
@@ -132,7 +132,7 @@ def create_profile_axes(filename, projection, flip):
         profile_ny = ns[:,1]
 
         my_profiles.append([profile, profile_x, profile_y, profile_nx, profile_ny,
-                            profile_lon, profile_lat, profile_name, profile_clon, profile_clat])
+                            profile_lon, profile_lat, profile_name, profile_clon, profile_clat, profile_on_flightline])
     return my_profiles
 
 
@@ -178,6 +178,10 @@ def read_shapefile(filename):
             clat = feature.clat
         except:
             clat = str(pt)
+        try:
+            flightline = feature.flightline
+        except:
+            flightline = 2
         geometry = feature.GetGeometryRef()
         # Transform to latlon if needed
         if not srs.IsGeographic():
@@ -195,7 +199,7 @@ def read_shapefile(filename):
             pt = geometry.GetPoint(i)
             lon.append(pt[0])
             lat.append(pt[1])
-        profiles.append([lat, lon, name, clat, clon])
+        profiles.append([lat, lon, name, clat, clon, flightline])
     return profiles
 
 
@@ -496,6 +500,13 @@ var = 'ny'
 var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
 var_out.long_name = "y-component of the right-hand-pointing normal vector"
 
+var = 'flightline'
+var_out = nc.createVariable(var, 'b', dimensions=(stationdim))
+var_out.long_name = "flag if on flightline"
+var_out.valid_range = 0, 2
+var_out.flag_values = 0, 1, 2
+var_out.flag_meanings = "true false undetermined"
+
 for k in range(len(profiles)):
     profile = profiles[k]
     ## We have two unlimited dimensions, so we need to assign start and stop
@@ -511,6 +522,7 @@ for k in range(len(profiles)):
     nc.variables['profile_name'][k] = profile[7]
     nc.variables['clon'][k] = profile[8]
     nc.variables['clat'][k] = profile[9]
+    nc.variables['flightline'][k] = profile[10]
 
 for dim_name, dim in nc_in.dimensions.iteritems():
     if dim_name not in (mapplane_dim_names or nc.dimensions):
