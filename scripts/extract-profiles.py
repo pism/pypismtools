@@ -499,6 +499,20 @@ def create_variables(nc, profiledim, stationdim):
     var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
     var_out.long_name = "y-component of the right-hand-pointing normal vector"
 
+def copy_attributes(var_in, var_out, tdim):
+    for att in var_in.ncattrs():
+        if att == '_FillValue':
+            continue
+        elif att == 'coordinates':
+            if tdim:
+                coords = '{0} lat lon'.format(tdim)
+            else:
+                coords = 'lat lon'
+            setattr(var_out, 'coordinates', coords)
+
+        else:
+            setattr(var_out, att, getattr(var_in, att))
+
 if __name__ == "__main__":
     # Set up the option parser
     description = '''A script to extract data along (possibly multiple) profile using
@@ -657,11 +671,7 @@ if __name__ == "__main__":
         var_out = nc.createVariable(
             var_name, datatype, dimensions=dimensions, fill_value=fill_value)
         var_out[:] = var_in[:]
-        for att in var_in.ncattrs():
-            if att == '_FillValue':
-                continue
-            else:
-                setattr(var_out, att, getattr(var_in, att))
+        copy_attributes(var_in, var_out, tdim)
 
         has_time_bounds_var = False
         if has_time_bounds:
@@ -679,12 +689,7 @@ if __name__ == "__main__":
             var_out = nc.createVariable(
                 var_name, datatype, dimensions=dimensions, fill_value=fill_value)
             var_out[:] = var_in[:]
-            for att in var_in.ncattrs():
-                if att == '_FillValue':
-                    continue
-                else:
-                    setattr(var_out, att, getattr(var_in, att))
-
+            copy_attributes(var_in, var_out, tdim)
 
     print("Copying variables")
     if all_vars:
@@ -698,15 +703,19 @@ if __name__ == "__main__":
         profiler = timeprofile()
         if var_name not in vars_not_copied:
             print("  Reading variable %s" % var_name)
+
             var_in = nc_in.variables[var_name]
             xdim, ydim, zdim, tdim = get_dims_from_variable(var_in.dimensions)
+
             in_dims = var_in.dimensions
             datatype = var_in.dtype
+
             if hasattr(var_in, '_FillValue'):
                 fill_value = var_in._FillValue
             else:
                 # We need a fill value since the interpolation could produce missing values?
                 fill_value = fill_value
+
             if in_dims:
                 if len(in_dims) > 1:
                     p_dims = [x for x in in_dims if x not in mapplane_dim_names]
@@ -863,18 +872,7 @@ if __name__ == "__main__":
                     fill_value=fill_value)
                 var_out[:] = var_in[:]
 
-            for att in var_in.ncattrs():
-                if att == '_FillValue':
-                    continue
-                elif att == 'coordinates':
-                    if tdim:
-                        coords = '{0} lat lon'.format(tdim)
-                    else:
-                        coords = 'lat lon'
-                    setattr(var_out, 'coordinates', coords)
-
-                else:
-                    setattr(var_out, att, getattr(var_in, att))
+            copy_attributes(var_in, var_out, tdim)
             print("  - done with %s" % var_name)
 
     print("The following variables were not copied because they could not be found in {}:".format(in_filename))
