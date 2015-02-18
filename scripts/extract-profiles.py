@@ -4,6 +4,7 @@
 
 from argparse import ArgumentParser
 import numpy as np
+import scipy
 
 from netCDF4 import Dataset as NC
 
@@ -149,6 +150,103 @@ class Profile:
         result = np.zeros_like(self.x)
         result[1::] = np.sqrt(np.diff(self.x)**2 + np.diff(self.y)**2)
         return result.cumsum()
+
+def compute_interpolation_matrix(x, y, px, py, mask=None):
+    """Interpolate values of z to points (px,py) assuming that z is on a
+    regular grid defined by x and y."""
+
+    assert len(px) == len(py)
+
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
+
+    assert dx > 0
+    assert dy > 0
+
+    def column(X):
+        return int(np.floor((X - x[0]) / dx))
+
+    def row(Y):
+        return int(np.floor((Y - y[0]) / dy))
+
+    N = len(px)
+
+    c_min = column(px.min())
+    c_max = column(px.max()) + 1
+
+    r_min = row(py.min())
+    r_max = row(py.max()) + 1
+
+    # compute the size of the subset needed for interpolation
+    n_rows = r_max - r_min + 1
+    n_cols = c_max - c_min + 1
+
+    def matrix_column(r, c):
+        """Compute the interpolation matrix column corresponding to row,column
+        of the array.
+        """
+        return n_cols * r + c
+
+    A = scipy.sparse.lil_matrix((N, n_rows * n_cols))
+
+    for k in xrange(N):
+        x_k = px[k]
+        y_k = py[k]
+
+        C = column(x_k)
+        R = row(y_k)
+
+        alpha = (x_k - x[C]) / dx
+        beta  = (y_k - y[R]) / dy
+
+        # indexes within the subset needed for interpolation
+        c = C - c_min
+        r = R - r_min
+
+        A[k, matrix_column(r,         c)] = (1.0 - alpha) * (1.0 - beta)
+        A[k, matrix_column(r + 1,     c)] = (1.0 - alpha) * beta
+        A[k, matrix_column(r,     c + 1)] = alpha * (1.0 - beta)
+        A[k, matrix_column(r + 1, c + 1)] = alpha * beta
+
+    return A.tocsr(), (r_min, r_max), (c_min, c_max)
+
+def interpolation_test():
+    """Test interpolation by recovering values of a linear function."""
+
+    Lx = 10.0                    # size of the box in the x direction
+    Ly = 20.0                    # size of the box in the y direction
+    P = 100                      # number of test points
+
+    # grid size (note: it should not be a square)
+    Mx = 101
+    My = 201
+    x = np.linspace(0, Lx, Mx)
+    y = np.linspace(0, Ly, My)
+
+    # test points
+    np.random.seed([100])
+    px = np.random.rand(P) * Lx
+    py = np.random.rand(P) * Ly
+
+    # initialize the interpolation matrix
+    A, (r_min, r_max), (c_min, c_max) = compute_interpolation_matrix(x, y, px, py)
+
+    # a linear function (perfectly recovered using bilinear
+    # interpolation)
+    def Z(x, y):
+        return 0.3 * x + 0.2 * y + 0.1
+
+    # compute values of Z on the grid
+    xx, yy = np.meshgrid(x, y)
+    z = Z(xx, yy)
+
+    # select the part of the grid we need
+    subset = z[r_min:r_max+1, c_min:c_max+1]
+
+    # interpolate
+    z_interpolated = A * subset.flatten()
+
+    assert np.max(np.fabs(z_interpolated - Z(px, py))) < 1e-12
 
 def create_profile_axes(filename, projection, flip):
     '''
