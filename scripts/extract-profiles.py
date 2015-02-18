@@ -335,7 +335,7 @@ def read_shapefile(filename):
     return profiles
 
 
-def get_dims_from_variable(var):
+def get_dims_from_variable(var_dimensions):
     '''
     Gets dimensions from netcdf variable
 
@@ -364,19 +364,19 @@ def get_dims_from_variable(var):
     
     ## assign x dimension
     for dim in xdims:
-        if dim in var.dimensions:
+        if dim in var_dimensions:
             xdim = dim
     ## assign y dimension
     for dim in ydims:
-        if dim in var.dimensions:
+        if dim in var_dimensions:
             ydim = dim
     ## assign y dimension
     for dim in zdims:
-        if dim in var.dimensions:
+        if dim in var_dimensions:
             zdim = dim
     ## assign t dimension
     for dim in tdims:
-        if dim in list(nc.dimensions.keys()):
+        if dim in var_dimensions:
             tdim = dim
     return xdim, ydim, zdim, tdim
 
@@ -696,7 +696,7 @@ if __name__ == "__main__":
         if var_name not in vars_not_copied:
             print("  Reading variable %s" % var_name)
             var_in = nc_in.variables[var_name]
-            xdim, ydim, zdim, tdim = get_dims_from_variable(var_in)
+            xdim, ydim, zdim, tdim = get_dims_from_variable(var_in.dimensions)
             in_dims = var_in.dimensions
             datatype = var_in.dtype
             if hasattr(var_in, '_FillValue'):
