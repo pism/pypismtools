@@ -588,8 +588,6 @@ if __name__ == "__main__":
 
     # create dimensions. Check for unlimited dim.
     print("Creating dimensions") 
-    unlimdimname = False
-    unlimdim = None
     # create global attributes.
     nc = NC(out_filename, 'w', format='NETCDF4')
     # copy global attributes
@@ -615,11 +613,12 @@ if __name__ == "__main__":
         nc.variables['clat'][k] = profile.center_lat
         nc.variables['clon'][k] = profile.center_lon
 
+    # re-create dimensions from an input file in an output file, but
+    # skip x and y dimensions and dimensions that are already present
     for dim_name, dim in nc_in.dimensions.iteritems():
-        if dim_name not in (mapplane_dim_names or nc.dimensions):
+        if (dim_name not in mapplane_dim_names and
+            dim_name not in nc.dimensions):
             if dim.isunlimited():
-                unlimdimname = dim_name
-                unlimdim = dim
                 nc.createDimension(dim_name, None)
             else:
                 nc.createDimension(dim_name, len(dim))
