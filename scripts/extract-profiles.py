@@ -164,9 +164,11 @@ def compute_interpolation_matrix(x, y, px, py, mask=None):
     assert dy > 0
 
     def column(X):
+        "Input grid column number corresponding to X."
         return int(np.floor((X - x[0]) / dx))
 
     def row(Y):
+        "Input grid row number corresponding to Y."
         return int(np.floor((Y - y[0]) / dy))
 
     n_points = len(px)
@@ -182,9 +184,9 @@ def compute_interpolation_matrix(x, y, px, py, mask=None):
     n_cols = c_max - c_min + 1
 
     def matrix_column(r, c):
-        """Compute the interpolation matrix column corresponding to row,column
-        of the array. This is the same as the linear index within the
-        subset needed for interpolation.
+        """Interpolation matrix column number corresponding to r,c of the
+        array *subset*. This is the same as the linear index within
+        the subset needed for interpolation.
 
         """
         return n_cols * r + c
