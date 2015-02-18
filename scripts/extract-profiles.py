@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2012-2013 Andy Aschwanden
+# Copyright (C) 2012-2013, 2015 Andy Aschwanden
 #
 
 from argparse import ArgumentParser
@@ -121,7 +121,6 @@ def create_profile_axes(filename, projection, flip):
         if flip:
             profile_lat = profile_lat[::-1]
             profile_lon = profile_lon[::-1]
-            profile_name = profile_name[::-1]
         profile_x, profile_y = projection(profile_lon, profile_lat)
         profile = np.zeros_like(profile_x)
         profile[1::] = np.sqrt(np.diff(profile_x)**2 + np.diff(profile_y)**2)
