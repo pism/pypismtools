@@ -5,10 +5,7 @@
 from argparse import ArgumentParser
 import numpy as np
 
-try:
-    from netCDF4 import Dataset as NC
-except:
-    from netCDF3 import Dataset as NC
+from netCDF4 import Dataset as NC
 
 try:
     import pypismtools.pypismtools as ppt
