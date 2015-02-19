@@ -151,7 +151,7 @@ class Profile:
         result[1::] = np.sqrt(np.diff(self.x)**2 + np.diff(self.y)**2)
         return result.cumsum()
 
-def compute_interpolation_matrix(x, y, px, py, mask=None):
+def compute_interpolation_matrix(x, y, px, py):
     """Interpolate values of z to points (px,py) assuming that z is on a
     regular grid defined by x and y."""
 
