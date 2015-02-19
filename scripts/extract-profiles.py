@@ -4,7 +4,7 @@
 
 from argparse import ArgumentParser
 import numpy as np
-import scipy
+import scipy.sparse
 
 from netCDF4 import Dataset as NC
 
@@ -732,6 +732,63 @@ def interpolate_profile(profile, input_file, input_variable):
                                input_order=p_dims, output_order=out_dim_order)
     return p_values
 
+def interpolate_profile_new(variable, x, y, profile):
+    xdim, ydim, zdim, tdim = get_dims_from_variable(variable.dimensions)
+
+    n_points = len(profile.x)
+
+    dim_length = dict(zip(variable.dimensions, variable.shape))
+
+    # take care of the transpose the easy way (i.e. dealing with 1D objects)
+    if variable.dimensions.index(ydim) < variable.dimensions.index(xdim):
+        A = ProfileInterpolationMatrix(x, y, profile.x, profile.y)
+        x_slice = slice(A.c_min, A.c_max+1)
+        y_slice = slice(A.r_min, A.r_max+1)
+    else:
+        A = ProfileInterpolationMatrix(y, x, profile.y, profile.x)
+        x_slice = slice(A.r_min, A.r_max+1)
+        y_slice = slice(A.c_min, A.c_max+1)
+
+    def get_subset(t=0, z=0):
+        """Assemble the indexing tuple and get a sbset from a variable."""
+        index = []
+        for dim in variable.dimensions:
+            if dim == xdim:
+                index.append(x_slice)
+            elif dim == ydim:
+                index.append(y_slice)
+            elif dim == zdim:
+                index.append(z)
+            elif dim == tdim:
+                index.append(t)
+            else:
+                index.append(Ellipsis)
+        return variable[index]
+
+    if tdim and zdim:
+        # 3D time-dependent
+        result = np.zeros((dim_length[tdim], n_points, dim_length[zdim]))
+        for t in xrange(dim_length[tdim]):
+            for z in xrange(dim_length[zdim]):
+                raise NotImplementedError
+    elif tdim:
+        # 2D time-dependent
+        result = np.zeros((dim_length[tdim], n_points))
+        for t in xrange(dim_length[tdim]):
+            subset = get_subset(t=t)
+            result[t, :] = A.apply_to_subset(subset)
+    elif zdim:
+        # 3D time-independent
+        result = np.zeros((dim_length[tdim], n_points))
+        for z in xrange(dim_length[zdim]):
+            raise NotImplementedError
+    else:
+        # 2D time-independent
+        subset = get_subset()
+        result = A.apply_to_subset(subset)
+
+    return result
+
 if __name__ == "__main__":
     # Set up the option parser
     description = '''A script to extract data along (possibly multiple) profile using
@@ -947,14 +1004,21 @@ if __name__ == "__main__":
                 var_out = nc.createVariable(var_name, datatype, dimensions=out_dim_order,
                                             fill_value=fill_value)
 
-                for k in range(len(profiles)):
-                    profile = profiles[k]
+                for k, profile in enumerate(profiles):
                     print("    - processing profile {0}".format(profile.name))
-                    p_values = interpolate_profile(profile, nc_in, var_in)
+                    # p_values = interpolate_profile(profile, nc_in, var_in)
+                    p_values = interpolate_profile_new(var_in, x_coord, y_coord, profile)
+
                     profiler.mark('write')
-                    access_str = 'k,' + ','.join([':'.join(['0', str(coord)]) for coord in p_values.shape])
-                    exec('var_out[%s] = p_values' % access_str)
+                    try:
+                        # try without exec (should work using newer netcdf4-python)
+                        indexes = np.r_[k, [np.s_[0:n] for n in p_values.shape]]
+                        var_out[indexes] = p_values
+                    except:
+                        access_str = 'k,' + ','.join([':'.join(['0', str(coord)]) for coord in p_values.shape])
+                        exec('var_out[%s] = p_values' % access_str)
                     p_write = profiler.elapsed('write')
+
                     if timing:
                         print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
             else:
