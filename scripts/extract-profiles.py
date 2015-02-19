@@ -151,68 +151,101 @@ class Profile:
         result[1::] = np.sqrt(np.diff(self.x)**2 + np.diff(self.y)**2)
         return result.cumsum()
 
-def compute_interpolation_matrix(x, y, px, py):
-    """Interpolate values of z to points (px,py) assuming that z is on a
-    regular grid defined by x and y."""
+class ProfileInterpolationMatrix:
+    # sparse matrix
+    A = None
+    # row and column ranges for extracting array subsets
+    r_min = None
+    r_max = None
+    c_min = None
+    c_max = None
+    n_rows = None
+    n_cols = None
 
-    assert len(px) == len(py)
-
-    dx = x[1] - x[0]
-    dy = y[1] - y[0]
-
-    assert dx > 0
-    assert dy > 0
-
-    def column(X):
-        "Input grid column number corresponding to X."
-        return int(np.floor((X - x[0]) / dx))
-
-    def row(Y):
-        "Input grid row number corresponding to Y."
-        return int(np.floor((Y - y[0]) / dy))
-
-    n_points = len(px)
-
-    c_min = column(px.min())
-    c_max = column(px.max()) + 1
-
-    r_min = row(py.min())
-    r_max = row(py.max()) + 1
-
-    # compute the size of the subset needed for interpolation
-    n_rows = r_max - r_min + 1
-    n_cols = c_max - c_min + 1
-
-    def matrix_column(r, c):
+    def column(self, r, c):
         """Interpolation matrix column number corresponding to r,c of the
         array *subset*. This is the same as the linear index within
         the subset needed for interpolation.
 
         """
-        return n_cols * r + c
+        return self.n_cols * r + c
 
-    A = scipy.sparse.lil_matrix((n_points, n_rows * n_cols))
+    def __init__(self, x, y, px, py):
+        """Interpolate values of z to points (px,py) assuming that z is on a
+        regular grid defined by x and y."""
 
-    for k in xrange(n_points):
-        x_k = px[k]
-        y_k = py[k]
+        assert len(px) == len(py)
 
-        C = column(x_k)
-        R = row(y_k)
+        dx = x[1] - x[0]
+        dy = y[1] - y[0]
 
-        alpha = (x_k - x[C]) / dx
-        beta  = (y_k - y[R]) / dy
+        assert dx > 0
+        assert dy > 0
 
-        # indexes within the subset needed for interpolation
-        c = C - c_min
-        r = R - r_min
+        def grid_column(X):
+            "Input grid column number corresponding to X."
+            return int(np.floor((X - x[0]) / dx))
 
-        A[k, matrix_column(r,         c)] = (1.0 - alpha) * (1.0 - beta)
-        A[k, matrix_column(r + 1,     c)] = (1.0 - alpha) * beta
-        A[k, matrix_column(r,     c + 1)] = alpha * (1.0 - beta)
-        A[k, matrix_column(r + 1, c + 1)] = alpha * beta
+        def grid_row(Y):
+            "Input grid row number corresponding to Y."
+            return int(np.floor((Y - y[0]) / dy))
 
-    return A, (r_min, r_max), (c_min, c_max)
+        n_points = len(px)
+
+        self.c_min = grid_column(px.min())
+        self.c_max = grid_column(px.max()) + 1
+
+        self.r_min = grid_row(py.min())
+        self.r_max = grid_row(py.max()) + 1
+
+        # compute the size of the subset needed for interpolation
+        self.n_rows = self.r_max - self.r_min + 1
+        self.n_cols = self.c_max - self.c_min + 1
+
+        self.A = scipy.sparse.lil_matrix((n_points, self.n_rows * self.n_cols))
+
+        for k in xrange(n_points):
+            x_k = px[k]
+            y_k = py[k]
+
+            C = grid_column(x_k)
+            R = grid_row(y_k)
+
+            alpha = (x_k - x[C]) / dx
+            beta  = (y_k - y[R]) / dy
+
+            # indexes within the subset needed for interpolation
+            c = C - self.c_min
+            r = R - self.r_min
+
+            self.A[k, self.column(r,         c)] = (1.0 - alpha) * (1.0 - beta)
+            self.A[k, self.column(r + 1,     c)] = (1.0 - alpha) * beta
+            self.A[k, self.column(r,     c + 1)] = alpha * (1.0 - beta)
+            self.A[k, self.column(r + 1, c + 1)] = alpha * beta
+
+    def apply(self, array):
+        """Apply the interpolation to an array. Returns values at points along
+        the profile."""
+        subset = array[self.r_min:self.r_max+1, self.c_min:self.c_max+1]
+        if np.ma.is_masked(subset):
+            raise NotImplementedError
+
+        return self.A.tocsr() * np.ravel(subset)
+
+def interpolate_profile_2(array, x, y, profile):
+    n_rows, n_cols = array.shape
+
+    # take care of the transpose the easy way (i.e. dealing with 1D objects)
+    if n_rows == x.size and n_cols == y.size:
+        grid_x = x
+        grid_y = y
+        profile_x = profile.x
+        profile_y = profile.y
+    else:
+        grid_x = y
+        grid_y = x
+        profile_x = profile.y
+        profile_y = profile.x
 
 def interpolation_test():
     """Test interpolation by recovering values of a linear function."""
@@ -233,7 +266,7 @@ def interpolation_test():
     py = np.random.rand(P) * Ly
 
     # initialize the interpolation matrix
-    A, (r_min, r_max), (c_min, c_max) = compute_interpolation_matrix(x, y, px, py)
+    A = ProfileInterpolationMatrix(x, y, px, py)
 
     # a linear function (perfectly recovered using bilinear
     # interpolation)
@@ -244,11 +277,8 @@ def interpolation_test():
     xx, yy = np.meshgrid(x, y)
     z = Z(xx, yy)
 
-    # select the part of the grid we need
-    subset = z[r_min:r_max+1, c_min:c_max+1]
-
     # interpolate
-    z_interpolated = A.tocsr() * subset.flatten()
+    z_interpolated = A.apply(z)
 
     assert np.max(np.fabs(z_interpolated - Z(px, py))) < 1e-12
 
