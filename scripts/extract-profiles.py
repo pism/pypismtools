@@ -739,15 +739,24 @@ def interpolate_profile_new(variable, x, y, profile):
 
     dim_length = dict(zip(variable.dimensions, variable.shape))
 
-    # take care of the transpose the easy way (i.e. dealing with 1D objects)
-    if variable.dimensions.index(ydim) < variable.dimensions.index(xdim):
-        A = ProfileInterpolationMatrix(x, y, profile.x, profile.y)
-        x_slice = slice(A.c_min, A.c_max+1)
-        y_slice = slice(A.r_min, A.r_max+1)
-    else:
-        A = ProfileInterpolationMatrix(y, x, profile.y, profile.x)
-        x_slice = slice(A.r_min, A.r_max+1)
-        y_slice = slice(A.c_min, A.c_max+1)
+    # try to get the matrix we pre-computed earlier:
+    try:
+        A = profile.A
+        x_slice = profile.x_slice
+        y_slice = profile.y_slice
+    except AttributeError:
+        # take care of the transpose the easy way (i.e. dealing with 1D objects)
+        if variable.dimensions.index(ydim) < variable.dimensions.index(xdim):
+            A = ProfileInterpolationMatrix(x, y, profile.x, profile.y)
+            x_slice = slice(A.c_min, A.c_max+1)
+            y_slice = slice(A.r_min, A.r_max+1)
+        else:
+            A = ProfileInterpolationMatrix(y, x, profile.y, profile.x)
+            x_slice = slice(A.r_min, A.r_max+1)
+            y_slice = slice(A.c_min, A.c_max+1)
+        profile.A = A
+        profile.x_slice = x_slice
+        profile.y_slice = y_slice
 
     def get_subset(t=0, z=0):
         """Assemble the indexing tuple and get a sbset from a variable."""
