@@ -376,7 +376,7 @@ def create_profile_axes(filename, projection, flip):
 def output_dimensions(input_dimensions, stationdim, profiledim):
     """Build a list of dimension names used to define a variable in the
     output file."""
-    xdim, ydim, zdim, tdim = get_dims_from_variable(input_dimensions)
+    _, _, zdim, tdim = get_dims_from_variable(input_dimensions)
 
     if tdim:
         result = [stationdim, tdim, profiledim]
@@ -596,7 +596,8 @@ def create_variables(nc, profiledim, stationdim):
         variable = nc.createVariable(name, type, dimensions)
         variable.setncatts(attributes)
 
-def copy_attributes(var_in, var_out, tdim):
+def copy_attributes(var_in, var_out):
+    _, _, _, tdim = get_dims_from_variable(var_in.dimensions)
     for att in var_in.ncattrs():
         if att == '_FillValue':
             continue
@@ -904,7 +905,7 @@ if __name__ == "__main__":
         var_out = nc.createVariable(
             var_name, datatype, dimensions=dimensions, fill_value=fill_value)
         var_out[:] = var_in[:]
-        copy_attributes(var_in, var_out, tdim)
+        copy_attributes(var_in, var_out)
 
         has_time_bounds_var = False
         if has_time_bounds:
@@ -922,7 +923,7 @@ if __name__ == "__main__":
             var_out = nc.createVariable(
                 var_name, datatype, dimensions=dimensions, fill_value=fill_value)
             var_out[:] = var_in[:]
-            copy_attributes(var_in, var_out, tdim)
+            copy_attributes(var_in, var_out)
 
     print("Copying variables")
     if all_vars:
@@ -949,41 +950,35 @@ if __name__ == "__main__":
                 # We need a fill value since the interpolation could produce missing values?
                 fill_value = fill_value
 
-            if in_dims:
-                if len(in_dims) > 1:
-                    p_dims = [x for x in in_dims if x not in mapplane_dim_names]
-                    idx = []
-                    for dim in mapplane_dim_names:
-                        idx.append(in_dims.index(dim))
-                    loc = np.min(idx)
-                    p_dims.insert(loc, profiledim)
-                    out_dim_order = output_dimensions(in_dims, stationdim, profiledim)
+            if in_dims and len(in_dims) > 1:
+                p_dims = [x for x in in_dims if x not in mapplane_dim_names]
+                idx = []
+                for dim in mapplane_dim_names:
+                    idx.append(in_dims.index(dim))
+                loc = np.min(idx)
+                p_dims.insert(loc, profiledim)
 
-                    var_out = nc.createVariable(var_name, datatype, dimensions=out_dim_order,
-                                                fill_value=fill_value)
+                out_dim_order = output_dimensions(in_dims, stationdim, profiledim)
+                var_out = nc.createVariable(var_name, datatype, dimensions=out_dim_order,
+                                            fill_value=fill_value)
 
-                    for k in range(len(profiles)):
-                        profile = profiles[k]
-                        print("    - processing profile {0}".format(profile.name))
-                        p_values = interpolate_profile(profile, nc_in, var_in)
-                        profiler.mark('write')
-                        access_str = 'k,' + ','.join([':'.join(['0', str(coord)]) for coord in p_values.shape])
-                        exec('var_out[%s] = p_values' % access_str)
-                        p_write = profiler.elapsed('write')
-                        if timing:
-                            print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
-                else:
-                    var_out = nc.createVariable(
-                        var_name, datatype, dimensions=var_in.dimensions,
-                    fill_value=fill_value)
-                    var_out[:] = var_in[:]
+                for k in range(len(profiles)):
+                    profile = profiles[k]
+                    print("    - processing profile {0}".format(profile.name))
+                    p_values = interpolate_profile(profile, nc_in, var_in)
+                    profiler.mark('write')
+                    access_str = 'k,' + ','.join([':'.join(['0', str(coord)]) for coord in p_values.shape])
+                    exec('var_out[%s] = p_values' % access_str)
+                    p_write = profiler.elapsed('write')
+                    if timing:
+                        print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
             else:
-                var_out = nc.createVariable(
-                    var_name, datatype, dimensions=var_in.dimensions,
-                    fill_value=fill_value)
+                # it is a scalar or a 1D variable
+                var_out = nc.createVariable(var_name, datatype, dimensions=var_in.dimensions,
+                                            fill_value=fill_value)
                 var_out[:] = var_in[:]
 
-            copy_attributes(var_in, var_out, tdim)
+            copy_attributes(var_in, var_out)
             print("  - done with %s" % var_name)
 
     print("The following variables were not copied because they could not be found in {}:".format(in_filename))
