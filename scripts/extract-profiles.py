@@ -943,7 +943,6 @@ if __name__ == "__main__":
                         idx.append(in_dims.index(dim))
                     loc = np.min(idx)
                     p_dims.insert(loc, profiledim)
-                    out_dims = (stationdim, profiledim, tdim, zdim)
                     out_dim_order_all = (stationdim, profiledim, tdim, zdim)
                     out_dim_order = [x for x in out_dim_order_all if x]
                     out_dim_ordered = [x for x in in_dims if x not in mapplane_dim_names]
