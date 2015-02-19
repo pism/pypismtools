@@ -278,21 +278,6 @@ class ProfileInterpolationMatrix:
 
         return self.A.tocsr() * np.ravel(subset)
 
-def interpolate_profile_2(array, x, y, profile):
-    n_rows, n_cols = array.shape
-
-    # take care of the transpose the easy way (i.e. dealing with 1D objects)
-    if n_rows == x.size and n_cols == y.size:
-        grid_x = x
-        grid_y = y
-        profile_x = profile.x
-        profile_y = profile.y
-    else:
-        grid_x = y
-        grid_y = x
-        profile_x = profile.y
-        profile_y = profile.x
-
 def masked_interpolation_test():
     """Test matrix adjustment."""
 
