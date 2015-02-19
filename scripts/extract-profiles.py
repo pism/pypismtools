@@ -542,49 +542,45 @@ def dim_permute(values,
 def create_variables(nc, profiledim, stationdim):
     # create dimensions
     nc.createDimension(profiledim)
-
     nc.createDimension(stationdim)
 
-    var = 'profile_name'
-    var_out = nc.createVariable(var, str, dimensions=(stationdim))
-    var_out.cf_role = "timeseries_id"
-    var_out.long_name = "profile name"
+    variables = [("profile_name", str, (stationdim),
+                  {"cf_role" : "timeseries_id",
+                   "long_name" : "profile name"}),
 
-    var_out = nc.createVariable('profile', 'f', dimensions=(stationdim, profiledim))
-    var_out.long_name = 'distance along profile'
-    var_out.units = 'm'
+                 ("profile", "f", (stationdim, profiledim),
+                  {"long_name" : 'distance along profile',
+                   "units" : "m"}),
 
-    var = 'clon'
-    var_out = nc.createVariable(var, 'f', dimensions=(stationdim))
-    var_out.long_name = "center longitude of profile"
-    var_out.units = "degrees_east";
-    var_out.valid_range = -180., 180.
+                 ("clon", "f", (stationdim),
+                  {"long_name" : "center longitude of profile",
+                   "units" : "degrees_east",
+                   "valid_range" : [-180.0, 180.0]}),
 
-    var = 'clat'
-    var_out = nc.createVariable(var, 'f', dimensions=(stationdim))
-    var_out.long_name = "center latitude of profile"
-    var_out.units = "degrees_north";
-    var_out.valid_range = -90., 90.
+                 ("clat", "f", (stationdim),
+                  {"long_name" : "center latitude of profile",
+                   "units" : "degrees_north",
+                   "valid_range" : [-90.0, 90.0]}),
 
-    var = 'lon'
-    var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
-    var_out.units = "degrees_east";
-    var_out.valid_range = -180., 180.
-    var_out.standard_name = "longitude"
+                 ("lon", "f", (stationdim, profiledim),
+                  {"units" : "degrees_east",
+                   "valid_range" : [-180.0, 180.0],
+                   "standard_name" : "longitude"}),
 
-    var = 'lat'
-    var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
-    var_out.units = "degrees_north";
-    var_out.valid_range = -90., 90.
-    var_out.standard_name = "latitude"
+                 ("lat", "f", (stationdim, profiledim),
+                  {"units" : "degrees_north",
+                   "valid_range" : [-90.0, 90.0],
+                   "standard_name" : "latitude"}),
 
-    var = 'nx'
-    var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
-    var_out.long_name = "x-component of the right-hand--pointing normal vector"
+                 ("nx", "f", (stationdim, profiledim),
+                  {"long_name" : "x-component of the right-hand-pointing normal vector"}),
 
-    var = 'ny'
-    var_out = nc.createVariable(var, 'f', dimensions=(stationdim, profiledim))
-    var_out.long_name = "y-component of the right-hand-pointing normal vector"
+                 ("ny", "f", (stationdim, profiledim),
+                  {"long_name" : "y-component of the right-hand-pointing normal vector"})]
+
+    for name, type, dimensions, attributes in variables:
+        variable = nc.createVariable(name, type, dimensions)
+        variable.setncatts(attributes)
 
 def copy_attributes(var_in, var_out, tdim):
     for att in var_in.ncattrs():
