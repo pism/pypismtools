@@ -192,11 +192,11 @@ class ProfileInterpolationMatrix:
 
         n_points = len(px)
 
-        self.c_min = grid_column(px.min())
-        self.c_max = grid_column(px.max()) + 1
+        self.c_min = grid_column(np.min(px))
+        self.c_max = grid_column(np.max(px)) + 1
 
-        self.r_min = grid_row(py.min())
-        self.r_max = grid_row(py.max()) + 1
+        self.r_min = grid_row(np.min(py))
+        self.r_max = grid_row(np.max(py)) + 1
 
         # compute the size of the subset needed for interpolation
         self.n_rows = self.r_max - self.r_min + 1
@@ -223,12 +223,48 @@ class ProfileInterpolationMatrix:
             self.A[k, self.column(r,     c + 1)] = alpha * (1.0 - beta)
             self.A[k, self.column(r + 1, c + 1)] = alpha * beta
 
+    def adjusted_matrix(self, mask):
+        """Return adjusted interpolation matrix that ignores missing (masked)
+        values."""
+
+        A = self.A.tocsr()
+        n_rows = A.shape[0]
+
+        for r in xrange(n_rows):
+            # for each row, i.e. each point along the profile
+            row = np.s_[A.indptr[r]:A.indptr[r+1]]
+            # get the locations and values
+            indexes = A.indices[row]
+            values = A.data[row]
+
+            # if a particular location is masked, set the
+            # interpolation weight to zero
+            for k, index in enumerate(indexes):
+                if np.ravel(mask)[index]:
+                    values[k] = 0.0
+
+            # normalize so that we still have an interpolation matrix
+            if values.sum() > 0:
+                values = values / values.sum()
+
+            A.data[row] = values
+
+        A.eliminate_zeros()
+
+        return A
+
     def apply(self, array):
         """Apply the interpolation to an array. Returns values at points along
         the profile."""
         subset = array[self.r_min:self.r_max+1, self.c_min:self.c_max+1]
+        return self.apply_to_subset(subset)
+
+    def apply_to_subset(self, subset):
+        """Apply interpolation to an array subset."""
+
         if np.ma.is_masked(subset):
-            raise NotImplementedError
+            A = self.adjusted_matrix(subset.mask)
+            return A * np.ravel(subset)
 
         return self.A.tocsr() * np.ravel(subset)
 
@@ -246,6 +282,28 @@ def interpolate_profile_2(array, x, y, profile):
         grid_y = x
         profile_x = profile.y
         profile_y = profile.x
+
+def masked_interpolation_test():
+    """Test matrix adjustment."""
+
+    # 2x2 grid of ones
+    x = [0, 1]
+    y = [0, 1]
+    z = np.ones((2,2))
+    # set the [0,0] element to a negative number and mark that value
+    # as "missing" by turning it into a masked array
+    z[0,0] = -2e9
+    z = np.ma.array(z, mask=[[True, False],
+                             [False, False]])
+    # sample in the middle
+    px = [0.5]
+    py = [0.5]
+
+    A = ProfileInterpolationMatrix(x, y, px, py)
+
+    # We should get the average of the three remaining ones, i.e. 1.0.
+    # (We would get a negative value without adjusting the matrix.)
+    assert A.apply(z)[0] == 1.0
 
 def interpolation_test():
     """Test interpolation by recovering values of a linear function."""
