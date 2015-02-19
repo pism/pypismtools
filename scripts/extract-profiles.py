@@ -373,6 +373,20 @@ def create_profile_axes(filename, projection, flip):
         profiles.append(Profile(name, lat, lon, clat, clon, projection, flip))
     return profiles
 
+def output_dimensions(input_dimensions, stationdim, profiledim):
+    """Build a list of dimension names used to define a variable in the
+    output file."""
+    xdim, ydim, zdim, tdim = get_dims_from_variable(input_dimensions)
+
+    if tdim:
+        result = [stationdim, tdim, profiledim]
+    else:
+        result = [stationdim, profiledim]
+
+    if zdim:
+        result.append(zdim)
+
+    return result
 
 def read_shapefile(filename):
     '''
@@ -943,16 +957,10 @@ if __name__ == "__main__":
                         idx.append(in_dims.index(dim))
                     loc = np.min(idx)
                     p_dims.insert(loc, profiledim)
-                    out_dim_order_all = (stationdim, profiledim, tdim, zdim)
-                    out_dim_order = [x for x in out_dim_order_all if x]
-                    out_dim_ordered = [x for x in in_dims if x not in mapplane_dim_names]
-                    out_dim_ordered.insert(0, stationdim)
-                    out_dim_ordered.insert(2, profiledim)
-                    out_dim_order = filter(lambda(x): x in out_dim_order, out_dim_ordered)
+                    out_dim_order = output_dimensions(in_dims, stationdim, profiledim)
 
-                    var_out = nc.createVariable(
-                        var_name, datatype, dimensions=out_dim_order,
-                        fill_value=fill_value)
+                    var_out = nc.createVariable(var_name, datatype, dimensions=out_dim_order,
+                                                fill_value=fill_value)
 
                     for k in range(len(profiles)):
                         profile = profiles[k]
