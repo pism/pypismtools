@@ -352,37 +352,24 @@ def get_dims_from_variable(var_dimensions):
     xdim, ydim, zdim, tdim: dimensions
     '''
 
-    ## a list of possible x-dimensions names
+    def find(candidates, list):
+        """Return one of the candidates if it was found in the list or None
+        otherwise."""
+        for name in candidates:
+            if name in list:
+                return name
+        return None
+
+    ## possible x-dimensions names
     xdims = ['x','x1']
-    ## a list of possible y-dimensions names
+    ## possible y-dimensions names
     ydims = ['y','y1']
-    ## a list of possible z-dimensions names
-    zdims= ['z', 'zb']
-    ## a list of possible time-dimensions names
-    tdims= ['t', 'time']
+    ## possible z-dimensions names
+    zdims = ['z', 'zb']
+    ## possible time-dimensions names
+    tdims = ['t', 'time']
 
-    xdim = None
-    ydim = None
-    zdim = None
-    tdim = None
-
-    ## assign x dimension
-    for dim in xdims:
-        if dim in var_dimensions:
-            xdim = dim
-    ## assign y dimension
-    for dim in ydims:
-        if dim in var_dimensions:
-            ydim = dim
-    ## assign y dimension
-    for dim in zdims:
-        if dim in var_dimensions:
-            zdim = dim
-    ## assign t dimension
-    for dim in tdims:
-        if dim in var_dimensions:
-            tdim = dim
-    return xdim, ydim, zdim, tdim
+    return [ find(dim, var_dimensions) for dim in [xdims, ydims, zdims, tdims] ]
 
 
 def piecewise_bilinear(x, y, p_x, p_y, p_i, p_j, A, B, C, D):
