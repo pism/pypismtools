@@ -368,10 +368,10 @@ def create_profile_axes(filename, projection, flip):
 
     '''
 
-    my_profiles = []
+    profiles = []
     for lat, lon, name, clat, clon in read_shapefile(filename):
-        my_profiles.append(Profile(name, lat, lon, clat, clon, projection, flip))
-    return my_profiles
+        profiles.append(Profile(name, lat, lon, clat, clon, projection, flip))
+    return profiles
 
 
 def read_shapefile(filename):
