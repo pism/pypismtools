@@ -34,7 +34,7 @@ def timeprofile():
 
 class TimeProfiler:
     """ A utility class for profiling execution time for code """
-    
+
     def __init__(self):
         # Dictionary with times in seconds
         self.timedict = {}
@@ -44,12 +44,12 @@ class TimeProfiler:
 
         # Note: 'slot' has to be string type
         # we are not checking it here.
-        
+
         self.timedict[slot] = time.time()
 
     def unmark(self, slot=''):
         """ Unmark the slot 'slot' """
-        
+
         # Note: 'slot' has to be string type
         # we are not checking it here.
 
@@ -61,7 +61,7 @@ class TimeProfiler:
 
         # To get the latest slot, just get the max of values
         return time.time() - max(self.timedict.values())
-    
+
     def elapsed(self, slot=''):
         """ Get the time difference between now and a previous
         time slot named 'slot' """
@@ -81,7 +81,7 @@ class TimeProfiler:
         # Difference of max time with min time
         times = self.timedict.values()
         return max(times) - min(times)
-    
+
     def timegap(self):
         """ Return the full time-gap since we started marking """
 
@@ -267,7 +267,7 @@ def create_profile_axes(filename, projection, flip):
     x: array_like along-profile axis
     lat: array_like latitudes
     lon: array_like longitudes
-    
+
     '''
 
     my_profiles = []
@@ -287,7 +287,7 @@ def read_shapefile(filename):
     Returns
     -------
     lat, lon: array_like coordinates
-    
+
     '''
     import ogr
     import osr
@@ -326,7 +326,7 @@ def read_shapefile(filename):
         lat = []
 
         # This stopped working in gdal 1.11????
-        # for point in geometry.GetPoints():            
+        # for point in geometry.GetPoints():
         #     lon.append(point[0])
         #     lat.append(point[1])
         # So here's a bug fix??
@@ -351,7 +351,7 @@ def get_dims_from_variable(var_dimensions):
     --------
     xdim, ydim, zdim, tdim: dimensions
     '''
-        
+
     ## a list of possible x-dimensions names
     xdims = ['x','x1']
     ## a list of possible y-dimensions names
@@ -365,7 +365,7 @@ def get_dims_from_variable(var_dimensions):
     ydim = None
     zdim = None
     tdim = None
-    
+
     ## assign x dimension
     for dim in xdims:
         if dim in var_dimensions:
@@ -407,7 +407,7 @@ def piecewise_bilinear(x, y, p_x, p_y, p_i, p_j, A, B, C, D):
     Returns
     -------
     pw_linear: array with shape like p_i containing interpolated values
-    
+
     '''
 
     delta_x = p_x - x[p_i]
@@ -438,7 +438,7 @@ def dim_permute(values,
     Returns
     -------
     values_perm : array_like
-    
+
     '''
 
     # filter out irrelevant dimensions
@@ -514,6 +514,142 @@ def copy_attributes(var_in, var_out, tdim):
 
         else:
             setattr(var_out, att, getattr(var_in, att))
+
+def interpolate_profile(profile, input_file, input_variable):
+    p_x = profile.x
+    p_y = profile.y
+
+    # indices (i,j)
+    p_i = (np.floor((p_x - (x0-dx/2)) / dx)).astype('int')
+    p_j = (np.floor((p_y - (y0-dy/2)) / dy)).astype('int')
+
+    if bilinear:
+
+        A_i, A_j = p_i, p_j
+        B_i, B_j = p_i, p_j + 1
+        C_i, C_j = p_i + 1, p_j + 1
+        D_i, D_j = p_i + 1, p_j
+
+        profiler.mark('read')
+
+        if zdim:
+            # level-by level bilinear interpolation for fields with 3 spatial dimensions
+            nz = len(input_file.variables[zdim][:])
+
+            dim_dict = dict([(tdim, ':'), (xdim, 'A_i'), (ydim, 'A_j'), (zdim, ':')])
+            access_str = ','.join([dim_dict[x] for x in in_dims])
+            A_values = eval('input_variable[%s]' % access_str)
+
+            A_p_values = dim_permute(A_values,
+                                     input_order=p_dims, output_order=out_dim_order)
+            if isinstance(A_p_values, np.ma.MaskedArray):
+                A_p_values = A_p_values.filled(0)
+
+            dim_dict = dict([(tdim, ':'), (xdim, 'B_i'), (ydim, 'B_j'), (zdim, ':')])
+            access_str = ','.join([dim_dict[x] for x in in_dims])
+            B_values = eval('input_variable[%s]' % access_str)
+
+            B_p_values = dim_permute(B_values,
+                                     input_order=p_dims, output_order=out_dim_order)
+            if isinstance(B_p_values, np.ma.MaskedArray):
+                B_p_values = B_p_values.filled(0)
+
+            dim_dict = dict([(tdim, ':'), (xdim, 'C_i'), (ydim, 'C_j'), (zdim, ':')])
+            access_str = ','.join([dim_dict[x] for x in in_dims])
+            C_values = eval('input_variable[%s]' % access_str)
+
+            C_p_values = dim_permute(C_values,
+                                     input_order=p_dims, output_order=out_dim_order)
+            if isinstance(C_p_values, np.ma.MaskedArray):
+                C_p_values = C_p_values.filled(0)
+
+            dim_dict = dict([(tdim, ':'), (xdim, 'D_i'), (ydim, 'D_j'), (zdim, ':')])
+            access_str = ','.join([dim_dict[x] for x in in_dims])
+            D_values = eval('input_variable[%s]' % access_str)
+
+            D_p_values = dim_permute(D_values,
+                                         input_order=p_dims, output_order=out_dim_order)
+            if isinstance(D_p_values, np.ma.MaskedArray):
+                D_p_values = D_p_values.filled(0)
+
+            p_read = profiler.elapsed('read')
+            if timing:
+                print("    - read in %3.4f s" % p_read)
+
+            profiler.mark('interp')
+
+            p_values = np.zeros_like(A_p_values)
+            for level in range(nz):
+                # We need to loop through all levels
+                p_values[Ellipsis, level] = piecewise_bilinear(x_coord, y_coord,
+                                                    p_x, p_y,
+                                                    p_i, p_j,
+                                                    A_p_values[Ellipsis, level],
+                                                    B_p_values[Ellipsis, level],
+                                                    C_p_values[Ellipsis, level],
+                                                    D_p_values[Ellipsis, level])
+        else:
+            # Mapplane variable
+            dim_dict = dict([(tdim, ':'), (xdim, 'A_i'), (ydim, 'A_j')])
+            access_str = ','.join([dim_dict[x] for x in in_dims])
+            A_values = eval('input_variable[%s]' % access_str)
+
+            A_p_values = dim_permute(A_values,
+                                     input_order=p_dims, output_order=out_dim_order)
+            if isinstance(A_p_values, np.ma.MaskedArray):
+                A_p_values = A_p_values.filled(0)
+
+            dim_dict = dict([(tdim, ':'), (xdim, 'B_i'), (ydim, 'B_j')])
+            access_str = ','.join([dim_dict[x] for x in in_dims])
+            B_values = eval('input_variable[%s]' % access_str)
+
+            B_p_values = dim_permute(B_values,
+                                     input_order=p_dims, output_order=out_dim_order)
+            if isinstance(B_p_values, np.ma.MaskedArray):
+                B_p_values = B_p_values.filled(0)
+
+            dim_dict = dict([(tdim, ':'), (xdim, 'C_i'), (ydim, 'C_j')])
+            access_str = ','.join([dim_dict[x] for x in in_dims])
+            C_values = eval('input_variable[%s]' % access_str)
+
+            C_p_values = dim_permute(C_values,
+                                     input_order=p_dims, output_order=out_dim_order)
+            if isinstance(C_p_values, np.ma.MaskedArray):
+                C_p_values = C_p_values.filled(0)
+
+            dim_dict = dict([(tdim, ':'), (xdim, 'D_i'), (ydim, 'D_j')])
+            access_str = ','.join([dim_dict[x] for x in in_dims])
+            D_values = eval('input_variable[%s]' % access_str)
+
+            D_p_values = dim_permute(D_values,
+                                     input_order=p_dims, output_order=out_dim_order)
+            if isinstance(D_p_values, np.ma.MaskedArray):
+                D_p_values = D_p_values.filled(0)
+
+            p_read = profiler.elapsed('read')
+            if timing:
+                print("    - read in %3.4f s" % p_read)
+            profiler.mark('interp')
+            p_values = piecewise_bilinear(x_coord, y_coord,
+                                          p_x, p_y,
+                                          p_i, p_j,
+                                          A_p_values,
+                                          B_p_values,
+                                          C_p_values,
+                                          D_p_values)
+        p_interp = profiler.elapsed('interp')
+        if timing:
+            print("    - interpolated in %3.4f s" % p_interp)
+    else:
+        # The trivial nearest-neighbor case
+        dim_dict = dict([(tdim, ':'), (xdim, 'p_i'), (ydim, 'p_j'), (zdim, ':')])
+        access_str = ','.join([dim_dict[x] for x in in_dims])
+        profiler.mark('read')
+        in_values = eval('input_variable[%s]' % access_str)
+        p_read = profiler.elapsed('read')
+        p_values = dim_permute(in_values,
+                               input_order=p_dims, output_order=out_dim_order)
+    return p_values
 
 if __name__ == "__main__":
     # Set up the option parser
@@ -603,7 +739,7 @@ if __name__ == "__main__":
     mapplane_dim_names = (xdim, ydim)
 
     # create dimensions. Check for unlimited dim.
-    print("Creating dimensions") 
+    print("Creating dimensions")
     # create global attributes.
     nc = NC(out_filename, 'w', format='NETCDF4')
     # copy global attributes
@@ -624,7 +760,7 @@ if __name__ == "__main__":
         nc.variables['nx'][k,0:pl] = np.squeeze(profile.nx)
         nc.variables['ny'][k,0:pl] = np.squeeze(profile.ny)
         nc.variables['lon'][k,0:pl] = np.squeeze(profile.lon)
-        nc.variables['lat'][k,0:pl] = np.squeeze(profile.lat)   
+        nc.variables['lat'][k,0:pl] = np.squeeze(profile.lat)
         nc.variables['profile_name'][k] = profile.name
         nc.variables['clat'][k] = profile.center_lat
         nc.variables['clon'][k] = profile.center_lon
@@ -739,124 +875,9 @@ if __name__ == "__main__":
                         fill_value=fill_value)
 
                     for k in range(len(profiles)):
-                        print("    - processing profile {0}".format(profile.name))
                         profile = profiles[k]
-                        p_x = profile.x
-                        p_y = profile.y
-
-                        # indices (i,j)
-                        p_i = (np.floor((p_x - (x0-dx/2)) / dx)).astype('int')
-                        p_j = (np.floor((p_y - (y0-dy/2)) / dy)).astype('int')
-
-                        if bilinear:
-
-                            A_i, A_j = p_i, p_j
-                            B_i, B_j = p_i, p_j + 1
-                            C_i, C_j = p_i + 1, p_j + 1
-                            D_i, D_j = p_i + 1, p_j
-
-                            profiler.mark('read')
-
-                            if zdim:
-                                # level-by level bilinear interpolation for fields with 3 spatial dimensions
-                                nz = len(nc_in.variables[zdim][:])
-
-                                dim_dict = dict([(tdim, ':'), (xdim, 'A_i'), (ydim, 'A_j'), (zdim, ':')])
-                                access_str = ','.join([dim_dict[x] for x in in_dims])
-                                A_values = eval('var_in[%s]' % access_str)
-                                A_p_values = dim_permute(A_values,
-                                                             input_order=p_dims, output_order=out_dim_order)
-                                if isinstance(A_p_values, np.ma.MaskedArray):
-                                    A_p_values = A_p_values.filled(0)
-                                dim_dict = dict([(tdim, ':'), (xdim, 'B_i'), (ydim, 'B_j'), (zdim, ':')])
-                                access_str = ','.join([dim_dict[x] for x in in_dims])
-                                B_values = eval('var_in[%s]' % access_str)
-                                B_p_values = dim_permute(B_values,
-                                                             input_order=p_dims, output_order=out_dim_order)
-                                if isinstance(B_p_values, np.ma.MaskedArray):
-                                    B_p_values = B_p_values.filled(0)
-                                dim_dict = dict([(tdim, ':'), (xdim, 'C_i'), (ydim, 'C_j'), (zdim, ':')])
-                                access_str = ','.join([dim_dict[x] for x in in_dims])
-                                C_values = eval('var_in[%s]' % access_str)
-                                C_p_values = dim_permute(C_values,
-                                                             input_order=p_dims, output_order=out_dim_order)
-                                if isinstance(C_p_values, np.ma.MaskedArray):
-                                    C_p_values = C_p_values.filled(0)                        
-                                dim_dict = dict([(tdim, ':'), (xdim, 'D_i'), (ydim, 'D_j'), (zdim, ':')])
-                                access_str = ','.join([dim_dict[x] for x in in_dims])
-                                D_values = eval('var_in[%s]' % access_str)
-                                D_p_values = dim_permute(D_values,
-                                                             input_order=p_dims, output_order=out_dim_order)
-                                if isinstance(D_p_values, np.ma.MaskedArray):
-                                    D_p_values = D_p_values.filled(0)
-                                p_read = profiler.elapsed('read')
-                                if timing:
-                                    print("    - read in %3.4f s" % p_read)
-                                profiler.mark('interp')
-                                p_values = np.zeros_like(A_p_values)
-                                for level in range(nz):
-                                    # We need to loop through all levels
-                                    p_values[Ellipsis, level] = piecewise_bilinear(x_coord, y_coord,
-                                                                        p_x, p_y,
-                                                                        p_i, p_j,
-                                                                        A_p_values[Ellipsis, level],
-                                                                        B_p_values[Ellipsis, level],
-                                                                        C_p_values[Ellipsis, level],
-                                                                        D_p_values[Ellipsis, level])
-                            else:
-                                # Mapplane variable
-                                dim_dict = dict([(tdim, ':'), (xdim, 'A_i'), (ydim, 'A_j')])
-                                access_str = ','.join([dim_dict[x] for x in in_dims])
-                                A_values = eval('var_in[%s]' % access_str)
-                                A_p_values = dim_permute(A_values,
-                                                             input_order=p_dims, output_order=out_dim_order)
-                                if isinstance(A_p_values, np.ma.MaskedArray):
-                                    A_p_values = A_p_values.filled(0)
-                                dim_dict = dict([(tdim, ':'), (xdim, 'B_i'), (ydim, 'B_j')])
-                                access_str = ','.join([dim_dict[x] for x in in_dims])
-                                B_values = eval('var_in[%s]' % access_str)
-                                B_p_values = dim_permute(B_values,
-                                                             input_order=p_dims, output_order=out_dim_order)
-                                if isinstance(B_p_values, np.ma.MaskedArray):
-                                    B_p_values = B_p_values.filled(0)
-                                dim_dict = dict([(tdim, ':'), (xdim, 'C_i'), (ydim, 'C_j')])
-                                access_str = ','.join([dim_dict[x] for x in in_dims])
-                                C_values = eval('var_in[%s]' % access_str)
-                                C_p_values = dim_permute(C_values,
-                                                             input_order=p_dims, output_order=out_dim_order)
-                                if isinstance(C_p_values, np.ma.MaskedArray):
-                                    C_p_values = C_p_values.filled(0)                        
-                                dim_dict = dict([(tdim, ':'), (xdim, 'D_i'), (ydim, 'D_j')])
-                                access_str = ','.join([dim_dict[x] for x in in_dims])
-                                D_values = eval('var_in[%s]' % access_str)
-                                D_p_values = dim_permute(D_values,
-                                                             input_order=p_dims, output_order=out_dim_order)
-                                if isinstance(D_p_values, np.ma.MaskedArray):
-                                    D_p_values = D_p_values.filled(0)
-                                p_read = profiler.elapsed('read')
-                                if timing:
-                                    print("    - read in %3.4f s" % p_read)
-                                profiler.mark('interp')
-                                p_values = piecewise_bilinear(x_coord, y_coord,
-                                                                    p_x, p_y,
-                                                                    p_i, p_j,
-                                                                    A_p_values,
-                                                                    B_p_values,
-                                                                    C_p_values,
-                                                                    D_p_values)
-                            p_interp = profiler.elapsed('interp')
-                            if timing:
-                                print("    - interpolated in %3.4f s" % p_interp)
-                        else:
-                            # The trivial nearest-neighbor case
-                            dim_dict = dict([(tdim, ':'), (xdim, 'p_i'), (ydim, 'p_j'), (zdim, ':')])
-                            access_str = ','.join([dim_dict[x] for x in in_dims])
-                            profiler.mark('read')
-                            in_values = eval('var_in[%s]' % access_str)
-                            p_read = profiler.elapsed('read')
-                            p_values = dim_permute(in_values,
-                                                         input_order=p_dims, output_order=out_dim_order)
-
+                        print("    - processing profile {0}".format(profile.name))
+                        p_values = interpolate_profile(profile, nc_in, var_in)
                         profiler.mark('write')
                         access_str = 'k,' + ','.join([':'.join(['0', str(coord)]) for coord in p_values.shape])
                         exec('var_out[%s] = p_values' % access_str)
