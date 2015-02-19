@@ -170,7 +170,15 @@ class ProfileInterpolationMatrix:
         """
         return self.n_cols * r + c
 
-    def __init__(self, x, y, px, py):
+    def grid_column(self, x, dx, X):
+        "Input grid column number corresponding to X."
+        return int(np.floor((X - x[0]) / dx))
+
+    def grid_row(self, y, dy, Y):
+        "Input grid row number corresponding to Y."
+        return int(np.floor((Y - y[0]) / dy))
+
+    def __init__(self, x, y, px, py, bilinear=True):
         """Interpolate values of z to points (px,py) assuming that z is on a
         regular grid defined by x and y."""
 
@@ -182,34 +190,31 @@ class ProfileInterpolationMatrix:
         assert dx > 0
         assert dy > 0
 
-        def grid_column(X):
-            "Input grid column number corresponding to X."
-            return int(np.floor((X - x[0]) / dx))
+        self.c_min = self.grid_column(x, dx, np.min(px))
+        self.c_max = self.grid_column(x, dx, np.max(px)) + 1
 
-        def grid_row(Y):
-            "Input grid row number corresponding to Y."
-            return int(np.floor((Y - y[0]) / dy))
-
-        n_points = len(px)
-
-        self.c_min = grid_column(np.min(px))
-        self.c_max = grid_column(np.max(px)) + 1
-
-        self.r_min = grid_row(np.min(py))
-        self.r_max = grid_row(np.max(py)) + 1
+        self.r_min = self.grid_row(y, dy, np.min(py))
+        self.r_max = self.grid_row(y, dy, np.max(py)) + 1
 
         # compute the size of the subset needed for interpolation
         self.n_rows = self.r_max - self.r_min + 1
         self.n_cols = self.c_max - self.c_min + 1
 
+        n_points = len(px)
         self.A = scipy.sparse.lil_matrix((n_points, self.n_rows * self.n_cols))
 
-        for k in xrange(n_points):
+        if bilinear:
+            self._compute_bilinear_matrix(x, y, dx, dy, px, py)
+        else:
+            raise NotImplementedError
+
+    def _compute_bilinear_matrix(self, x, y, dx, dy, px, py):
+        for k in xrange(self.A.shape[0]):
             x_k = px[k]
             y_k = py[k]
 
-            C = grid_column(x_k)
-            R = grid_row(y_k)
+            C = self.grid_column(x, dx, x_k)
+            R = self.grid_row(y, dy, y_k)
 
             alpha = (x_k - x[C]) / dx
             beta  = (y_k - y[R]) / dy
@@ -228,9 +233,11 @@ class ProfileInterpolationMatrix:
         values."""
 
         A = self.A.tocsr()
-        n_rows = A.shape[0]
+        n_points = A.shape[0]
 
-        for r in xrange(n_rows):
+        output_mask = np.zeros(n_points, dtype=np.bool_)
+
+        for r in xrange(n_points):
             # for each row, i.e. each point along the profile
             row = np.s_[A.indptr[r]:A.indptr[r+1]]
             # get the locations and values
@@ -246,12 +253,14 @@ class ProfileInterpolationMatrix:
             # normalize so that we still have an interpolation matrix
             if values.sum() > 0:
                 values = values / values.sum()
+            else:
+                output_mask[r] = True
 
             A.data[row] = values
 
         A.eliminate_zeros()
 
-        return A
+        return A, output_mask
 
     def apply(self, array):
         """Apply the interpolation to an array. Returns values at points along
@@ -263,8 +272,9 @@ class ProfileInterpolationMatrix:
         """Apply interpolation to an array subset."""
 
         if np.ma.is_masked(subset):
-            A = self.adjusted_matrix(subset.mask)
-            return A * np.ravel(subset)
+            A, mask = self.adjusted_matrix(subset.mask)
+            data = A * np.ravel(subset)
+            return np.ma.array(data, mask=mask)
 
         return self.A.tocsr() * np.ravel(subset)
 
