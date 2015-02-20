@@ -435,7 +435,6 @@ def read_shapefile(filename):
         profiles.append([lat, lon, name, clat, clon])
     return profiles
 
-
 def get_dims_from_variable(var_dimensions):
     '''
     Gets dimensions from netcdf variable
@@ -467,76 +466,6 @@ def get_dims_from_variable(var_dimensions):
     tdims = ['t', 'time']
 
     return [ find(dim, var_dimensions) for dim in [xdims, ydims, zdims, tdims] ]
-
-
-def piecewise_bilinear(x, y, p_x, p_y, p_i, p_j, A, B, C, D):
-    '''
-    Returns a piece-wise bilinear interpolation.
-
-      ^ y
-      |
-      |
-      B-----C
-      |     |
-      | *   |   x
-    --A-----D---->
-      |
-
-    Parameters
-    ----------
-    x, y: 1d coordinate arrays
-    p_i, p_j: 1d indices arrays
-    A, B, C, D: array_like containing corner values
-
-    Returns
-    -------
-    pw_linear: array with shape like p_i containing interpolated values
-
-    '''
-
-    delta_x = p_x - x[p_i]
-    delta_y = p_y - y[p_j]
-
-    alpha = 1./dx * delta_x
-    beta  = 1./dy * delta_y
-
-    pw_bilinear = ((1-alpha) * (1-beta) * A + (1-alpha) * beta * B +
-                   alpha * beta * C + alpha * (1-beta) * D)
-
-    return pw_bilinear
-
-
-def dim_permute(values,
-                input_order=('time', 'z', 'zb', 'y', 'x'),
-                output_order=('time', 'z', 'zb', 'y', 'x')):
-    '''
-    Permute dimensions of an array_like object.
-
-    Parameters
-    ----------
-    values : array_like
-    input_order : dimension tuple
-    output_order: dimension tuple (optional)
-                  default ordering is ('time', 'z', 'zb', 'y', 'x')
-
-    Returns
-    -------
-    values_perm : array_like
-
-    '''
-
-    # filter out irrelevant dimensions
-    dimensions = filter(lambda(x): x in input_order,
-                        output_order)
-
-    # create the mapping
-    mapping = map(lambda(x): dimensions.index(x),
-                  input_order)
-
-    if mapping:
-        return np.transpose(values, mapping)
-    else:
-        return values  # so that it does not break processing "mapping"
 
 def create_variables(nc, profiledim, stationdim):
     # create dimensions
@@ -596,150 +525,14 @@ def copy_attributes(var_in, var_out):
         else:
             setattr(var_out, att, getattr(var_in, att))
 
-def interpolate_profile(profile, input_file, input_variable):
-    p_x = profile.x
-    p_y = profile.y
-
-    # indices (i,j)
-    p_i = (np.floor((p_x - (x0-dx/2)) / dx)).astype('int')
-    p_j = (np.floor((p_y - (y0-dy/2)) / dy)).astype('int')
-
-    if bilinear:
-
-        A_i, A_j = p_i, p_j
-        B_i, B_j = p_i, p_j + 1
-        C_i, C_j = p_i + 1, p_j + 1
-        D_i, D_j = p_i + 1, p_j
-
-        profiler.mark('read')
-
-        if zdim:
-            # level-by level bilinear interpolation for fields with 3 spatial dimensions
-            nz = len(input_file.variables[zdim][:])
-
-            dim_dict = dict([(tdim, ':'), (xdim, 'A_i'), (ydim, 'A_j'), (zdim, ':')])
-            access_str = ','.join([dim_dict[x] for x in in_dims])
-            A_values = eval('input_variable[%s]' % access_str)
-
-            A_p_values = dim_permute(A_values,
-                                     input_order=p_dims, output_order=out_dim_order)
-            if isinstance(A_p_values, np.ma.MaskedArray):
-                A_p_values = A_p_values.filled(0)
-
-            dim_dict = dict([(tdim, ':'), (xdim, 'B_i'), (ydim, 'B_j'), (zdim, ':')])
-            access_str = ','.join([dim_dict[x] for x in in_dims])
-            B_values = eval('input_variable[%s]' % access_str)
-
-            B_p_values = dim_permute(B_values,
-                                     input_order=p_dims, output_order=out_dim_order)
-            if isinstance(B_p_values, np.ma.MaskedArray):
-                B_p_values = B_p_values.filled(0)
-
-            dim_dict = dict([(tdim, ':'), (xdim, 'C_i'), (ydim, 'C_j'), (zdim, ':')])
-            access_str = ','.join([dim_dict[x] for x in in_dims])
-            C_values = eval('input_variable[%s]' % access_str)
-
-            C_p_values = dim_permute(C_values,
-                                     input_order=p_dims, output_order=out_dim_order)
-            if isinstance(C_p_values, np.ma.MaskedArray):
-                C_p_values = C_p_values.filled(0)
-
-            dim_dict = dict([(tdim, ':'), (xdim, 'D_i'), (ydim, 'D_j'), (zdim, ':')])
-            access_str = ','.join([dim_dict[x] for x in in_dims])
-            D_values = eval('input_variable[%s]' % access_str)
-
-            D_p_values = dim_permute(D_values,
-                                         input_order=p_dims, output_order=out_dim_order)
-            if isinstance(D_p_values, np.ma.MaskedArray):
-                D_p_values = D_p_values.filled(0)
-
-            p_read = profiler.elapsed('read')
-            if timing:
-                print("    - read in %3.4f s" % p_read)
-
-            profiler.mark('interp')
-
-            p_values = np.zeros_like(A_p_values)
-            for level in range(nz):
-                # We need to loop through all levels
-                p_values[Ellipsis, level] = piecewise_bilinear(x_coord, y_coord,
-                                                    p_x, p_y,
-                                                    p_i, p_j,
-                                                    A_p_values[Ellipsis, level],
-                                                    B_p_values[Ellipsis, level],
-                                                    C_p_values[Ellipsis, level],
-                                                    D_p_values[Ellipsis, level])
-        else:
-            # Mapplane variable
-            dim_dict = dict([(tdim, ':'), (xdim, 'A_i'), (ydim, 'A_j')])
-            access_str = ','.join([dim_dict[x] for x in in_dims])
-            A_values = eval('input_variable[%s]' % access_str)
-
-            A_p_values = dim_permute(A_values,
-                                     input_order=p_dims, output_order=out_dim_order)
-            if isinstance(A_p_values, np.ma.MaskedArray):
-                A_p_values = A_p_values.filled(0)
-
-            dim_dict = dict([(tdim, ':'), (xdim, 'B_i'), (ydim, 'B_j')])
-            access_str = ','.join([dim_dict[x] for x in in_dims])
-            B_values = eval('input_variable[%s]' % access_str)
-
-            B_p_values = dim_permute(B_values,
-                                     input_order=p_dims, output_order=out_dim_order)
-            if isinstance(B_p_values, np.ma.MaskedArray):
-                B_p_values = B_p_values.filled(0)
-
-            dim_dict = dict([(tdim, ':'), (xdim, 'C_i'), (ydim, 'C_j')])
-            access_str = ','.join([dim_dict[x] for x in in_dims])
-            C_values = eval('input_variable[%s]' % access_str)
-
-            C_p_values = dim_permute(C_values,
-                                     input_order=p_dims, output_order=out_dim_order)
-            if isinstance(C_p_values, np.ma.MaskedArray):
-                C_p_values = C_p_values.filled(0)
-
-            dim_dict = dict([(tdim, ':'), (xdim, 'D_i'), (ydim, 'D_j')])
-            access_str = ','.join([dim_dict[x] for x in in_dims])
-            D_values = eval('input_variable[%s]' % access_str)
-
-            D_p_values = dim_permute(D_values,
-                                     input_order=p_dims, output_order=out_dim_order)
-            if isinstance(D_p_values, np.ma.MaskedArray):
-                D_p_values = D_p_values.filled(0)
-
-            p_read = profiler.elapsed('read')
-            if timing:
-                print("    - read in %3.4f s" % p_read)
-            profiler.mark('interp')
-            p_values = piecewise_bilinear(x_coord, y_coord,
-                                          p_x, p_y,
-                                          p_i, p_j,
-                                          A_p_values,
-                                          B_p_values,
-                                          C_p_values,
-                                          D_p_values)
-        p_interp = profiler.elapsed('interp')
-        if timing:
-            print("    - interpolated in %3.4f s" % p_interp)
-    else:
-        # The trivial nearest-neighbor case
-        dim_dict = dict([(tdim, ':'), (xdim, 'p_i'), (ydim, 'p_j'), (zdim, ':')])
-        access_str = ','.join([dim_dict[x] for x in in_dims])
-        profiler.mark('read')
-        in_values = eval('input_variable[%s]' % access_str)
-        p_read = profiler.elapsed('read')
-        p_values = dim_permute(in_values,
-                               input_order=p_dims, output_order=out_dim_order)
-    return p_values
-
-def interpolate_profile_new(variable, x, y, profile):
+def interpolate_profile(variable, x, y, profile):
     xdim, ydim, zdim, tdim = get_dims_from_variable(variable.dimensions)
 
     n_points = len(profile.x)
 
     dim_length = dict(zip(variable.dimensions, variable.shape))
 
-    # try to get the matrix we pre-computed earlier:
+    # try to get the matrix we (possibly) pre-computed earlier:
     try:
         A = profile.A
         x_slice = profile.x_slice
@@ -1002,21 +795,13 @@ if __name__ == "__main__":
                 fill_value = fill_value
 
             if in_dims and len(in_dims) > 1:
-                p_dims = [x for x in in_dims if x not in mapplane_dim_names]
-                idx = []
-                for dim in mapplane_dim_names:
-                    idx.append(in_dims.index(dim))
-                loc = np.min(idx)
-                p_dims.insert(loc, profiledim)
-
                 out_dim_order = output_dimensions(in_dims, stationdim, profiledim)
                 var_out = nc.createVariable(var_name, datatype, dimensions=out_dim_order,
                                             fill_value=fill_value)
 
                 for k, profile in enumerate(profiles):
                     print("    - processing profile {0}".format(profile.name))
-                    # p_values = interpolate_profile(profile, nc_in, var_in)
-                    p_values = interpolate_profile_new(var_in, x_coord, y_coord, profile)
+                    p_values = interpolate_profile(var_in, x_coord, y_coord, profile)
 
                     profiler.mark('write')
                     try:
@@ -1031,7 +816,7 @@ if __name__ == "__main__":
                     if timing:
                         print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
             else:
-                # it is a scalar or a 1D variable
+                # it is a scalar or a 1D variable; copy as it is
                 var_out = nc.createVariable(var_name, datatype, dimensions=var_in.dimensions,
                                             fill_value=fill_value)
                 var_out[:] = var_in[:]
