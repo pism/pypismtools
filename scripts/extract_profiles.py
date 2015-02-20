@@ -617,6 +617,17 @@ def interpolate_profile(variable, x, y, profile):
 
     return result
 
+def copy_dimensions(in_file, out_file, exclude_list):
+    """Copy dimensions from in_file to out_file, excluding ones in
+    exclude_list."""
+    for name, dim in in_file.dimensions.iteritems():
+        if (name not in exclude_list and
+            name not in out_file.dimensions):
+            if dim.isunlimited():
+                out_file.createDimension(name, None)
+            else:
+                out_file.createDimension(name, len(dim))
+
 if __name__ == "__main__":
     # Set up the option parser
     description = '''A script to extract data along (possibly multiple) profile using
@@ -733,14 +744,7 @@ if __name__ == "__main__":
 
     # re-create dimensions from an input file in an output file, but
     # skip x and y dimensions and dimensions that are already present
-    for dim_name, dim in nc_in.dimensions.iteritems():
-        if (dim_name not in mapplane_dim_names and
-            dim_name not in nc.dimensions):
-            if dim.isunlimited():
-                nc.createDimension(dim_name, None)
-            else:
-                nc.createDimension(dim_name, len(dim))
-
+    copy_dimensions(nc_in, nc, mapplane_dim_names)
 
     # figure out which variables not need to be copied to the new file.
     # mapplane coordinate variables
