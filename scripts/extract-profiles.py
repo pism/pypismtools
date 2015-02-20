@@ -287,7 +287,7 @@ def masked_interpolation_test():
     z = np.ones((2,2))
     # set the [0,0] element to a negative number and mark that value
     # as "missing" by turning it into a masked array
-    z[0,0] = -2e9
+    z[0,0] = np.nan
     z = np.ma.array(z, mask=[[True, False],
                              [False, False]])
     # sample in the middle
@@ -297,8 +297,34 @@ def masked_interpolation_test():
     A = ProfileInterpolationMatrix(x, y, px, py)
 
     # We should get the average of the three remaining ones, i.e. 1.0.
-    # (We would get a negative value without adjusting the matrix.)
+    # (We would get a nan without adjusting the matrix.)
     assert A.apply(z)[0] == 1.0
+
+def masked_missing_interpolation_test():
+    """Test interpolation from a masked array that produces missing values
+    in the output."""
+
+    x = [-1, 0, 1]
+    y = [-1, 0, 1]
+    z = np.ones((3,3))
+
+    # set the four elements in the corner to nan and mark them as
+    # missing
+    z[0:2,0:2] = np.nan
+    mask = np.zeros_like(z, dtype=np.bool_)
+    mask[0:2,0:2] = np.nan
+
+    z = np.ma.array(z, mask=mask)
+
+    px = [-0.5, 0.5]
+    py = [-0.5, 0.5]
+
+    A = ProfileInterpolationMatrix(x, y, px, py)
+
+    z_interpolated = A.apply(z)
+
+    assert z_interpolated.mask[0] == True
+    assert z_interpolated[1] == 1.0
 
 def interpolation_test():
     """Test interpolation by recovering values of a linear function."""
