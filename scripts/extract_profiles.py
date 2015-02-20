@@ -2,6 +2,8 @@
 # Copyright (C) 2012-2013, 2015 Andy Aschwanden
 #
 
+# nosetests --with-coverage --cover-branches --cover-html --cover-package=extract_profiles scripts/extract_profiles.py
+
 from argparse import ArgumentParser
 import numpy as np
 import scipy.sparse
