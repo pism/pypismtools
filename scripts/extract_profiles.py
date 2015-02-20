@@ -413,7 +413,7 @@ def load_profiles(filename, projection, flip):
     -----------
     filename: filename of ESRI shape file
 
-    projection: proj4 projection object. (lat,lon) coordinates of
+    projection: proj4 projection object. (lon,lat) coordinates of
                 points along a profile are conterted to (x,y)
                 coordinates in this projection. This should be the
                 projection used by the dataset we're extracting
@@ -600,8 +600,13 @@ def copy_global_attributes(in_file, out_file):
     for attribute in in_file.ncattrs():
         setattr(out_file, attribute, getattr(in_file, attribute))
 
-def interpolate_profile(variable, x, y, profile):
+def extract_profile(variable, profile):
+    """Extract values of variable along a profile.  """
     xdim, ydim, zdim, tdim = get_dims_from_variable(variable.dimensions)
+
+    group = variable.group()
+    x = group.variables[xdim][:]
+    y = group.variables[ydim][:]
 
     n_points = len(profile.x)
 
@@ -626,19 +631,17 @@ def interpolate_profile(variable, x, y, profile):
         profile.x_slice = x_slice
         profile.y_slice = y_slice
 
-    def get_subset(t=0, z=0):
+    def read_subset(t=0, z=0):
         """Assemble the indexing tuple and get a sbset from a variable."""
         index = []
+        indexes = {xdim : x_slice,
+                   ydim : y_slice,
+                   zdim : z,
+                   tdim : t}
         for dim in variable.dimensions:
-            if dim == xdim:
-                index.append(x_slice)
-            elif dim == ydim:
-                index.append(y_slice)
-            elif dim == zdim:
-                index.append(z)
-            elif dim == tdim:
-                index.append(t)
-            else:
+            try:
+                index.append(indexes[dim])
+            except KeyError:
                 index.append(Ellipsis)
         return variable[index]
 
@@ -651,9 +654,8 @@ def interpolate_profile(variable, x, y, profile):
     elif tdim:
         # 2D time-dependent
         result = np.zeros((dim_length[tdim], n_points))
-        for t in xrange(dim_length[tdim]):
-            subset = get_subset(t=t)
-            result[t, :] = A.apply_to_subset(subset)
+        for j in xrange(dim_length[tdim]):
+            result[j, :] = A.apply_to_subset(read_subset(t=j))
     elif zdim:
         # 3D time-independent
         result = np.zeros((dim_length[tdim], n_points))
@@ -661,8 +663,7 @@ def interpolate_profile(variable, x, y, profile):
             raise NotImplementedError
     else:
         # 2D time-independent
-        subset = get_subset()
-        result = A.apply_to_subset(subset)
+        result = A.apply_to_subset(read_subset())
 
     return result
 
@@ -676,6 +677,69 @@ def copy_dimensions(in_file, out_file, exclude_list):
                 out_file.createDimension(name, None)
             else:
                 out_file.createDimension(name, len(dim))
+
+def create_variable_like(in_file, var_name, out_file, dimensions=None,
+                         fill_value=-2e9):
+    """Create a variable in an out_file that is the same var_name in
+    in_file, except possibly depending on different dimensions,
+    provided in dimensions.
+
+    """
+    var_in = in_file.variables[var_name]
+    try:
+        fill_value = var_in._FillValue
+    except:
+        pass
+
+    if dimensions is None:
+        dimensions = var_in.dimensions
+
+    dtype = var_in.dtype
+
+    var_out = out_file.createVariable(var_name, dtype, dimensions=dimensions,
+                                      fill_value=fill_value)
+    copy_attributes(var_in, var_out)
+    return var_out
+
+def copy_time_dimension(in_file, out_file, name):
+    """Copy time dimension, the corresponding coordinate variable, and the
+    corresponding time bounds variable (if present) from an in_file to
+    an out_file.
+
+    """
+    var_out = create_variable_like(nc_in, name, out_file)
+    var_out[:] = nc_in.variables[name][:]
+
+    try:
+        bounds_name = var_in.bounds
+        var_out = create_variable_like(bounds_name, in_file, out_file)
+        var_out[:] = in_file.variables[bounds_name][:]
+
+    except AttributeError:
+        # we get here if var_in does not have a bounds attribute
+        pass
+    except Exception as e:
+        print "Got an unexpected exception", e
+
+def write_profile(out_file, index, profile):
+    """Write information about a profile (name, latitude, longitude,
+    center latitude, center longitude, normal x, normal y, distance
+    along profile) to an output file.
+
+    """
+    ## We have two unlimited dimensions, so we need to assign start and stop
+    ## start:stop where start=0 and stop is the length of the array
+    ## or netcdf4python will bail. See
+    ## https://code.google.com/p/netcdf4-python/issues/detail?id=76
+    pl = len(profile.distance_from_start)
+    out_file.variables['profile'][k,0:pl] = np.squeeze(profile.distance_from_start)
+    out_file.variables['nx'][k,0:pl] = np.squeeze(profile.nx)
+    out_file.variables['ny'][k,0:pl] = np.squeeze(profile.ny)
+    out_file.variables['lon'][k,0:pl] = np.squeeze(profile.lon)
+    out_file.variables['lat'][k,0:pl] = np.squeeze(profile.lat)
+    out_file.variables['profile_name'][k] = profile.name
+    out_file.variables['clat'][k] = profile.center_lat
+    out_file.variables['clon'][k] = profile.center_lon
 
 if __name__ == "__main__":
     # Set up the option parser
@@ -748,8 +812,6 @@ if __name__ == "__main__":
 
     # get the dimensions
     xdim, ydim, zdim, tdim = ppt.get_dims(nc_in)
-    x_coord = nc_in.variables[xdim][:]
-    y_coord = nc_in.variables[ydim][:]
     # read projection information
     projection = ppt.get_projection_from_file(nc_in)
 
@@ -759,31 +821,18 @@ if __name__ == "__main__":
 
     mapplane_dim_names = (xdim, ydim)
 
-    # create dimensions. Check for unlimited dim.
     print("Creating dimensions")
-    # create global attributes.
     nc = NC(out_filename, 'w', format='NETCDF4')
-    # copy global attributes
     copy_global_attributes(nc_in, nc)
 
     profiledim = 'profile'
     stationdim = 'station'
-    define_profile_variables(nc, profiledim, stationdim)
 
+    # define variables storing profile information
+    define_profile_variables(nc, profiledim, stationdim)
+    # fill these variables
     for k, profile in enumerate(profiles):
-        ## We have two unlimited dimensions, so we need to assign start and stop
-        ## start:stop where start=0 and stop is the length of the array
-        ## or netcdf4python will bail. See
-        ## https://code.google.com/p/netcdf4-python/issues/detail?id=76
-        pl = len(profile.distance_from_start)
-        nc.variables['profile'][k,0:pl] = np.squeeze(profile.distance_from_start)
-        nc.variables['nx'][k,0:pl] = np.squeeze(profile.nx)
-        nc.variables['ny'][k,0:pl] = np.squeeze(profile.ny)
-        nc.variables['lon'][k,0:pl] = np.squeeze(profile.lon)
-        nc.variables['lat'][k,0:pl] = np.squeeze(profile.lat)
-        nc.variables['profile_name'][k] = profile.name
-        nc.variables['clat'][k] = profile.center_lat
-        nc.variables['clon'][k] = profile.center_lon
+        write_profile(nc, k, profile)
 
     # re-create dimensions from an input file in an output file, but
     # skip x and y dimensions and dimensions that are already present
@@ -812,37 +861,7 @@ if __name__ == "__main__":
             last = vars_not_copied[i]
 
     if tdim is not None:
-        var_name = tdim
-        var_in = nc_in.variables[tdim]
-        dimensions = var_in.dimensions
-        datatype = var_in.dtype
-        if hasattr(var_in, 'bounds'):
-            time_bounds_varname = var_in.bounds
-            has_time_bounds = True
-        else:
-            has_time_bounds = False
-        var_out = nc.createVariable(
-            var_name, datatype, dimensions=dimensions, fill_value=fill_value)
-        var_out[:] = var_in[:]
-        copy_attributes(var_in, var_out)
-
-        has_time_bounds_var = False
-        if has_time_bounds:
-            try:
-                var_in = nc_in.variables[var_name]
-                has_time_bounds_var = True
-            except:
-                has_time_bounds_var = False
-
-        if has_time_bounds_var:
-            var_name = time_bounds_varname
-            var_in = nc_in.variables[var_name]
-            dimensions = var_in.dimensions
-            datatype = var_in.dtype
-            var_out = nc.createVariable(
-                var_name, datatype, dimensions=dimensions, fill_value=fill_value)
-            var_out[:] = var_in[:]
-            copy_attributes(var_in, var_out)
+        copy_time_dimension(nc_in, nc, tdim)
 
     print("Copying variables")
     if all_vars:
@@ -854,50 +873,44 @@ if __name__ == "__main__":
 
     for var_name in vars_list:
         profiler = timeprofile()
-        if var_name not in vars_not_copied:
-            print("  Reading variable %s" % var_name)
+        if var_name in vars_not_copied:
+            continue
 
-            var_in = nc_in.variables[var_name]
-            xdim, ydim, zdim, tdim = get_dims_from_variable(var_in.dimensions)
+        print("  Reading variable %s" % var_name)
 
-            in_dims = var_in.dimensions
-            datatype = var_in.dtype
+        var_in = nc_in.variables[var_name]
+        in_dims = var_in.dimensions
+        datatype = var_in.dtype
 
-            if hasattr(var_in, '_FillValue'):
-                fill_value = var_in._FillValue
-            else:
-                # We need a fill value since the interpolation could produce missing values?
-                fill_value = fill_value
+        if in_dims and len(in_dims) > 1:
+            # it is a non-scalar variable and it depends on more
+            # than one dimension, so we probably need to extract profiles
+            out_dims = output_dimensions(in_dims, stationdim, profiledim)
+            var_out = create_variable_like(nc_in, var_name, nc, dimensions=out_dims)
 
-            if in_dims and len(in_dims) > 1:
-                out_dim_order = output_dimensions(in_dims, stationdim, profiledim)
-                var_out = nc.createVariable(var_name, datatype, dimensions=out_dim_order,
-                                            fill_value=fill_value)
+            for k, profile in enumerate(profiles):
+                print("    - processing profile {0}".format(profile.name))
+                p_values = extract_profile(var_in, profile)
 
-                for k, profile in enumerate(profiles):
-                    print("    - processing profile {0}".format(profile.name))
-                    p_values = interpolate_profile(var_in, x_coord, y_coord, profile)
+                profiler.mark('write')
+                try:
+                    # try without exec (should work using newer netcdf4-python)
+                    indexes = np.r_[k, [np.s_[0:n] for n in p_values.shape]]
+                    var_out[indexes] = p_values
+                except:
+                    access_str = 'k,' + ','.join([':'.join(['0', str(coord)]) for coord in p_values.shape])
+                    exec('var_out[%s] = p_values' % access_str)
+                p_write = profiler.elapsed('write')
 
-                    profiler.mark('write')
-                    try:
-                        # try without exec (should work using newer netcdf4-python)
-                        indexes = np.r_[k, [np.s_[0:n] for n in p_values.shape]]
-                        var_out[indexes] = p_values
-                    except:
-                        access_str = 'k,' + ','.join([':'.join(['0', str(coord)]) for coord in p_values.shape])
-                        exec('var_out[%s] = p_values' % access_str)
-                    p_write = profiler.elapsed('write')
+                if timing:
+                    print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
+        else:
+            # it is a scalar or a 1D variable; just copy it
+            var_out = create_variable_like(nc_in, var_name, nc)
+            var_out[:] = var_in[:]
 
-                    if timing:
-                        print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
-            else:
-                # it is a scalar or a 1D variable; copy as it is
-                var_out = nc.createVariable(var_name, datatype, dimensions=var_in.dimensions,
-                                            fill_value=fill_value)
-                var_out[:] = var_in[:]
-
-            copy_attributes(var_in, var_out)
-            print("  - done with %s" % var_name)
+        copy_attributes(var_in, var_out)
+        print("  - done with %s" % var_name)
 
     print("The following variables were not copied because they could not be found in {}:".format(in_filename))
     print vars_not_found
