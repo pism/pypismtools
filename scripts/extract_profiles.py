@@ -287,7 +287,7 @@ def masked_interpolation_test():
     x = [0, 1]
     y = [0, 1]
     z = np.ones((2,2))
-    # set the [0,0] element to a negative number and mark that value
+    # set the [0,0] element to a nan and mark that value
     # as "missing" by turning it into a masked array
     z[0,0] = np.nan
     z = np.ma.array(z, mask=[[True, False],
@@ -346,6 +346,12 @@ def interpolation_test():
     px = np.random.rand(P) * Lx
     py = np.random.rand(P) * Ly
 
+    try:
+        A = ProfileInterpolationMatrix(x, y, px, py, bilinear=False)
+        raise RuntimeError("Update this test if you implemented nearest neighbor interpolation.") #pragma: nocover
+    except NotImplementedError:
+        pass
+
     # initialize the interpolation matrix
     A = ProfileInterpolationMatrix(x, y, px, py)
 
@@ -362,6 +368,43 @@ def interpolation_test():
     z_interpolated = A.apply(z)
 
     assert np.max(np.fabs(z_interpolated - Z(px, py))) < 1e-12
+
+def profile_test():
+    """Test Profile constructor."""
+    import pyproj
+    x = np.linspace(-1.0, 1.0, 101)
+    y = np.linspace(1.0, -1.0, 101)
+
+    projection = pyproj.Proj("+proj=latlon")
+
+    lon,lat = projection(x, y, inverse=True)
+
+    center_lat,center_lon = projection(0.0, 0.0, inverse=True)
+
+    profile = Profile("test_profile", lat, lon, center_lat, center_lon, projection)
+
+    assert profile.nx[0] == -1.0 / np.sqrt(2.0)
+    assert profile.ny[0] == -1.0 / np.sqrt(2.0)
+
+    assert np.fabs(profile.distance_from_start[1] - 0.02 * np.sqrt(2.0)) < 1e-12
+
+    x = -1.0 * x
+    lon,lat = projection(x, y, inverse=True)
+
+    profile = Profile("flipped_profile", lat, lon, center_lat, center_lon, projection,
+                      flip=True)
+
+    assert profile.nx[0] == -1.0 / np.sqrt(2.0)
+    assert profile.ny[0] == 1.0 / np.sqrt(2.0)
+
+    x = np.linspace(-1.0, 1.0, 101)
+    y = np.zeros_like(x)
+    lon,lat = projection(x, y, inverse=True)
+
+    profile = Profile("test_profile", lat, lon, center_lat, center_lon, projection)
+
+    assert profile.nx[0] == 0.0
+    assert profile.ny[0] == -1.0
 
 def load_profiles(filename, projection, flip):
     """Load profiles from a file filename.
