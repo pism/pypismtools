@@ -363,24 +363,24 @@ def interpolation_test():
 
     assert np.max(np.fabs(z_interpolated - Z(px, py))) < 1e-12
 
-def create_profile_axes(filename, projection, flip):
-    '''
-    Create a profile axis.
+def load_profiles(filename, projection, flip):
+    """Load profiles from a file filename.
 
     Parameters
     -----------
     filename: filename of ESRI shape file
-    projection: proj4 projection object
+
+    projection: proj4 projection object. (lat,lon) coordinates of
+                points along a profile are conterted to (x,y)
+                coordinates in this projection. This should be the
+                projection used by the dataset we're extracting
+                profiles from.
+    flip: boolean; set to True to flip profile directions
 
     Returns
     -------
     list of proviles with
-    x: array_like along-profile axis
-    lat: array_like latitudes
-    lon: array_like longitudes
-
-    '''
-
+    """
     profiles = []
     for lat, lon, name, clat, clon in read_shapefile(filename):
         profiles.append(Profile(name, lat, lon, clat, clon, projection, flip))
@@ -495,7 +495,7 @@ def get_dims_from_variable(var_dimensions):
 
     return [ find(dim, var_dimensions) for dim in [xdims, ydims, zdims, tdims] ]
 
-def create_variables(nc, profiledim, stationdim):
+def define_profile_variables(nc, profiledim, stationdim):
     # create dimensions
     nc.createDimension(profiledim)
     nc.createDimension(stationdim)
@@ -552,6 +552,10 @@ def copy_attributes(var_in, var_out):
 
         else:
             setattr(var_out, att, getattr(var_in, att))
+
+def copy_global_attributes(in_file, out_file):
+    for attribute in in_file.ncattrs():
+        setattr(out_file, attribute, getattr(in_file, attribute))
 
 def interpolate_profile(variable, x, y, profile):
     xdim, ydim, zdim, tdim = get_dims_from_variable(variable.dimensions)
@@ -703,17 +707,12 @@ if __name__ == "__main__":
     xdim, ydim, zdim, tdim = ppt.get_dims(nc_in)
     x_coord = nc_in.variables[xdim][:]
     y_coord = nc_in.variables[ydim][:]
-    x0 = x_coord[0]
-    y0 = y_coord[0]
-    dx = x_coord[1] - x_coord[0]
-    dy = y_coord[1] - y_coord[0]
     # read projection information
     projection = ppt.get_projection_from_file(nc_in)
 
-
     # Read in profile data
     print("  reading profile from %s" % p_filename)
-    profiles  = create_profile_axes(p_filename, projection, flip)
+    profiles = load_profiles(p_filename, projection, flip)
 
     mapplane_dim_names = (xdim, ydim)
 
@@ -722,12 +721,11 @@ if __name__ == "__main__":
     # create global attributes.
     nc = NC(out_filename, 'w', format='NETCDF4')
     # copy global attributes
-    for attname in nc_in.ncattrs():
-        setattr(nc, attname, getattr(nc_in, attname))
+    copy_global_attributes(nc_in, nc)
 
     profiledim = 'profile'
     stationdim = 'station'
-    create_variables(nc, profiledim, stationdim)
+    define_profile_variables(nc, profiledim, stationdim)
 
     for k, profile in enumerate(profiles):
         ## We have two unlimited dimensions, so we need to assign start and stop
