@@ -116,10 +116,11 @@ def normal(p0, p1):
     return n
 
 class Profile:
-    def __init__(self, name, lat, lon, center_lat, center_lon, projection, flip=False):
+    def __init__(self, name, lat, lon, center_lat, center_lon, flightline, projection, flip=False):
         self.name = name
         self.center_lat = center_lat
         self.center_lon = center_lon
+        self.flightline = flightline
         if flip:
             self.lat = lat[::-1]
             self.lon = lon[::-1]
@@ -425,8 +426,8 @@ def load_profiles(filename, projection, flip):
     list of proviles with
     """
     profiles = []
-    for lat, lon, name, clat, clon in read_shapefile(filename):
-        profiles.append(Profile(name, lat, lon, clat, clon, projection, flip))
+    for lat, lon, name, clat, clon, flightline in read_shapefile(filename):
+        profiles.append(Profile(name, lat, lon, clat, clon, flightline, projection, flip))
     return profiles
 
 def output_dimensions(input_dimensions, stationdim, profiledim):
@@ -486,6 +487,10 @@ def read_shapefile(filename):
             clat = feature.clat
         except:
             clat = str(pt)
+        try:
+            flightline = feature.flightline
+        except:
+            flightline = 2
         geometry = feature.GetGeometryRef()
         # Transform to latlon if needed
         if not srs.IsGeographic():
@@ -503,7 +508,7 @@ def read_shapefile(filename):
             pt = geometry.GetPoint(i)
             lon.append(pt[0])
             lat.append(pt[1])
-        profiles.append([lat, lon, name, clat, clon])
+        profiles.append([lat, lon, name, clat, clon, flightline])
     return profiles
 
 def get_dims_from_variable(var_dimensions):
@@ -570,6 +575,12 @@ def define_profile_variables(nc, profiledim, stationdim):
                   {"units" : "degrees_north",
                    "valid_range" : [-90.0, 90.0],
                    "standard_name" : "latitude"}),
+
+                 ("flightline", "b", (stationdim),
+                  {"long_name" : "flightline flag",
+                   "flag_values": [0, 1, 2],
+                   "flag_meaning": "true false undetermined",
+                   "valid_range" : [0, 2]}),
 
                  ("nx", "f", (stationdim, profiledim),
                   {"long_name" : "x-component of the right-hand-pointing normal vector"}),
@@ -740,6 +751,7 @@ def write_profile(out_file, index, profile):
     out_file.variables['profile_name'][k] = profile.name
     out_file.variables['clat'][k] = profile.center_lat
     out_file.variables['clon'][k] = profile.center_lon
+    out_file.variables['flightline'][k] = profile.flightline
 
 if __name__ == "__main__":
     # Set up the option parser
