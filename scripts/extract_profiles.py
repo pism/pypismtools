@@ -173,15 +173,25 @@ class ProfileInterpolationMatrix:
         the subset needed for interpolation.
 
         """
-        return self.n_cols * r + c
+        return self.n_cols * min(r, self.n_rows - 1) + min(c, self.n_cols - 1)
 
     def grid_column(self, x, dx, X):
         "Input grid column number corresponding to X."
-        return int(np.floor((X - x[0]) / dx))
+        if X <= x[0]:
+            return 0
+        elif X >= x[-1]:
+            return len(x) - 1
+        else:
+            return int(np.floor((X - x[0]) / dx))
 
     def grid_row(self, y, dy, Y):
         "Input grid row number corresponding to Y."
-        return int(np.floor((Y - y[0]) / dy))
+        if Y <= y[0]:
+            return 0
+        elif Y >= y[-1]:
+            return len(y) - 1
+        else:
+            return int(np.floor((Y - y[0]) / dy))
 
     def __init__(self, x, y, px, py, bilinear=True):
         """Interpolate values of z to points (px,py) assuming that z is on a
@@ -196,10 +206,10 @@ class ProfileInterpolationMatrix:
         assert dy > 0
 
         self.c_min = self.grid_column(x, dx, np.min(px))
-        self.c_max = self.grid_column(x, dx, np.max(px)) + 1
+        self.c_max = min(self.grid_column(x, dx, np.max(px)) + 1, len(x) - 1)
 
         self.r_min = self.grid_row(y, dy, np.min(py))
-        self.r_max = self.grid_row(y, dy, np.max(py)) + 1
+        self.r_max = min(self.grid_row(y, dy, np.max(py)) + 1, len(y) - 1)
 
         # compute the size of the subset needed for interpolation
         self.n_rows = self.r_max - self.r_min + 1
@@ -228,10 +238,10 @@ class ProfileInterpolationMatrix:
             c = C - self.c_min
             r = R - self.r_min
 
-            self.A[k, self.column(r,         c)] = (1.0 - alpha) * (1.0 - beta)
-            self.A[k, self.column(r + 1,     c)] = (1.0 - alpha) * beta
-            self.A[k, self.column(r,     c + 1)] = alpha * (1.0 - beta)
-            self.A[k, self.column(r + 1, c + 1)] = alpha * beta
+            self.A[k, self.column(r,         c)] += (1.0 - alpha) * (1.0 - beta)
+            self.A[k, self.column(r + 1,     c)] += (1.0 - alpha) * beta
+            self.A[k, self.column(r,     c + 1)] += alpha * (1.0 - beta)
+            self.A[k, self.column(r + 1, c + 1)] += alpha * beta
 
     def adjusted_matrix(self, mask):
         """Return adjusted interpolation matrix that ignores missing (masked)
