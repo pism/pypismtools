@@ -346,7 +346,7 @@ def interpolation_test():
 
     Lx = 10.0                    # size of the box in the x direction
     Ly = 20.0                    # size of the box in the y direction
-    P = 100                      # number of test points
+    P = 1000                      # number of test points
 
     # grid size (note: it should not be a square)
     Mx = 101
@@ -426,7 +426,6 @@ def create_test_file():
         else:
             T = np.transpose
 
-        # fill all z levels with the same
         if "z" in dimensions:
             for k in xrange(Mz):
                 indexes[dimensions.index("z")] = k
@@ -725,8 +724,6 @@ def extract_profile(variable, profile):
     x = group.variables[xdim][:]
     y = group.variables[ydim][:]
 
-    n_points = len(profile.x)
-
     dim_length = dict(zip(variable.dimensions, variable.shape))
 
     # try to get the matrix we (possibly) pre-computed earlier:
@@ -761,6 +758,8 @@ def extract_profile(variable, profile):
             except KeyError:
                 index.append(Ellipsis)
         return variable[index]
+
+    n_points = len(profile.x)
 
     if tdim and zdim:
         # 3D time-dependent
@@ -882,7 +881,8 @@ if __name__ == "__main__":
         help='''Print timing information, Default=False''',
         default=False)
     parser.add_argument("-v", "--variable",dest="variables",
-                        help="comma-separated list with variables",default='x,y,thk,velsurf_mag,flux_mag,uflux,vflux,pism_config,pism_overrides,run_stats,uvelsurf,vvelsurf,topg,usurf,tillphi,tauc')
+                        help="comma-separated list with variables",
+                        default='x,y,thk,velsurf_mag,flux_mag,uflux,vflux,pism_config,pism_overrides,run_stats,uvelsurf,vvelsurf,topg,usurf,tillphi,tauc')
     parser.add_argument(
         "-a", "--all_variables",dest="all_vars",action="store_true",
         help='''Process all variables, overwrite -v/--variable''',
