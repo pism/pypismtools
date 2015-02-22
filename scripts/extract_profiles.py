@@ -372,6 +372,78 @@ def interpolation_test():
 
     assert np.max(np.fabs(z_interpolated - Z(px, py))) < 1e-12
 
+def create_test_file():
+    """Create an input file for testing."""
+
+    import netCDF4
+    nc = netCDF4.Dataset("test_input.nc", 'w')
+
+    Mx = 88
+    My = 152
+    Mz = 11
+    for name, length in [["x", Mx], ["y", My], ["z", Mz], ["time", None]]:
+        nc.createDimension(name, length)
+        nc.createVariable(name, "f4", (name,))
+
+    x = np.linspace(-669650.0, 896350.0, Mx)
+    y = np.linspace(-3362600.0, -644600.0, My)
+    z = np.linspace(0, 4000.0, Mz)
+
+    for name, data in [["x", x], ["y", y], ["z", z]]:
+        nc.variables[name][:] = data
+
+    nc.variables['time'][0] = 0.0
+
+    nc.proj4 = "+init=epsg:3413"
+
+    xx,yy = np.meshgrid(x,y)
+
+    def F(x,y,z):
+        return 0.1 * x + 0.2 * y + 0.3 + 0.4 * z
+
+    def write(dimensions):
+        name = "test_" + "_".join(dimensions)
+        variable = nc.createVariable(name, "f4", dimensions)
+        indexes = [Ellipsis] * len(dimensions)
+
+        # write to the first time record only
+        if "time" in dimensions:
+            indexes[dimensions.index("time")] = 0
+
+        # transpose input 2D array if needed
+        if dimensions.index("y") < dimensions.index("x"):
+            T = lambda x: x
+        else:
+            T = np.transpose
+
+        # fill all z levels with the same
+        if "z" in dimensions:
+            for k in xrange(Mz):
+                indexes[dimensions.index("z")] = k
+                variable[indexes] = T(F(xx, yy, z[k]))
+        else:
+            variable[indexes] = T(F(xx, yy, 0))
+
+    import itertools
+
+    # 2D time-independent
+    for d in itertools.permutations(["x", "y"]):
+        write(d)
+
+    # 2D time-dependent
+    for d in itertools.permutations(["time", "x", "y"]):
+        write(d)
+
+    # 3D time-independent
+    for d in itertools.permutations(["x", "y", "z"]):
+        write(d)
+
+    # 3D time-dependent
+    for d in itertools.permutations(["time", "x", "y", "z"]):
+        write(d)
+
+    nc.close()
+
 def profile_test():
     """Test Profile constructor."""
     import pyproj
