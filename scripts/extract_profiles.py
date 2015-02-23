@@ -382,45 +382,96 @@ def interpolation_test():
 
     assert np.max(np.fabs(z_interpolated - Z(px, py))) < 1e-12
 
-def create_test_file():
-    """Create an input file for testing."""
+def profile_extraction_test():
+    """Test extract_profile() by using an input file with fake data."""
+
+    def F(x,y,z):
+        """A function linear in x, y, and z. Used to test our interpolation
+        scheme."""
+        return 10.0 + 0.1 * x + 0.2 * y + 0.3 + 0.4 * z
+
+    # create a test file
+    import tempfile, os
+    fd, filename = tempfile.mkstemp(suffix=".nc", prefix="extract_profile_test_")
+    os.close(fd)
+
+    create_test_file(filename, F)
+
+    # create a profile to extract
+    import netCDF4
+    nc = netCDF4.Dataset(filename, "r")
+    x = nc.variables["x"][:]
+    y = nc.variables["y"][:]
+    proj4 = nc.proj4
+    import pyproj
+    projection = pyproj.Proj(str(proj4))
+
+    n_points = 5
+    x_profile = np.linspace(x[0], x[-1], n_points)
+    y_profile = np.linspace(y[0], y[-1], n_points)
+    x_center = 0.5 * (x_profile[0] + x_profile[-1])
+    y_center = 0.5 * (y_profile[0] + y_profile[-1])
+
+    lon,lat = projection(x_profile, y_profile, inverse=True)
+    clon,clat = projection(x_center, y_center, inverse=True)
+
+    profile = Profile("test profile", lat, lon, clat, clon, projection)
+
+    desired_result = F(profile.x, profile.y, 0.0)
+
+    from itertools import permutations
+
+    P = lambda x: list(permutations(x))
+
+    try:
+        for d in sorted(P(["x", "y"]) + P(["time", "x", "y"])):
+            print "Trying %s..." % str(d)
+            variable_name = "test_2D_" + "_".join(d)
+            variable = nc.variables[variable_name]
+
+            result = extract_profile(variable, profile)
+            np.set_printoptions(formatter={'float': '{: 0.5f}'.format})
+            print "got:       ", np.squeeze(result)
+            print "wanted:    ", desired_result
+            print "difference:", desired_result - np.squeeze(result)
+    finally:
+        os.remove(filename)
+
+def create_test_file(filename, F):
+    """Create an input file for testing. Does not use unlimited
+    dimensions, creates one time record only."""
 
     import netCDF4
-    nc = netCDF4.Dataset("test_input.nc", 'w')
+    nc = netCDF4.Dataset(filename, 'w')
 
     Mx = 88
     My = 152
     Mz = 11
-    for name, length in [["x", Mx], ["y", My], ["z", Mz], ["time", None]]:
+    for name, length in [["x", Mx], ["y", My], ["z", Mz], ["time", 1]]:
         nc.createDimension(name, length)
         nc.createVariable(name, "f4", (name,))
 
+    # use X and Y ranges corresponding to a grid covering Greenland
     x = np.linspace(-669650.0, 896350.0, Mx)
     y = np.linspace(-3362600.0, -644600.0, My)
     z = np.linspace(0, 4000.0, Mz)
+    # the single time record
+    time = [0.0]
 
-    for name, data in [["x", x], ["y", y], ["z", z]]:
+    for name, data in [["x", x], ["y", y], ["z", z], ["time", time]]:
         nc.variables[name][:] = data
-
-    nc.variables['time'][0] = 0.0
 
     nc.proj4 = "+init=epsg:3413"
 
     xx,yy = np.meshgrid(x,y)
 
-    def F(x,y,z):
-        return 0.1 * x + 0.2 * y + 0.3 + 0.4 * z
+    def write(prefix, dimensions):
+        name = prefix + "_".join(dimensions)
 
-    def write(dimensions):
-        name = "test_" + "_".join(dimensions)
         variable = nc.createVariable(name, "f4", dimensions)
         indexes = [Ellipsis] * len(dimensions)
 
-        # write to the first time record only
-        if "time" in dimensions:
-            indexes[dimensions.index("time")] = 0
-
-        # transpose input 2D array if needed
+        # transpose 2D array if needed
         if dimensions.index("y") < dimensions.index("x"):
             T = lambda x: x
         else:
@@ -433,23 +484,15 @@ def create_test_file():
         else:
             variable[indexes] = T(F(xx, yy, 0))
 
-    import itertools
+    from itertools import permutations
 
-    # 2D time-independent
-    for d in itertools.permutations(["x", "y"]):
-        write(d)
+    P = lambda x: list(permutations(x))
 
-    # 2D time-dependent
-    for d in itertools.permutations(["time", "x", "y"]):
-        write(d)
+    for d in sorted(P(["x", "y"]) + P(["time", "x", "y"])):
+        write("test_2D_", d)
 
-    # 3D time-independent
-    for d in itertools.permutations(["x", "y", "z"]):
-        write(d)
-
-    # 3D time-dependent
-    for d in itertools.permutations(["time", "x", "y", "z"]):
-        write(d)
+    for d in sorted(P(["x", "y", "z"]) + P(["time", "x", "y", "z"])):
+        write("test_3D_", d)
 
     nc.close()
 
