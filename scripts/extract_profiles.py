@@ -590,9 +590,9 @@ def define_profile_variables(nc, profiledim, stationdim):
                  ("glaciertype", "b", (stationdim),
                   {"long_name" : "glacier-type integer mask",
                    "comment": "glacier-type categorization after Moon et al. (2012), Science, 10.1126/science.1219985",
-                   "flag_values": [0, 1, 2, 3, 4, 5],
-                   "flag_meanings": "fast_flowing_marine_terminated low_velocity_marine_terminated ice_shelf_terminated fast_flowing_land_terminated low_velocity_land_terminated undetermined",
-                   "valid_range" : [0, 5]}),
+                   "flag_values": [0, 1, 2, 3, 4],
+                   "flag_meanings": "fast_flowing_marine_terminating low_velocity_marine_terminating ice_shelf_terminating land_terminating undetermined",
+                   "valid_range" : [0, 4]}),
 
                  ("nx", "f", (stationdim, profiledim),
                   {"long_name" : "x-component of the right-hand-pointing normal vector"}),
