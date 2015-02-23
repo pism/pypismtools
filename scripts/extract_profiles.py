@@ -116,11 +116,12 @@ def normal(p0, p1):
     return n
 
 class Profile:
-    def __init__(self, name, lat, lon, center_lat, center_lon, flightline, projection, flip=False):
+    def __init__(self, name, lat, lon, center_lat, center_lon, flightline, glaciertype, projection, flip=False):
         self.name = name
         self.center_lat = center_lat
         self.center_lon = center_lon
         self.flightline = flightline
+        self.glaciertype = glaciertype
         if flip:
             self.lat = lat[::-1]
             self.lon = lon[::-1]
@@ -426,8 +427,8 @@ def load_profiles(filename, projection, flip):
     list of proviles with
     """
     profiles = []
-    for lat, lon, name, clat, clon, flightline in read_shapefile(filename):
-        profiles.append(Profile(name, lat, lon, clat, clon, flightline, projection, flip))
+    for lat, lon, name, clat, clon, flightline, glaciertype in read_shapefile(filename):
+        profiles.append(Profile(name, lat, lon, clat, clon, flightline, glaciertype, projection, flip))
     return profiles
 
 def output_dimensions(input_dimensions, stationdim, profiledim):
@@ -491,6 +492,10 @@ def read_shapefile(filename):
             flightline = feature.flightline
         except:
             flightline = 2
+        try:
+            glaciertype = feature.gtype
+        except:
+            glaciertype = 5
         geometry = feature.GetGeometryRef()
         # Transform to latlon if needed
         if not srs.IsGeographic():
@@ -508,7 +513,7 @@ def read_shapefile(filename):
             pt = geometry.GetPoint(i)
             lon.append(pt[0])
             lat.append(pt[1])
-        profiles.append([lat, lon, name, clat, clon, flightline])
+        profiles.append([lat, lon, name, clat, clon, flightline, glaciertype])
     return profiles
 
 def get_dims_from_variable(var_dimensions):
@@ -577,10 +582,17 @@ def define_profile_variables(nc, profiledim, stationdim):
                    "standard_name" : "latitude"}),
 
                  ("flightline", "b", (stationdim),
-                  {"long_name" : "flightline flag",
+                  {"long_name" : "flightline (true/false/undetermined) integer mask",
                    "flag_values": [0, 1, 2],
-                   "flag_meaning": "true false undetermined",
+                   "flag_meanings": "true false undetermined",
                    "valid_range" : [0, 2]}),
+
+                 ("glaciertype", "b", (stationdim),
+                  {"long_name" : "glacier-type integer mask",
+                   "comment": "glacier-type categorization after Moon et al. (2012), Science, 10.1126/science.1219985",
+                   "flag_values": [0, 1, 2, 3, 4, 5],
+                   "flag_meanings": "fast_flowing_marine_terminated low_velocity_marine_terminated ice_shelf_terminated fast_flowing_land_terminated low_velocity_land_terminated undetermined",
+                   "valid_range" : [0, 5]}),
 
                  ("nx", "f", (stationdim, profiledim),
                   {"long_name" : "x-component of the right-hand-pointing normal vector"}),
@@ -752,6 +764,7 @@ def write_profile(out_file, index, profile):
     out_file.variables['clat'][k] = profile.center_lat
     out_file.variables['clon'][k] = profile.center_lon
     out_file.variables['flightline'][k] = profile.flightline
+    out_file.variables['glaciertype'][k] = profile.glaciertype
 
 if __name__ == "__main__":
     # Set up the option parser
