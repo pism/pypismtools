@@ -407,7 +407,7 @@ def profile_extraction_test():
     import pyproj
     projection = pyproj.Proj(str(proj4))
 
-    n_points = 5
+    n_points = 4
     x_profile = np.linspace(x[0], x[-1], n_points)
     y_profile = np.linspace(y[0], y[-1], n_points)
     x_center = 0.5 * (x_profile[0] + x_profile[-1])
@@ -431,7 +431,8 @@ def profile_extraction_test():
     P = lambda x: list(permutations(x))
 
     try:
-        for d in sorted(P(["x", "y"]) + P(["time", "x", "y"])):
+        # for d in sorted(P(["x", "y"]) + P(["time", "x", "y"])):
+        for d in P(["x", "y"]):
             print "Trying %s..." % str(d)
             variable_name = "test_2D_" + "_".join(d)
             variable = nc.variables[variable_name]
@@ -456,7 +457,7 @@ def create_dummy_input_file(filename, F):
     Mz = 11
     for name, length in [["x", Mx], ["y", My], ["z", Mz], ["time", 1]]:
         nc.createDimension(name, length)
-        nc.createVariable(name, "f4", (name,))
+        nc.createVariable(name, "f8", (name,))
 
     # use X and Y ranges corresponding to a grid covering Greenland
     x = np.linspace(-669650.0, 896350.0, Mx)
@@ -475,7 +476,7 @@ def create_dummy_input_file(filename, F):
     def write(prefix, dimensions):
         name = prefix + "_".join(dimensions)
 
-        variable = nc.createVariable(name, "f4", dimensions)
+        variable = nc.createVariable(name, "f8", dimensions)
         indexes = [Ellipsis] * len(dimensions)
 
         # transpose 2D array if needed
