@@ -331,7 +331,7 @@ def profile_extraction_test():
     def F(x, y, z):
         """A function linear in x, y, and z. Used to test our interpolation
         scheme."""
-        return 10.0 + 0.1 * x + 0.2 * y + 0.3 + 0.4 * z
+        return 10.0 + 0.01 * x + 0.02 * y + 0.03 + 0.04 * z
 
     # create a test file
     import tempfile, os
@@ -373,21 +373,14 @@ def profile_extraction_test():
     P = lambda x: list(permutations(x))
 
     try:
-        # for d in sorted(P(["x", "y"]) + P(["time", "x", "y"])):
-        for d in P(["x", "y"]):
-        # for d in [["x", "y"]]:
-        # for d in [["y", "x"]]:
-            # print "Trying %s..." % str(d)
+        for d in P(["x", "y"]) + P(["time", "x", "y"]):
+            print "Trying %s..." % str(d)
             variable_name = "test_2D_" + "_".join(d)
-            print variable_name
             variable = nc.variables[variable_name]
 
             result = extract_profile(variable, profile)
 
-            np.set_printoptions(formatter={'float': '{: 0.5f}'.format})
-            print "got:       ", np.squeeze(result)
-            print "wanted:    ", desired_result
-            print "difference:", desired_result - np.squeeze(result)
+            assert np.max(np.fabs(np.squeeze(result) - desired_result)) < 1e-9
     finally:
         os.remove(filename)
 
@@ -738,24 +731,35 @@ def extract_profile(variable, profile):
 
     dim_length = dict(zip(variable.dimensions, variable.shape))
 
-    # try to get the matrix we (possibly) pre-computed earlier:
-    try:
-        A = profile.A
-        x_slice = profile.x_slice
-        y_slice = profile.y_slice
-    except AttributeError:
-        # take care of the transpose the easy way (i.e. dealing with 1D objects)
+    def init_interpolation():
+        """Initialize interpolation weights. Takes care of the transpose."""
         if variable.dimensions.index(ydim) < variable.dimensions.index(xdim):
             A = ProfileInterpolationMatrix(x, y, profile.x, profile.y)
-            x_slice = slice(A.c_min, A.c_max+1)
-            y_slice = slice(A.r_min, A.r_max+1)
+            return A, slice(A.c_min, A.c_max+1), slice(A.r_min, A.r_max+1)
         else:
             A = ProfileInterpolationMatrix(y, x, profile.y, profile.x)
-            x_slice = slice(A.r_min, A.r_max+1)
-            y_slice = slice(A.c_min, A.c_max+1)
+            return A, slice(A.r_min, A.r_max+1), slice(A.c_min, A.c_max+1)
+
+    # try to get the matrix we (possibly) pre-computed earlier:
+    try:
+        # Check if we are extracting from the grid of the same shape
+        # as before. This will make sure that we re-compute weights if
+        # one variable is stored as (x,y) and a different as (y,x),
+        # but will not catch grids that are of the same shape, but
+        # with different extents and spacings. We'll worry about this
+        # case later -- if we have to.
+        if profile.grid_shape == variable.shape:
+            A = profile.A
+            x_slice = profile.x_slice
+            y_slice = profile.y_slice
+        else:
+            A, x_slice, y_slice = init_interpolation()
+    except AttributeError:
+        A, x_slice, y_slice = init_interpolation()
         profile.A = A
         profile.x_slice = x_slice
         profile.y_slice = y_slice
+        profile.grid_shape = variable.shape
 
     def read_subset(t=0, z=0):
         """Assemble the indexing tuple and get a sbset from a variable."""
