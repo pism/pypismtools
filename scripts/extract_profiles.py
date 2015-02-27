@@ -15,87 +15,6 @@ try:
 except:
     import pypismtools as ppt
 
-
-## {{{ http://code.activestate.com/recipes/496938/ (r1)
-"""
-A module that helps to inject time profiling code
-in other modules to measures actual execution times
-of blocks of code.
-
-"""
-
-__author__ = "Anand B. Pillai"
-__version__ = "0.1"
-
-import time
-
-def timeprofile():
-    """ A factory function to return an instance of TimeProfiler """
-
-    return TimeProfiler()
-
-class TimeProfiler:
-    """ A utility class for profiling execution time for code """
-
-    def __init__(self):
-        # Dictionary with times in seconds
-        self.timedict = {}
-
-    def mark(self, slot=''):
-        """ Mark the current time into the slot 'slot' """
-
-        # Note: 'slot' has to be string type
-        # we are not checking it here.
-
-        self.timedict[slot] = time.time()
-
-    def unmark(self, slot=''):
-        """ Unmark the slot 'slot' """
-
-        # Note: 'slot' has to be string type
-        # we are not checking it here.
-
-        if self.timedict.has_key(slot):
-            del self.timedict[slot]
-
-    def lastdiff(self):
-        """ Get time difference between now and the latest marked slot """
-
-        # To get the latest slot, just get the max of values
-        return time.time() - max(self.timedict.values())
-
-    def elapsed(self, slot=''):
-        """ Get the time difference between now and a previous
-        time slot named 'slot' """
-
-        # Note: 'slot' has to be marked previously
-        return time.time() - self.timedict.get(slot)
-
-    def diff(self, slot1, slot2):
-        """ Get the time difference between two marked time
-        slots 'slot1' and 'slot2' """
-
-        return self.timedict.get(slot2) - self.timedict.get(slot1)
-
-    def maxdiff(self):
-        """ Return maximum time difference marked """
-
-        # Difference of max time with min time
-        times = self.timedict.values()
-        return max(times) - min(times)
-
-    def timegap(self):
-        """ Return the full time-gap since we started marking """
-
-        # Return now minus min
-        times = self.timedict.values()
-        return time.time() - min(times)
-
-    def cleanup(self):
-        """ Cleanup the dictionary of all marks """
-
-        self.timedict.clear()
-
 def normal(p0, p1):
     '''
     Compute the unit normal vector orthogonal to (p1-p0), pointing 'to the
@@ -1054,7 +973,7 @@ if __name__ == "__main__":
         vars_not_found = filter(lambda(x): x not in nc_in.variables, variables)
 
     for var_name in vars_list:
-        profiler = timeprofile()
+
         if var_name in vars_not_copied:
             continue
 
@@ -1074,7 +993,6 @@ if __name__ == "__main__":
                 print("    - processing profile {0}".format(profile.name))
                 p_values = extract_profile(var_in, profile)
 
-                profiler.mark('write')
                 try:
                     # try without exec (should work using newer netcdf4-python)
                     indexes = np.r_[k, [np.s_[0:n] for n in p_values.shape]]
@@ -1082,7 +1000,6 @@ if __name__ == "__main__":
                 except:
                     access_str = 'k,' + ','.join([':'.join(['0', str(coord)]) for coord in p_values.shape])
                     exec('var_out[%s] = p_values' % access_str)
-                p_write = profiler.elapsed('write')
 
                 if timing:
                     print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
