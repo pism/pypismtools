@@ -107,7 +107,7 @@ def normal(p0, p1):
         n = np.array([1.0, - a[0] / a[1]])
         n = n / np.linalg.norm(n) # normalize
     else:
-        n = np.array([0,1])
+        n = np.array([0, 1])
 
     # flip direction if needed:
     if np.cross(a, n) < 0:
@@ -233,15 +233,15 @@ class ProfileInterpolationMatrix:
             R = self.grid_row(y, dy, y_k)
 
             alpha = (x_k - x[C]) / dx
-            beta  = (y_k - y[R]) / dy
+            beta = (y_k - y[R]) / dy
 
             # indexes within the subset needed for interpolation
             c = C - self.c_min
             r = R - self.r_min
 
-            self.A[k, self.column(r,         c)] += (1.0 - alpha) * (1.0 - beta)
-            self.A[k, self.column(r + 1,     c)] += (1.0 - alpha) * beta
-            self.A[k, self.column(r,     c + 1)] += alpha * (1.0 - beta)
+            self.A[k, self.column(r, c)] += (1.0 - alpha) * (1.0 - beta)
+            self.A[k, self.column(r + 1, c)] += (1.0 - alpha) * beta
+            self.A[k, self.column(r, c + 1)] += alpha * (1.0 - beta)
             self.A[k, self.column(r + 1, c + 1)] += alpha * beta
 
     def adjusted_matrix(self, mask):
@@ -300,10 +300,10 @@ def masked_interpolation_test():
     # 2x2 grid of ones
     x = [0, 1]
     y = [0, 1]
-    z = np.ones((2,2))
+    z = np.ones((2, 2))
     # set the [0,0] element to a nan and mark that value
     # as "missing" by turning it into a masked array
-    z[0,0] = np.nan
+    z[0, 0] = np.nan
     z = np.ma.array(z, mask=[[True, False],
                              [False, False]])
     # sample in the middle
@@ -322,13 +322,13 @@ def masked_missing_interpolation_test():
 
     x = [-1, 0, 1]
     y = [-1, 0, 1]
-    z = np.ones((3,3))
+    z = np.ones((3, 3))
 
     # set the four elements in the corner to nan and mark them as
     # missing
-    z[0:2,0:2] = np.nan
+    z[0:2, 0:2] = np.nan
     mask = np.zeros_like(z, dtype=np.bool_)
-    mask[0:2,0:2] = np.nan
+    mask[0:2, 0:2] = np.nan
 
     z = np.ma.array(z, mask=mask)
 
@@ -386,7 +386,7 @@ def interpolation_test():
 def profile_extraction_test():
     """Test extract_profile() by using an input file with fake data."""
 
-    def F(x,y,z):
+    def F(x, y, z):
         """A function linear in x, y, and z. Used to test our interpolation
         scheme."""
         return 10.0 + 0.1 * x + 0.2 * y + 0.3 + 0.4 * z
@@ -413,13 +413,13 @@ def profile_extraction_test():
     x_center = 0.5 * (x_profile[0] + x_profile[-1])
     y_center = 0.5 * (y_profile[0] + y_profile[-1])
 
-    lon,lat = projection(x_profile, y_profile, inverse=True)
-    clon,clat = projection(x_center, y_center, inverse=True)
+    lon, lat = projection(x_profile, y_profile, inverse=True)
+    clon, clat = projection(x_center, y_center, inverse=True)
 
     # these arguments are ignored
-    flightline  = None
+    flightline = None
     glaciertype = None
-    flowtype    = None
+    flowtype = None
 
     profile = Profile("test profile", lat, lon, clat, clon,
                       flightline, glaciertype, flowtype, projection)
@@ -433,15 +433,19 @@ def profile_extraction_test():
     try:
         # for d in sorted(P(["x", "y"]) + P(["time", "x", "y"])):
         for d in P(["x", "y"]):
-            print "Trying %s..." % str(d)
+        # for d in [["x", "y"]]:
+        # for d in [["y", "x"]]:
+            # print "Trying %s..." % str(d)
             variable_name = "test_2D_" + "_".join(d)
+            print variable_name
             variable = nc.variables[variable_name]
 
             result = extract_profile(variable, profile)
+
             np.set_printoptions(formatter={'float': '{: 0.5f}'.format})
             print "got:       ", np.squeeze(result)
-            print "wanted:    ", desired_result
-            print "difference:", desired_result - np.squeeze(result)
+            # print "wanted:    ", desired_result
+            # print "difference:", desired_result - np.squeeze(result)
     finally:
         os.remove(filename)
 
@@ -471,7 +475,7 @@ def create_dummy_input_file(filename, F):
 
     nc.proj4 = "+init=epsg:3413"
 
-    xx,yy = np.meshgrid(x,y)
+    xx, yy = np.meshgrid(x, y)
 
     def write(prefix, dimensions):
         name = prefix + "_".join(dimensions)
@@ -512,13 +516,13 @@ def profile_test():
 
     projection = pyproj.Proj("+proj=latlon")
 
-    lon,lat = projection(x, y, inverse=True)
+    lon, lat = projection(x, y, inverse=True)
 
-    center_lat,center_lon = projection(0.0, 0.0, inverse=True)
+    center_lat, center_lon = projection(0.0, 0.0, inverse=True)
 
-    flightline  = None
+    flightline = None
     glaciertype = None
-    flowtype    = None
+    flowtype = None
 
     profile = Profile("test_profile", lat, lon, center_lat, center_lon,
                       flightline, glaciertype, flowtype, projection)
@@ -529,7 +533,7 @@ def profile_test():
     assert np.fabs(profile.distance_from_start[1] - 0.02 * np.sqrt(2.0)) < 1e-12
 
     x = -1.0 * x
-    lon,lat = projection(x, y, inverse=True)
+    lon, lat = projection(x, y, inverse=True)
 
     profile = Profile("flipped_profile", lat, lon, center_lat, center_lon,
                       flightline, glaciertype, flowtype, projection,
@@ -540,7 +544,7 @@ def profile_test():
 
     x = np.linspace(-1.0, 1.0, 101)
     y = np.zeros_like(x)
-    lon,lat = projection(x, y, inverse=True)
+    lon, lat = projection(x, y, inverse=True)
 
     profile = Profile("test_profile", lat, lon, center_lat, center_lon,
                       flightline, glaciertype, flowtype, projection)
@@ -604,7 +608,7 @@ def read_shapefile(filename):
     driver = ogr.GetDriverByName('ESRI Shapefile')
     data_source = driver.Open(filename, 0)
     layer = data_source.GetLayer(0)
-    srs=layer.GetSpatialRef()
+    srs = layer.GetSpatialRef()
     if not srs.IsGeographic():
         print('''Spatial Reference System in % s is not latlon. Converting.'''
               % filename)
@@ -682,15 +686,15 @@ def get_dims_from_variable(var_dimensions):
         return None
 
     ## possible x-dimensions names
-    xdims = ['x','x1']
+    xdims = ['x', 'x1']
     ## possible y-dimensions names
-    ydims = ['y','y1']
+    ydims = ['y', 'y1']
     ## possible z-dimensions names
     zdims = ['z', 'zb']
     ## possible time-dimensions names
     tdims = ['t', 'time']
 
-    return [ find(dim, var_dimensions) for dim in [xdims, ydims, zdims, tdims] ]
+    return [find(dim, var_dimensions) for dim in [xdims, ydims, zdims, tdims]]
 
 def define_profile_variables(nc, profiledim, stationdim):
     # create dimensions
@@ -906,11 +910,11 @@ def write_profile(out_file, index, profile):
     ## or netcdf4python will bail. See
     ## https://code.google.com/p/netcdf4-python/issues/detail?id=76
     pl = len(profile.distance_from_start)
-    out_file.variables['profile'][k,0:pl] = np.squeeze(profile.distance_from_start)
-    out_file.variables['nx'][k,0:pl] = np.squeeze(profile.nx)
-    out_file.variables['ny'][k,0:pl] = np.squeeze(profile.ny)
-    out_file.variables['lon'][k,0:pl] = np.squeeze(profile.lon)
-    out_file.variables['lat'][k,0:pl] = np.squeeze(profile.lat)
+    out_file.variables['profile'][k, 0:pl] = np.squeeze(profile.distance_from_start)
+    out_file.variables['nx'][k, 0:pl] = np.squeeze(profile.nx)
+    out_file.variables['ny'][k, 0:pl] = np.squeeze(profile.ny)
+    out_file.variables['lon'][k, 0:pl] = np.squeeze(profile.lon)
+    out_file.variables['lat'][k, 0:pl] = np.squeeze(profile.lat)
     out_file.variables['profile_name'][k] = profile.name
     out_file.variables['clat'][k] = profile.center_lat
     out_file.variables['clon'][k] = profile.center_lon
@@ -927,22 +931,22 @@ if __name__ == "__main__":
     parser.description = description
     parser.add_argument("FILE", nargs='*')
     parser.add_argument(
-        "-b", "--bilinear",dest="bilinear",action="store_true",
+        "-b", "--bilinear", dest="bilinear", action="store_true",
         help='''Piece-wise bilinear interpolation, Default=False''',
         default=False)
     parser.add_argument(
-        "-f", "--flip",dest="flip",action="store_true",
+        "-f", "--flip", dest="flip", action="store_true",
         help='''Flip profile direction, Default=False''',
         default=False)
     parser.add_argument(
-        "-t", "--print_timing",dest="timing",action="store_true",
+        "-t", "--print_timing", dest="timing", action="store_true",
         help='''Print timing information, Default=False''',
         default=False)
     parser.add_argument("-v", "--variable",dest="variables",
                         help="comma-separated list with variables",
                         default='x,y,thk,velsurf_mag,flux_mag,uflux,vflux,pism_config,pism_overrides,run_stats,uvelsurf,vvelsurf,topg,usurf,tillphi,tauc')
     parser.add_argument(
-        "-a", "--all_variables",dest="all_vars",action="store_true",
+        "-a", "--all_variables", dest="all_vars", action="store_true",
         help='''Process all variables, overwrite -v/--variable''',
         default=False)
 
@@ -957,12 +961,12 @@ if __name__ == "__main__":
     n_args = len(args)
     required_no_args = 2
     max_no_args = 3
-    if (n_args < required_no_args):
+    if n_args < required_no_args:
         print(("received $i arguments, at least %i expected"
               % (n_args, required_no_args)))
         import sys.exit
         sys.exit
-    elif (n_args > max_no_args):
+    elif n_args > max_no_args:
         print(("received $i arguments, no more thant %i accepted"
               % (n_args, max_no_args)))
         import sys.exit
@@ -970,7 +974,7 @@ if __name__ == "__main__":
     else:
         p_filename = args[0]
         in_filename = args[1]
-        if (n_args == 2):
+        if n_args == 2:
             out_filename = 'profile.nc'
         else:
             out_filename = args[2]
@@ -1047,7 +1051,7 @@ if __name__ == "__main__":
         vars_not_found = ()
     else:
         vars_list = filter(lambda(x): x in nc_in.variables, variables)
-        vars_not_found =  filter(lambda(x): x not in nc_in.variables, variables)
+        vars_not_found = filter(lambda(x): x not in nc_in.variables, variables)
 
     for var_name in vars_list:
         profiler = timeprofile()
