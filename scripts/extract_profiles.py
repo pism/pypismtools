@@ -116,7 +116,8 @@ def normal(p0, p1):
     return n
 
 class Profile:
-    def __init__(self, name, lat, lon, center_lat, center_lon, flightline, glaciertype, flowtype, projection, flip=False):
+    def __init__(self, name, lat, lon, center_lat, center_lon,
+                 flightline, glaciertype, flowtype, projection, flip=False):
         self.name = name
         self.center_lat = center_lat
         self.center_lon = center_lon
@@ -395,7 +396,7 @@ def profile_extraction_test():
     fd, filename = tempfile.mkstemp(suffix=".nc", prefix="extract_profile_test_")
     os.close(fd)
 
-    create_test_file(filename, F)
+    create_dummy_input_file(filename, F)
 
     # create a profile to extract
     import netCDF4
@@ -415,7 +416,13 @@ def profile_extraction_test():
     lon,lat = projection(x_profile, y_profile, inverse=True)
     clon,clat = projection(x_center, y_center, inverse=True)
 
-    profile = Profile("test profile", lat, lon, clat, clon, projection)
+    # these arguments are ignored
+    flightline  = None
+    glaciertype = None
+    flowtype    = None
+
+    profile = Profile("test profile", lat, lon, clat, clon,
+                      flightline, glaciertype, flowtype, projection)
 
     desired_result = F(profile.x, profile.y, 0.0)
 
@@ -437,7 +444,7 @@ def profile_extraction_test():
     finally:
         os.remove(filename)
 
-def create_test_file(filename, F):
+def create_dummy_input_file(filename, F):
     """Create an input file for testing. Does not use unlimited
     dimensions, creates one time record only."""
 
@@ -508,7 +515,12 @@ def profile_test():
 
     center_lat,center_lon = projection(0.0, 0.0, inverse=True)
 
-    profile = Profile("test_profile", lat, lon, center_lat, center_lon, projection)
+    flightline  = None
+    glaciertype = None
+    flowtype    = None
+
+    profile = Profile("test_profile", lat, lon, center_lat, center_lon,
+                      flightline, glaciertype, flowtype, projection)
 
     assert profile.nx[0] == -1.0 / np.sqrt(2.0)
     assert profile.ny[0] == -1.0 / np.sqrt(2.0)
@@ -518,7 +530,8 @@ def profile_test():
     x = -1.0 * x
     lon,lat = projection(x, y, inverse=True)
 
-    profile = Profile("flipped_profile", lat, lon, center_lat, center_lon, projection,
+    profile = Profile("flipped_profile", lat, lon, center_lat, center_lon,
+                      flightline, glaciertype, flowtype, projection,
                       flip=True)
 
     assert profile.nx[0] == -1.0 / np.sqrt(2.0)
@@ -528,7 +541,8 @@ def profile_test():
     y = np.zeros_like(x)
     lon,lat = projection(x, y, inverse=True)
 
-    profile = Profile("test_profile", lat, lon, center_lat, center_lon, projection)
+    profile = Profile("test_profile", lat, lon, center_lat, center_lon,
+                      flightline, glaciertype, flowtype, projection)
 
     assert profile.nx[0] == 0.0
     assert profile.ny[0] == -1.0
