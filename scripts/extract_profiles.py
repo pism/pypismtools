@@ -4,6 +4,13 @@
 
 # nosetests --with-coverage --cover-branches --cover-html --cover-package=extract_profiles scripts/extract_profiles.py
 
+# pylint -d C0301,C0103,C0325,W0621 --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" extract_profiles.py > lint.txt
+
+"""This script containts tools for extracting 'profiles', that is
+sampling 2D and 3D fields on a regular grid at points along a flux
+gate or a flight line.
+"""
+
 from argparse import ArgumentParser
 import numpy as np
 import scipy.sparse
@@ -12,16 +19,19 @@ from netCDF4 import Dataset as NC
 
 try:
     import pypismtools.pypismtools as ppt
-except:
+except ImportError:
     import pypismtools as ppt
 
-def normal(p0, p1):
-    '''
-    Compute the unit normal vector orthogonal to (p1-p0), pointing 'to the
-    right' of (p1-p0).
+profiledim = 'profile'
+stationdim = 'station'
+
+def normal(point0, point1):
+    '''Compute the unit normal vector orthogonal to (point1-point0),
+    pointing 'to the right' of (point1-point0).
+
     '''
 
-    a = p0 - p1
+    a = point0 - point1
     if a[1] != 0.0:
         n = np.array([1.0, - a[0] / a[1]])
         n = n / np.linalg.norm(n) # normalize
@@ -34,7 +44,11 @@ def normal(p0, p1):
 
     return n
 
-class Profile:
+class Profile(object):
+    """Collects information about a profile, that is a sequence of points
+    along a flux gate or a flightline.
+
+    """
     def __init__(self, name, lat, lon, center_lat, center_lon,
                  flightline, glaciertype, flowtype, projection, flip=False):
         self.name = name
@@ -72,11 +86,16 @@ class Profile:
         return ns[:, 0], ns[:, 1]
 
     def _distance_from_start(self):
+        "Initialize the distance along a profile."
         result = np.zeros_like(self.x)
         result[1::] = np.sqrt(np.diff(self.x)**2 + np.diff(self.y)**2)
         return result.cumsum()
 
-class ProfileInterpolationMatrix:
+class ProfileInterpolationMatrix(object):
+    """Stores bilinear and nearest neighbor interpolation weights used to
+    extract profiles.
+
+    """
     # sparse matrix
     A = None
     # row and column ranges for extracting array subsets
@@ -95,7 +114,8 @@ class ProfileInterpolationMatrix:
         """
         return self.n_cols * min(r, self.n_rows - 1) + min(c, self.n_cols - 1)
 
-    def grid_column(self, x, dx, X):
+    @staticmethod
+    def grid_column(x, dx, X):
         "Input grid column number corresponding to X."
         if X <= x[0]:
             return 0
@@ -104,7 +124,8 @@ class ProfileInterpolationMatrix:
         else:
             return int(np.floor((X - x[0]) / dx))
 
-    def grid_row(self, y, dy, Y):
+    @staticmethod
+    def grid_row(y, dy, Y):
         "Input grid row number corresponding to Y."
         if Y <= y[0]:
             return 0
@@ -144,6 +165,7 @@ class ProfileInterpolationMatrix:
             raise NotImplementedError
 
     def _compute_bilinear_matrix(self, x, y, dx, dy, px, py):
+        """Initialize a bilinear interpolation matrix."""
         for k in xrange(self.A.shape[0]):
             x_k = px[k]
             y_k = py[k]
@@ -291,6 +313,7 @@ def interpolation_test():
     # a linear function (perfectly recovered using bilinear
     # interpolation)
     def Z(x, y):
+        "A linear function for testing."
         return 0.3 * x + 0.2 * y + 0.1
 
     # compute values of Z on the grid
@@ -363,8 +386,8 @@ def profile_extraction_test():
 
             np.set_printoptions(formatter={'float': '{: 0.5f}'.format})
             print "got:       ", np.squeeze(result)
-            # print "wanted:    ", desired_result
-            # print "difference:", desired_result - np.squeeze(result)
+            print "wanted:    ", desired_result
+            print "difference:", desired_result - np.squeeze(result)
     finally:
         os.remove(filename)
 
@@ -397,6 +420,7 @@ def create_dummy_input_file(filename, F):
     xx, yy = np.meshgrid(x, y)
 
     def write(prefix, dimensions):
+        "Write test data to the file using given storage order."
         name = prefix + "_".join(dimensions)
 
         variable = nc.createVariable(name, "f8", dimensions)
@@ -494,7 +518,7 @@ def load_profiles(filename, projection, flip):
         profiles.append(Profile(name, lat, lon, clat, clon, flightline, glaciertype, flowtype, projection, flip))
     return profiles
 
-def output_dimensions(input_dimensions, stationdim, profiledim):
+def output_dimensions(input_dimensions):
     """Build a list of dimension names used to define a variable in the
     output file."""
     _, _, zdim, tdim = get_dims_from_variable(input_dimensions)
@@ -535,7 +559,6 @@ def read_shapefile(filename):
         srs_geo = osr.SpatialReference()
         srs_geo.ImportFromEPSG(4326)
     cnt = layer.GetFeatureCount()
-    names = []
     profiles = []
     for pt in range(0, cnt):
         feature = layer.GetFeature(pt)
@@ -596,11 +619,13 @@ def get_dims_from_variable(var_dimensions):
     xdim, ydim, zdim, tdim: dimensions
     '''
 
-    def find(candidates, list):
-        """Return one of the candidates if it was found in the list or None
-        otherwise."""
+    def find(candidates, collection):
+        """Return one of the candidates if it was found in the collection or
+        None otherwise.
+
+        """
         for name in candidates:
-            if name in list:
+            if name in collection:
                 return name
         return None
 
@@ -615,7 +640,8 @@ def get_dims_from_variable(var_dimensions):
 
     return [find(dim, var_dimensions) for dim in [xdims, ydims, zdims, tdims]]
 
-def define_profile_variables(nc, profiledim, stationdim):
+def define_profile_variables(nc):
+    "Define variables used to store information about profiles."
     # create dimensions
     nc.createDimension(profiledim)
     nc.createDimension(stationdim)
@@ -674,11 +700,15 @@ def define_profile_variables(nc, profiledim, stationdim):
                  ("ny", "f", (stationdim, profiledim),
                   {"long_name" : "y-component of the right-hand-pointing normal vector"})]
 
-    for name, type, dimensions, attributes in variables:
-        variable = nc.createVariable(name, type, dimensions)
+    for name, datatype, dimensions, attributes in variables:
+        variable = nc.createVariable(name, datatype, dimensions)
         variable.setncatts(attributes)
 
 def copy_attributes(var_in, var_out):
+    """Copy attributes from var_in to var_out. Give special treatment to
+    _FillValue and coordinates.
+
+    """
     _, _, _, tdim = get_dims_from_variable(var_in.dimensions)
     for att in var_in.ncattrs():
         if att == '_FillValue':
@@ -694,6 +724,7 @@ def copy_attributes(var_in, var_out):
             setattr(var_out, att, getattr(var_in, att))
 
 def copy_global_attributes(in_file, out_file):
+    "Copy global attributes from in_file to out_file."
     for attribute in in_file.ncattrs():
         setattr(out_file, attribute, getattr(in_file, attribute))
 
@@ -785,7 +816,7 @@ def create_variable_like(in_file, var_name, out_file, dimensions=None,
     var_in = in_file.variables[var_name]
     try:
         fill_value = var_in._FillValue
-    except:
+    except AttributeError:
         pass
 
     if dimensions is None:
@@ -829,17 +860,17 @@ def write_profile(out_file, index, profile):
     ## or netcdf4python will bail. See
     ## https://code.google.com/p/netcdf4-python/issues/detail?id=76
     pl = len(profile.distance_from_start)
-    out_file.variables['profile'][k, 0:pl] = np.squeeze(profile.distance_from_start)
-    out_file.variables['nx'][k, 0:pl] = np.squeeze(profile.nx)
-    out_file.variables['ny'][k, 0:pl] = np.squeeze(profile.ny)
-    out_file.variables['lon'][k, 0:pl] = np.squeeze(profile.lon)
-    out_file.variables['lat'][k, 0:pl] = np.squeeze(profile.lat)
-    out_file.variables['profile_name'][k] = profile.name
-    out_file.variables['clat'][k] = profile.center_lat
-    out_file.variables['clon'][k] = profile.center_lon
-    out_file.variables['flightline'][k] = profile.flightline
-    out_file.variables['glaciertype'][k] = profile.glaciertype
-    out_file.variables['flowtype'][k] = profile.flowtype
+    out_file.variables['profile'][index, 0:pl] = np.squeeze(profile.distance_from_start)
+    out_file.variables['nx'][index, 0:pl] = np.squeeze(profile.nx)
+    out_file.variables['ny'][index, 0:pl] = np.squeeze(profile.ny)
+    out_file.variables['lon'][index, 0:pl] = np.squeeze(profile.lon)
+    out_file.variables['lat'][index, 0:pl] = np.squeeze(profile.lat)
+    out_file.variables['profile_name'][index] = profile.name
+    out_file.variables['clat'][index] = profile.center_lat
+    out_file.variables['clon'][index] = profile.center_lon
+    out_file.variables['flightline'][index] = profile.flightline
+    out_file.variables['glaciertype'][index] = profile.glaciertype
+    out_file.variables['flowtype'][index] = profile.flowtype
 
 if __name__ == "__main__":
     # Set up the option parser
@@ -857,11 +888,7 @@ if __name__ == "__main__":
         "-f", "--flip", dest="flip", action="store_true",
         help='''Flip profile direction, Default=False''',
         default=False)
-    parser.add_argument(
-        "-t", "--print_timing", dest="timing", action="store_true",
-        help='''Print timing information, Default=False''',
-        default=False)
-    parser.add_argument("-v", "--variable",dest="variables",
+    parser.add_argument("-v", "--variable", dest="variables",
                         help="comma-separated list with variables",
                         default='x,y,thk,velsurf_mag,flux_mag,uflux,vflux,pism_config,pism_overrides,run_stats,uvelsurf,vvelsurf,topg,usurf,tillphi,tauc')
     parser.add_argument(
@@ -870,10 +897,7 @@ if __name__ == "__main__":
         default=False)
 
     options = parser.parse_args()
-    bilinear = options.bilinear
     args = options.FILE
-    flip = options.flip
-    timing = options.timing
     fill_value = -2e9
     variables = options.variables.split(',')
     all_vars = options.all_vars
@@ -881,15 +905,15 @@ if __name__ == "__main__":
     required_no_args = 2
     max_no_args = 3
     if n_args < required_no_args:
-        print(("received $i arguments, at least %i expected"
+        print(("received %i arguments, at least %i expected"
               % (n_args, required_no_args)))
-        import sys.exit
-        sys.exit
+        import sys
+        sys.exit()
     elif n_args > max_no_args:
-        print(("received $i arguments, no more thant %i accepted"
+        print(("received %i arguments, no more thant %i accepted"
               % (n_args, max_no_args)))
-        import sys.exit
-        sys.exit
+        import sys
+        sys.exit()
     else:
         p_filename = args[0]
         in_filename = args[1]
@@ -918,7 +942,7 @@ if __name__ == "__main__":
 
     # Read in profile data
     print("  reading profile from %s" % p_filename)
-    profiles = load_profiles(p_filename, projection, flip)
+    profiles = load_profiles(p_filename, projection, options.flip)
 
     mapplane_dim_names = (xdim, ydim)
 
@@ -926,11 +950,8 @@ if __name__ == "__main__":
     nc = NC(out_filename, 'w', format='NETCDF4')
     copy_global_attributes(nc_in, nc)
 
-    profiledim = 'profile'
-    stationdim = 'station'
-
     # define variables storing profile information
-    define_profile_variables(nc, profiledim, stationdim)
+    define_profile_variables(nc)
     # fill these variables
     for k, profile in enumerate(profiles):
         write_profile(nc, k, profile)
@@ -969,8 +990,8 @@ if __name__ == "__main__":
         vars_list = nc_in.variables
         vars_not_found = ()
     else:
-        vars_list = filter(lambda(x): x in nc_in.variables, variables)
-        vars_not_found = filter(lambda(x): x not in nc_in.variables, variables)
+        vars_list = [x for x in variables if x in nc_in.variables]
+        vars_not_found = [x for x in variables if x not in nc_in.variables]
 
     for var_name in vars_list:
 
@@ -986,7 +1007,7 @@ if __name__ == "__main__":
         if in_dims and len(in_dims) > 1:
             # it is a non-scalar variable and it depends on more
             # than one dimension, so we probably need to extract profiles
-            out_dims = output_dimensions(in_dims, stationdim, profiledim)
+            out_dims = output_dimensions(in_dims)
             var_out = create_variable_like(nc_in, var_name, nc, dimensions=out_dims)
 
             for k, profile in enumerate(profiles):
@@ -1000,9 +1021,6 @@ if __name__ == "__main__":
                 except:
                     access_str = 'k,' + ','.join([':'.join(['0', str(coord)]) for coord in p_values.shape])
                     exec('var_out[%s] = p_values' % access_str)
-
-                if timing:
-                    print('''    - read in %3.4f s, written in %3.4f s''' % (p_read, p_write))
         else:
             # it is a scalar or a 1D variable; just copy it
             var_out = create_variable_like(nc_in, var_name, nc)
@@ -1015,6 +1033,7 @@ if __name__ == "__main__":
     print vars_not_found
 
     # writing global attributes
+    import time
     script_command = ' '.join([time.ctime(), ':', __file__.split('/')[-1],
                                ' '.join([str(l) for l in args])])
     if hasattr(nc_in, 'history'):
