@@ -345,6 +345,7 @@ def profile_extraction_test():
     nc = netCDF4.Dataset(filename, "r")
     x = nc.variables["x"][:]
     y = nc.variables["y"][:]
+    z = nc.variables["z"][:]
     proj4 = nc.proj4
     import pyproj
     projection = pyproj.Proj(str(proj4))
@@ -368,11 +369,16 @@ def profile_extraction_test():
 
     desired_result = F(profile.x, profile.y, 0.0)
 
+    desired_3d_result = np.zeros((n_points, len(z)))
+    for k, level in enumerate(z):
+        desired_3d_result[:,k] = F(profile.x, profile.y, level)
+
     from itertools import permutations
 
     P = lambda x: list(permutations(x))
 
     try:
+        # 2D variables
         for d in P(["x", "y"]) + P(["time", "x", "y"]):
             print "Trying %s..." % str(d)
             variable_name = "test_2D_" + "_".join(d)
@@ -381,6 +387,15 @@ def profile_extraction_test():
             result = extract_profile(variable, profile)
 
             assert np.max(np.fabs(np.squeeze(result) - desired_result)) < 1e-9
+        # 3D variables
+        for d in P(["x", "y", "z"]) + P(["time", "x", "y", "z"]):
+            print "Trying %s..." % str(d)
+            variable_name = "test_3D_" + "_".join(d)
+            variable = nc.variables[variable_name]
+
+            result = extract_profile(variable, profile)
+
+            assert np.max(np.fabs(np.squeeze(result) - desired_3d_result)) < 1e-9
     finally:
         os.remove(filename)
 
@@ -780,9 +795,9 @@ def extract_profile(variable, profile):
     if tdim and zdim:
         # 3D time-dependent
         result = np.zeros((dim_length[tdim], n_points, dim_length[zdim]))
-        for t in xrange(dim_length[tdim]):
-            for z in xrange(dim_length[zdim]):
-                raise NotImplementedError
+        for j in xrange(dim_length[tdim]):
+            for k in xrange(dim_length[zdim]):
+                result[j, :, k] = A.apply_to_subset(read_subset(t=j, z=k))
     elif tdim:
         # 2D time-dependent
         result = np.zeros((dim_length[tdim], n_points))
@@ -790,9 +805,9 @@ def extract_profile(variable, profile):
             result[j, :] = A.apply_to_subset(read_subset(t=j))
     elif zdim:
         # 3D time-independent
-        result = np.zeros((dim_length[tdim], n_points))
-        for z in xrange(dim_length[zdim]):
-            raise NotImplementedError
+        result = np.zeros((n_points, dim_length[zdim]))
+        for k in xrange(dim_length[zdim]):
+            result[:, k] = A.apply_to_subset(read_subset(z=k))
     else:
         # 2D time-independent
         result = A.apply_to_subset(read_subset())
