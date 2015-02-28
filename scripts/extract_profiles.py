@@ -140,11 +140,15 @@ class ProfileInterpolationMatrix(object):
 
         assert len(px) == len(py)
 
+        # The grid has to be equally spaced.
+        assert np.fabs(np.diff(x).max() - np.diff(x).min()) < 1e-12
+        assert np.fabs(np.diff(y).max() - np.diff(y).min()) < 1e-12
+
         dx = x[1] - x[0]
         dy = y[1] - y[0]
 
-        assert dx > 0
-        assert dy > 0
+        assert dx != 0
+        assert dy != 0
 
         self.c_min = self.grid_column(x, dx, np.min(px))
         self.c_max = min(self.grid_column(x, dx, np.max(px)) + 1, len(x) - 1)
@@ -170,11 +174,24 @@ class ProfileInterpolationMatrix(object):
             x_k = px[k]
             y_k = py[k]
 
+            # make sure we are in the bounding box defined by the grid
+            assert x_k >= np.min(x)
+            assert x_k <= np.max(x)
+
+            assert y_k >= np.min(y)
+            assert y_k <= np.max(y)
+
             C = self.grid_column(x, dx, x_k)
             R = self.grid_row(y, dy, y_k)
 
             alpha = (x_k - x[C]) / dx
             beta = (y_k - y[R]) / dy
+
+            assert alpha >= 0.0
+            assert alpha <= 1.0
+
+            assert beta >= 0.0
+            assert beta <= 1.0
 
             # indexes within the subset needed for interpolation
             c = C - self.c_min
