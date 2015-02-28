@@ -159,11 +159,14 @@ class ProfileInterpolationMatrix(object):
         assert dx != 0
         assert dy != 0
 
-        self.c_min = self.grid_column(x, dx, np.min(px))
-        self.c_max = min(self.grid_column(x, dx, np.max(px)) + 1, len(x) - 1)
+        cs = [self.grid_column(x, dx, p_x) for p_x in px]
+        rs = [self.grid_column(y, dy, p_y) for p_y in py]
 
-        self.r_min = self.grid_row(y, dy, np.min(py))
-        self.r_max = min(self.grid_row(y, dy, np.max(py)) + 1, len(y) - 1)
+        self.c_min = np.min(cs)
+        self.c_max = min(np.max(cs) + 1, len(x) - 1)
+
+        self.r_min = np.min(rs)
+        self.r_max = min(np.max(rs) + 1, len(y) - 1)
 
         # compute the size of the subset needed for interpolation
         self.n_rows = self.r_max - self.r_min + 1
@@ -377,18 +380,12 @@ def flipped_y_interpolation_test():
 
     z = Z(xx, yy)
 
-    n_points = 7
-    px = np.array([-1.5, -0.5, 0.5])
-    py = np.array([-0.5, 0.0, 0.5])
+    px = np.array([-1.75, -0.5, 0.75])
+    py = np.array([-0.25, 0.0, 0.25])
 
     A = ProfileInterpolationMatrix(x, y, px, py)
-    print A.A
 
     z_interpolated = A.apply(z)
-
-    print "Wanted:    ", Z(px, py)
-    print "Got:       ", z_interpolated
-    print "Difference:", Z(px, py) - z_interpolated
 
     assert np.max(np.fabs(z_interpolated - Z(px, py))) < 1e-12
 
@@ -440,7 +437,7 @@ def profile_extraction_test():
 
     desired_3d_result = np.zeros((n_points, len(z)))
     for k, level in enumerate(z):
-        desired_3d_result[:,k] = F(profile.x, profile.y, level)
+        desired_3d_result[:, k] = F(profile.x, profile.y, level)
 
     from itertools import permutations
 
