@@ -183,12 +183,22 @@ class ProfileInterpolationMatrix(object):
             x_k = px[k]
             y_k = py[k]
 
-            # make sure we are in the bounding box defined by the grid
-            assert x_k >= np.min(x)
-            assert x_k <= np.max(x)
+            x_min = np.min(x)
+            x_max = np.max(x)
 
-            assert y_k >= np.min(y)
-            assert y_k <= np.max(y)
+            y_min = np.min(y)
+            y_max = np.max(y)
+
+            # make sure we are in the bounding box defined by the grid
+            if x_k <= x_min:
+                x_k = x_min
+            if x_k >= x_max:
+                x_k = x_max
+
+            if y_k <= y_min:
+                y_k = y_min
+            if y_k >= y_max:
+                y_k = y_max
 
             C = self.grid_column(x, dx, x_k)
             R = self.grid_row(y, dy, y_k)
