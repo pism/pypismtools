@@ -408,8 +408,10 @@ def profile_extraction_test():
     projection = pyproj.Proj(str(proj4))
 
     n_points = 4
-    x_profile = np.linspace(x[0], x[-1], n_points)
-    y_profile = np.linspace(y[0], y[-1], n_points)
+    # move points slightly to make sure we can interpolate
+    epsilon = 0.1
+    x_profile = np.linspace(x[0] + epsilon, x[-1] - epsilon, n_points)
+    y_profile = np.linspace(y[0] + epsilon, y[-1] - epsilon, n_points)
     x_center = 0.5 * (x_profile[0] + x_profile[-1])
     y_center = 0.5 * (y_profile[0] + y_profile[-1])
 
