@@ -150,8 +150,8 @@ class ProfileInterpolationMatrix(object):
         assert len(px) == len(py)
 
         # The grid has to be equally spaced.
-        assert np.fabs(np.diff(x).max() - np.diff(x).min()) < 1e-12
-        assert np.fabs(np.diff(y).max() - np.diff(y).min()) < 1e-12
+        assert np.fabs(np.diff(x).max() - np.diff(x).min()) < 1e-9
+        assert np.fabs(np.diff(y).max() - np.diff(y).min()) < 1e-9
 
         dx = x[1] - x[0]
         dy = y[1] - y[0]
