@@ -351,6 +351,37 @@ def interpolation_test():
 
     assert np.max(np.fabs(z_interpolated - Z(px, py))) < 1e-12
 
+def flipped_y_interpolation_test():
+    """Test interpolation from a grid with decreasing y coordinates"""
+
+    x = [-2, -1, 0, 1]
+    y = [1, 0, -1]
+
+    # a linear function (perfectly recovered using bilinear
+    # interpolation)
+    def Z(x, y):
+        "A linear function for testing."
+        return 0.3 * x + 0.2 * y + 0.1
+
+    xx, yy = np.meshgrid(x, y)
+
+    z = Z(xx, yy)
+
+    n_points = 7
+    px = np.array([-1.5, -0.5, 0.5])
+    py = np.array([-0.5, 0.0, 0.5])
+
+    A = ProfileInterpolationMatrix(x, y, px, py)
+    print A.A
+
+    z_interpolated = A.apply(z)
+
+    print "Wanted:    ", Z(px, py)
+    print "Got:       ", z_interpolated
+    print "Difference:", Z(px, py) - z_interpolated
+
+    assert np.max(np.fabs(z_interpolated - Z(px, py))) < 1e-12
+
 def profile_extraction_test():
     """Test extract_profile() by using an input file with fake data."""
 
