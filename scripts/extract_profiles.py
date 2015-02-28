@@ -239,14 +239,14 @@ def masked_interpolation_test():
     """Test matrix adjustment."""
 
     # 2x2 grid of ones
-    x = [0, 1]
+    x = [0, 1, 2]
     y = [0, 1]
-    z = np.ones((2, 2))
+    z = np.ones((len(y), len(x)))
     # set the [0,0] element to a nan and mark that value
     # as "missing" by turning it into a masked array
     z[0, 0] = np.nan
-    z = np.ma.array(z, mask=[[True, False],
-                             [False, False]])
+    z = np.ma.array(z, mask=[[True, False, False],
+                             [False, False, False]])
     # sample in the middle
     px = [0.5]
     py = [0.5]
@@ -261,9 +261,9 @@ def masked_missing_interpolation_test():
     """Test interpolation from a masked array that produces missing values
     in the output."""
 
-    x = [-1, 0, 1]
+    x = [-1, 0, 1, 2]
     y = [-1, 0, 1]
-    z = np.ones((3, 3))
+    z = np.ones((len(y), len(x)))
 
     # set the four elements in the corner to nan and mark them as
     # missing
