@@ -115,24 +115,33 @@ class ProfileInterpolationMatrix(object):
         return self.n_cols * min(r, self.n_rows - 1) + min(c, self.n_cols - 1)
 
     @staticmethod
-    def grid_column(x, dx, X):
-        "Input grid column number corresponding to X."
-        if X <= x[0]:
-            return 0
-        elif X >= x[-1]:
-            return len(x) - 1
+    def find(grid, delta, point):
+        """Find the point to the left of point on the grid with spacing
+        delta."""
+        if delta > 0:
+            # grid points are stored in the increasing order
+            if point <= grid[0]:
+                return 0
+            elif point >= grid[-1]:
+                return len(grid) - 1
+            else:
+                return int(np.floor((point - grid[0]) / delta))
         else:
-            return int(np.floor((X - x[0]) / dx))
+            # grid points are stored in the decreasing order
+            if point >= grid[0]:
+                return 0
+            elif point <= grid[-1]:
+                return len(grid) - 1
+            else:
+                return int(np.floor((point - grid[0]) / delta))
 
-    @staticmethod
-    def grid_row(y, dy, Y):
+    def grid_column(self, x, dx, X):
+        "Input grid column number corresponding to X."
+        return self.find(x, dx, X)
+
+    def grid_row(self, y, dy, Y):
         "Input grid row number corresponding to Y."
-        if Y <= y[0]:
-            return 0
-        elif Y >= y[-1]:
-            return len(y) - 1
-        else:
-            return int(np.floor((Y - y[0]) / dy))
+        return self.find(y, dy, Y)
 
     def __init__(self, x, y, px, py, bilinear=True):
         """Interpolate values of z to points (px,py) assuming that z is on a
