@@ -657,7 +657,7 @@ def read_shapefile(filename):
         except:
             glaciertype = 5
         try:
-            flowtype = feature.flowtype
+            flowtype = feature.ftype
         except:
             flowtype = 2
         geometry = feature.GetGeometryRef()
