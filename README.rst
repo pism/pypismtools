@@ -78,6 +78,14 @@ surfvelmag --colorbar_label -o geotiff.png Greenland_5km_v1.1.nc``
 
    Example 3: Magnitude of surface velocities over a MODIS mosaic of Greenland.
 
+Examples for extract_profiles.py
+-------------------------
+
+The script extract_profiles.py extracts variables stored in a NetCDF_  ``input.nc`` file along profiles given in a shape file ``myprofiles.shp`` and saves the extracted profiles in ``profile.nc``.
+
+``extract_profiles.py myprofiles.shp input.nc profile.py``
+
+
 Examples for qgis-colorramp.py
 -------------------------
 
