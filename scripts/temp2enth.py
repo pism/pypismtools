@@ -56,13 +56,12 @@ for m in range(M):
         for k in range(K):
             depth = topg[k,l] - usurf[k,l] + z[m]
             if (topg[k,l] + z[m] < usurf[k,l]):
-                p = EC.getPressureFromDepth(depth)
+                p = EC.pressure(depth)
             else:
                 p = p_air
             # liquid water fraction is set to zero because
             # it is not available in this context
-            e = EC.getEnth(temp[k,l,m], 0., p)
-            enthalpy[k,l,m] = e
+            enthalpy[k,l,m] = EC.enthalpy(temp[k,l,m], 0., p)
 
 # Compare with enthalpy field in file.
 # Note that difference is only zero in the absence of temperate ice
