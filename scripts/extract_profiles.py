@@ -966,10 +966,6 @@ if __name__ == "__main__":
     parser.description = description
     parser.add_argument("FILE", nargs='*')
     parser.add_argument(
-        "-b", "--bilinear", dest="bilinear", action="store_true",
-        help='''Piece-wise bilinear interpolation, Default=False''',
-        default=False)
-    parser.add_argument(
         "-f", "--flip", dest="flip", action="store_true",
         help='''Flip profile direction, Default=False''',
         default=False)
