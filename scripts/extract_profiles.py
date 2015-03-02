@@ -1095,13 +1095,8 @@ if __name__ == "__main__":
                 print("    - processing profile {0}".format(profile.name))
                 p_values = extract_profile(var_in, profile)
 
-                try:
-                    # try without exec (should work using newer netcdf4-python)
-                    indexes = np.r_[k, [np.s_[0:n] for n in p_values.shape]]
-                    var_out[indexes] = p_values
-                except:
-                    access_str = 'k,' + ','.join([':'.join(['0', str(coord)]) for coord in p_values.shape])
-                    exec('var_out[%s] = p_values' % access_str)
+                access_str = 'k,' + ','.join([':'.join(['0', str(coord)]) for coord in p_values.shape])
+                exec('var_out[%s] = p_values' % access_str)
         else:
             # it is a scalar or a 1D variable; just copy it
             var_out = create_variable_like(nc_in, var_name, nc)
