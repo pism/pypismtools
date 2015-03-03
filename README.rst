@@ -8,9 +8,9 @@ histogram plotting. It also includes helper functions and wrappers for
 things like unit conversion, defining figure sizes and parameters, and
 more. Additionally, some scripts are included, to plot netCDF
 variables over GeoTIFF files using basemap, to generate colorramps
-forQGIS, and to extract contour lines.
+for QGIS, and to extract contour lines.
 
-Some scripts (e.g. flowline-plot.py) is experimental, and currently uncdocumented.
+Some scripts (e.g. ``flowline-plot.py``) are experimental, and currently undocumented.
 
 Requirements
 -------------------------
@@ -40,7 +40,7 @@ To install for the current user, run
 Examples for basemap-plot.py
 -------------------------
 
-basemap-plot.py is a script to plot a variety of ice sheet model relevant variables from a netCDF file from Greenland and Antarctica data sets. Projection information is retrieved from the first input file, and all subsquent plots are on-the-fly reprojected, which makes the script slow but flexible. 
+basemap-plot.py is a script to plot a variety of ice sheet model relevant variables from a netCDF file from Greenland and Antarctica data sets. Projection information is retrieved from the first input file, and all subsequent plots are on-the-fly re-projected, which makes the script slow but flexible.
 
 - Download a test data set, e.g. the SeaRISE master data set from
 
@@ -67,7 +67,7 @@ basemap-plot.py is a script to plot a variety of ice sheet model relevant variab
 
    Example 2: Ice thickness with ETOPO background.
 
-- Use a geotiff file as background, plot the colorbar horizontally. In this case, projection information is taken from the geotiff:
+- Use a GeoTIFF file as background, plot the colorbar horizontally. In this case, projection information is taken from the GeoTIFF:
 
 ``$ basemap-plot.py --geotiff mygeotiff.tif --singlecolumn -v
 surfvelmag --colorbar_label -o geotiff.png Greenland_5km_v1.1.nc``
@@ -96,7 +96,7 @@ To show the bathymetry around Greenland, you can use the IBCAO colormap. By runn
 ``qgis-colorramp.py --vmin -5000 --vmax 1400 --extend -10000 4000 ibcao.cpt``
 
 and you get a linear colorramp from -5000m to 1400m, where the first and last color
-will be extended to -10000 and 4000m, respectively (in ibcao.txt). The result should like like
+will be extended to -10000 and 4000m, respectively (in ``ibcao.txt``). The result should like like
 
 .. figure:: https://github.com/pism/pypismtools/raw/master/docs/ibcao.png
    :width: 200px
@@ -134,7 +134,7 @@ mask. Or you can extract the 2000m elevation contour:
 Examples for create_greenland_grid.py
 -------------------------
 
-create_greenland_grid.py creates a netcdf file with the SeaRISE Greenland grid with a given grid spacing. Run ``nc2cdo.py`` from pism/utils and you got a grid definition file that can be used for conservative remapping with CDO (https://code.zmaw.de/projects/cdo).
+create_greenland_grid.py creates a netCDF file with the SeaRISE Greenland grid with a given grid spacing. Run ``nc2cdo.py`` from pism/utils and you got a grid definition file that can be used for conservative remapping with CDO (https://code.zmaw.de/projects/cdo).
 
 ``create_greenland_grid.py -g 2 searise_2km_grid.nc``
 
