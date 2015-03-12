@@ -16,15 +16,15 @@ DXY = 2.0  # km
 parser = OptionParser()
 parser.usage = "usage: %prog [options] FILE"
 parser.description = "Create CDO-compliant grid description"
-parser.add_option("-g", "--grid_spacing",dest="grid_spacing",type='float',
+parser.add_option("-g", "--grid_spacing", dest="grid_spacing", type='float',
                   help="use X km grid spacing",
-                  metavar="X",default=DXY)
+                  metavar="X", default=DXY)
 
 (options, args) = parser.parse_args()
-grid_spacing = options.grid_spacing*1e3 # convert km -> m
+grid_spacing = options.grid_spacing * 1e3  # convert km -> m
 
 if len(args) == 0:
-    nc_outfile = 'grn' + str(grid_spacing/1e3) + 'km.nc'
+    nc_outfile = 'grn' + str(grid_spacing / 1e3) + 'km.nc'
 elif len(args) == 1:
     nc_outfile = args[0]
 else:
@@ -33,31 +33,30 @@ else:
     exit(0)
 
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
 
     # define output grid
 
-    e0 =  -800000.0
+    e0 = -800000.0
     n0 = -3400000.0
-    e1 =   700000.0
-    n1 =  -600000.0
+    e1 = 700000.0
+    n1 = -600000.0
 
-    de = dn =  grid_spacing # m
-    M = int((e1 - e0)/de) + 1
-    N = int((n1 - n0)/dn) + 1
+    de = dn = grid_spacing  # m
+    M = int((e1 - e0) / de) + 1
+    N = int((n1 - n0) / dn) + 1
 
-    easting  = np.linspace(e0, e1, M)
+    easting = np.linspace(e0, e1, M)
     northing = np.linspace(n0, n1, N)
-    ee, nn = np.meshgrid(easting,northing)
-
+    ee, nn = np.meshgrid(easting, northing)
 
     # Set up SeaRISE Projection
     projection = "+proj=stere +ellps=WGS84 +datum=WGS84 +lon_0=-39 +lat_0=90 +lat_ts=71 +units=m"
     proj = Proj(projection)
 
-    lon,lat = proj(ee,nn,inverse=True)
+    lon, lat = proj(ee, nn, inverse=True)
 
-    nc = CDF(nc_outfile,'w',format='NETCDF3_CLASSIC')
+    nc = CDF(nc_outfile, 'w', format='NETCDF3_CLASSIC')
 
     nc.createDimension("x", size=easting.shape[0])
     nc.createDimension("y", size=northing.shape[0])
@@ -75,33 +74,39 @@ if __name__ == "__main__":
     var_out.axis = "Y"
     var_out.long_name = "Y-coordinate in Cartesian system"
     var_out.standard_name = "projection_y_coordinate"
-    var_out.units = "meters";
+    var_out.units = "meters"
     var_out[:] = northing
 
     var = 'lon'
-    var_out = nc.createVariable(var, 'f', dimensions=("y","x"))
-    var_out.units = "degrees_east";
+    var_out = nc.createVariable(var, 'f', dimensions=("y", "x"))
+    var_out.units = "degrees_east"
     var_out.valid_range = -180., 180.
     var_out.standard_name = "longitude"
     var_out[:] = lon
 
     var = 'lat'
-    var_out = nc.createVariable(var, 'f', dimensions=("y","x"))
-    var_out.units = "degrees_north";
+    var_out = nc.createVariable(var, 'f', dimensions=("y", "x"))
+    var_out.units = "degrees_north"
     var_out.valid_range = -90., 90.
     var_out.standard_name = "latitude"
     var_out[:] = lat
-      
+
     var = 'dummy'
-    var_out = nc.createVariable(var, 'f', dimensions=("y","x"), fill_value=np.nan)
-    var_out.units = "meters";
+    var_out = nc.createVariable(
+        var,
+        'f',
+        dimensions=(
+            "y",
+            "x"),
+        fill_value=np.nan)
+    var_out.units = "meters"
     var_out.long_name = "Just A Dummy"
     var_out.comment = "This is just a dummy variable for CDO."
     var_out.grid_mapping = "mapping"
-    var_out.coordinates = "lon lat"    
+    var_out.coordinates = "lon lat"
     var_out[:] = np.nan
 
-    mapping = nc.createVariable("mapping",'c')
+    mapping = nc.createVariable("mapping", 'c')
     mapping.ellipsoid = "WGS84"
     mapping.false_easting = 0.
     mapping.false_northing = 0.

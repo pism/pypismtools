@@ -16,15 +16,15 @@ DXY = 1800.  # m
 parser = OptionParser()
 parser.usage = "usage: %prog [options] FILE"
 parser.description = "Create CDO-compliant grid description"
-parser.add_option("-g", "--grid_spacing",dest="grid_spacing",type='float',
+parser.add_option("-g", "--grid_spacing", dest="grid_spacing", type='float',
                   help="use X m grid spacing",
-                  metavar="X",default=DXY)
+                  metavar="X", default=DXY)
 
 (options, args) = parser.parse_args()
-grid_spacing = options.grid_spacing # convert
+grid_spacing = options.grid_spacing  # convert
 
 if len(args) == 0:
-    nc_outfile = 'grn' + str(grid_spacing/1e3) + 'km.nc'
+    nc_outfile = 'grn' + str(grid_spacing / 1e3) + 'km.nc'
 elif len(args) == 1:
     nc_outfile = args[0]
 else:
@@ -33,17 +33,18 @@ else:
     exit(0)
 
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
 
-    # define output grid, these are the extents of Mathieu's domain (cell corners)
+    # define output grid, these are the extents of Mathieu's domain (cell
+    # corners)
     e0 = -638000
     n0 = -3349600
     e1 = 864700
-    n1 =-657600
+    n1 = -657600
 
     # Add a buffer on each side such that we get nice grids up to a grid spacing
     # of 36 km.
-    
+
     buffer_e = 40650
     buffer_n = 22000
     e0 -= buffer_e
@@ -51,21 +52,19 @@ if __name__ == "__main__":
     e1 += buffer_e
     n1 += buffer_n
 
-
     # Shift to cell centers
     e0 += grid_spacing / 2
     n0 += grid_spacing / 2
     e1 -= grid_spacing / 2
     n1 -= grid_spacing / 2
 
-    de = dn =  grid_spacing # m
-    M = int((e1 - e0)/de) + 1
-    N = int((n1 - n0)/dn) + 1
+    de = dn = grid_spacing  # m
+    M = int((e1 - e0) / de) + 1
+    N = int((n1 - n0) / dn) + 1
 
-    easting  = np.linspace(e0, e1, M)
+    easting = np.linspace(e0, e1, M)
     northing = np.linspace(n0, n1, N)
-    ee, nn = np.meshgrid(easting,northing)
-
+    ee, nn = np.meshgrid(easting, northing)
 
     # Set up SeaRISE Projection
     projection = "+init=epsg:3413"
@@ -91,33 +90,39 @@ if __name__ == "__main__":
     var_out.axis = "Y"
     var_out.long_name = "Y-coordinate in Cartesian system"
     var_out.standard_name = "projection_y_coordinate"
-    var_out.units = "meters";
+    var_out.units = "meters"
     var_out[:] = northing
 
     var = 'lon'
-    var_out = nc.createVariable(var, 'f', dimensions=("y","x"))
-    var_out.units = "degrees_east";
+    var_out = nc.createVariable(var, 'f', dimensions=("y", "x"))
+    var_out.units = "degrees_east"
     var_out.valid_range = -180., 180.
     var_out.standard_name = "longitude"
     var_out[:] = lon
 
     var = 'lat'
-    var_out = nc.createVariable(var, 'f', dimensions=("y","x"))
-    var_out.units = "degrees_north";
+    var_out = nc.createVariable(var, 'f', dimensions=("y", "x"))
+    var_out.units = "degrees_north"
     var_out.valid_range = -90., 90.
     var_out.standard_name = "latitude"
     var_out[:] = lat
-      
+
     var = 'dummy'
-    var_out = nc.createVariable(var, 'f', dimensions=("y","x"), fill_value=np.nan)
-    var_out.units = "meters";
+    var_out = nc.createVariable(
+        var,
+        'f',
+        dimensions=(
+            "y",
+            "x"),
+        fill_value=np.nan)
+    var_out.units = "meters"
     var_out.long_name = "Just A Dummy"
     var_out.comment = "This is just a dummy variable for CDO."
     var_out.grid_mapping = "mapping"
-    var_out.coordinates = "lon lat"    
+    var_out.coordinates = "lon lat"
     var_out[:] = np.nan
 
-    mapping = nc.createVariable("mapping",'c')
+    mapping = nc.createVariable("mapping", 'c')
     mapping.ellipsoid = "WGS84"
     mapping.false_easting = 0.
     mapping.false_northing = 0.

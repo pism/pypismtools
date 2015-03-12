@@ -26,10 +26,12 @@ from osgeo import gdal
 from osgeo import osr
 
 
-## FIXME: how to provide DEBUG flag to module
-DEBUG=None
+# FIXME: how to provide DEBUG flag to module
+DEBUG = None
+
 
 class GeoTIFF(object):
+
     '''
     A class to read a GeoTIFF
 
@@ -48,7 +50,6 @@ class GeoTIFF(object):
             self.gtiff = gdal.Open(file_name)
         except:
             print("could not open file %s" % file_name)
-
 
         self.RasterArray = self.gtiff.ReadAsArray()
         self.gtiff_projection = self.gtiff.GetProjection()
@@ -92,34 +93,34 @@ def get_dims(nc):
     --------
     xdim, ydim, zdim, tdim: dimensions
     '''
-        
-    ## a list of possible x-dimensions names
-    xdims = ['x','x1']
-    ## a list of possible y-dimensions names
-    ydims = ['y','y1']
-    ## a list of possible z-dimensions names
-    zdims= ['z', 'z1']
-    ## a list of possible time-dimensions names
-    tdims= ['t', 'time']
+
+    # a list of possible x-dimensions names
+    xdims = ['x', 'x1']
+    # a list of possible y-dimensions names
+    ydims = ['y', 'y1']
+    # a list of possible z-dimensions names
+    zdims = ['z', 'z1']
+    # a list of possible time-dimensions names
+    tdims = ['t', 'time']
 
     xdim = None
     ydim = None
     zdim = None
     tdim = None
 
-    ## assign x dimension
+    # assign x dimension
     for dim in xdims:
         if dim in list(nc.dimensions.keys()):
             xdim = dim
-    ## assign y dimension
+    # assign y dimension
     for dim in ydims:
         if dim in list(nc.dimensions.keys()):
             ydim = dim
-    ## assign z dimension
+    # assign z dimension
     for dim in zdims:
         if dim in list(nc.dimensions.keys()):
             zdim = dim
-    ## assign time dimension
+    # assign time dimension
     for dim in tdims:
         if dim in list(nc.dimensions.keys()):
             tdim = dim
@@ -141,39 +142,44 @@ def get_projection_from_file(nc):
 
     from pyproj import Proj
 
-    ## First, check if we have a global attribute 'proj4'
-    ## which contains a Proj4 string:
+    # First, check if we have a global attribute 'proj4'
+    # which contains a Proj4 string:
     try:
         p = Proj(str(nc.proj4))
-        print('Found projection information in global attribute proj4, using it')
+        print(
+            'Found projection information in global attribute proj4, using it')
     except:
         try:
             p = Proj(str(nc.projection))
-            print('Found projection information in global attribute projection, using it')
+            print(
+                'Found projection information in global attribute projection, using it')
         except:
             try:
-                ## go through variables and look for 'grid_mapping' attribute
+                # go through variables and look for 'grid_mapping' attribute
                 for var in nc.variables.keys():
                     if hasattr(nc.variables[var], 'grid_mapping'):
                         mappingvarname = nc.variables[var].grid_mapping
-                        print('Found projection information in variable "%s", using it' % mappingvarname)
+                        print(
+                            'Found projection information in variable "%s", using it' %
+                            mappingvarname)
                         break
                 var_mapping = nc.variables[mappingvarname]
-                p = Proj(proj   = "stere",
-                         ellps  = var_mapping.ellipsoid,
-                         datum  = var_mapping.ellipsoid,
-                         units = "m",
-                         lat_ts = var_mapping.standard_parallel,
-                         lat_0  = var_mapping.latitude_of_projection_origin,
-                         lon_0  = var_mapping.straight_vertical_longitude_from_pole,
-                         x_0    = var_mapping.false_easting,
-                         y_0    = var_mapping.false_northing)
+                p = Proj(proj="stere",
+                         ellps=var_mapping.ellipsoid,
+                         datum=var_mapping.ellipsoid,
+                         units="m",
+                         lat_ts=var_mapping.standard_parallel,
+                         lat_0=var_mapping.latitude_of_projection_origin,
+                         lon_0=var_mapping.straight_vertical_longitude_from_pole,
+                         x_0=var_mapping.false_easting,
+                         y_0=var_mapping.false_northing)
             except:
                 print('No mapping information found, exiting.')
                 import sys
                 sys.exit(1)
 
     return p
+
 
 def add_inner_title(ax, title, loc, size=None, **kwargs):
     '''
@@ -190,6 +196,7 @@ def add_inner_title(ax, title, loc, size=None, **kwargs):
                       frameon=False, **kwargs)
     ax.add_artist(at)
     return at
+
 
 def get_golden_mean():
     '''
@@ -330,7 +337,6 @@ def set_mode(mode, aspect_ratio=0.95):
 
         return lw, 0.10
 
-    
     def set_medium():
         '''
         Define parameters for "medium" mode and return value for pad_inches
@@ -359,7 +365,6 @@ def set_mode(mode, aspect_ratio=0.95):
         plt.rcParams.update(params)
 
         return lw, 0.10
-    
 
     def set_small_font():
         '''
@@ -389,7 +394,6 @@ def set_mode(mode, aspect_ratio=0.95):
         plt.rcParams.update(params)
 
         return lw, 0.10
-    
 
     def set_large_font():
         '''
@@ -419,7 +423,6 @@ def set_mode(mode, aspect_ratio=0.95):
         plt.rcParams.update(params)
 
         return lw, 0.20
-    
 
     def set_presentation():
         '''
@@ -450,7 +453,6 @@ def set_mode(mode, aspect_ratio=0.95):
         plt.rcParams.update(params)
 
         return lw, 0.2
-    
 
     def set_twocol():
         '''
@@ -480,7 +482,6 @@ def set_mode(mode, aspect_ratio=0.95):
         plt.rcParams.update(params)
 
         return lw, 0.35
-    
 
     def set_height():
         '''
@@ -509,7 +510,6 @@ def set_mode(mode, aspect_ratio=0.95):
         plt.rcParams.update(params)
 
         return lw, 0.025
-    
 
     if (mode == "onecol"):
         return set_onecol()
@@ -716,10 +716,10 @@ def gmtColormap(fileName, log_color=False, reverse=False):
         r = r / 255.
         g = g / 255.
         b = b / 255.
-        
+
     if log_color:
         xNorm = np.zeros((len(x), ))
-        xNorm[1::] = np.logspace(-1,0,len(x) - 1)
+        xNorm[1::] = np.logspace(-1, 0, len(x) - 1)
         xNorm[1::-2] /= 4
     else:
         xNorm = (x - x[0]) / (x[-1] - x[0])
@@ -779,18 +779,21 @@ def smooth(x, window_len=11, window='hanning'):
     '''
 
     if x.ndim != 1:
-        raise ValueError, "smooth only accepts 1 dimension arrays."
+        raise ValueError("smooth only accepts 1 dimension arrays.")
 
     if x.size < window_len:
-        raise ValueError, "Input vector needs to be bigger than window size."
+        raise ValueError("Input vector needs to be bigger than window size.")
 
     if window_len < 3:
         return x
 
     if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
-        raise ValueError, "Window is one of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
+        raise ValueError(
+            "Window is one of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
 
-    s=np.r_[2 * x[0] - x[window_len:1:-1], x, 2 * x[-1] - x[-1:-window_len:-1]]
+    s = np.r_[2 * x[0] - x[window_len:1:-1],
+              x,
+              2 * x[-1] - x[-1:-window_len:-1]]
 
     if window == 'flat':  # moving average
         w = np.ones(window_len, 'd')
@@ -848,18 +851,21 @@ def fftsmooth(x, window_len=11, window='hanning'):
     from scipy.signal import fftconvolve
 
     if x.ndim != 1:
-        raise ValueError, "smooth only accepts 1 dimension arrays."
+        raise ValueError("smooth only accepts 1 dimension arrays.")
 
     if x.size < window_len:
-        raise ValueError, "Input vector needs to be bigger than window size."
+        raise ValueError("Input vector needs to be bigger than window size.")
 
     if window_len < 3:
         return x
 
     if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
-        raise ValueError, "Window is one of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
+        raise ValueError(
+            "Window is one of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
 
-    s=np.r_[2 * x[0] - x[window_len:1:-1], x, 2 * x[-1] - x[-1:-window_len:-1]]
+    s = np.r_[2 * x[0] - x[window_len:1:-1],
+              x,
+              2 * x[-1] - x[-1:-window_len:-1]]
 
     if window == 'flat':  # moving average
         w = np.ones(window_len, 'd')
@@ -868,6 +874,7 @@ def fftsmooth(x, window_len=11, window='hanning'):
 
     y = fftconvolve(w / w.sum(), s, mode='same')
     return y[window_len - 1:-window_len + 1]
+
 
 def get_rmse(a, b, N, w=None):
     '''
@@ -915,11 +922,12 @@ def get_avg(a, b, N, relative=False):
         c = a.ravel() - b.ravel()
     else:
         c = (a.ravel() - b.ravel() / b.ravel())
-    if isinstance(c,np.ma.MaskedArray):
+    if isinstance(c, np.ma.MaskedArray):
         return np.linalg.norm(np.ma.compressed(c), 1) / N
     else:
         return np.linalg.norm(c, 1) / N
-     
+
+
 def unit_converter(data, inunit, outunit):
     '''
     Unit converter. Takes an (numpy) array, valid udunits inunits and outunits
@@ -959,7 +967,8 @@ def unit_converter(data, inunit, outunit):
                 c = Converter((Unit(sys, inunit), Unit(sys, outunit)))
             outdata = c(data)
         except:
-            print("No udunits module found, you're on your own.\n  -> I am assuming input unit is m, and will convert to km.\n  -> Installation of Constantine's awesome python wrapper for udunits is highly recommended.\n  -> Download it from https://github.com/ckhroulev/py_udunits2.")
+            print(
+                "No udunits module found, you're on your own.\n  -> I am assuming input unit is m, and will convert to km.\n  -> Installation of Constantine's awesome python wrapper for udunits is highly recommended.\n  -> Download it from https://github.com/ckhroulev/py_udunits2.")
             c = 1. / 1e3
             outdata = c * data
     else:
@@ -988,11 +997,11 @@ def permute(variable, output_order=('time', 'z', 'zb', 'y', 'x')):
     input_dimensions = variable.dimensions
 
     # filter out irrelevant dimensions
-    dimensions = filter(lambda(x): x in input_dimensions,
+    dimensions = filter(lambda x: x in input_dimensions,
                         output_order)
 
     # create the mapping
-    mapping = map(lambda(x): dimensions.index(x),
+    mapping = map(lambda x: dimensions.index(x),
                   input_dimensions)
 
     if mapping:
@@ -1047,13 +1056,13 @@ def plot_histogram(data, **kwargs):
     show = False
     if 'show' in kwargsdict:
         show = kwargsdict['show']
-    ticks = map(lambda(x): "%3d" % x, bins)
+    ticks = map(lambda x: "%3d" % x, bins)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     n, bin, patches = ax.hist(data.values[data.values > vmin],
-                            bins=bins,
-                            log=log,
-                            histtype='bar')
+                              bins=bins,
+                              log=log,
+                              histtype='bar')
     ax.set_xlabel("ice surface velocity, m a$^{-1}$")
     ax.set_ylabel("number of grid cells")
     plt.title(data.title)
@@ -1077,15 +1086,15 @@ def plot_histogram2(data, obs, **kwargs):
     show = False
     if 'show' in kwargsdict:
         show = kwargsdict['show']
-    ticks = map(lambda(x): "%3d" % x, bins)
+    ticks = map(lambda x: "%3d" % x, bins)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     n, bin, patches = ax.hist([data.values[data.values > vmin],
-                            obs.values[obs.values > vmin]],
-                            bins=bins,
-                            log=log,
-                            histtype='bar',
-                            label=['modeled', 'observed'])
+                               obs.values[obs.values > vmin]],
+                              bins=bins,
+                              log=log,
+                              histtype='bar',
+                              label=['modeled', 'observed'])
     ax.set_xlabel("ice surface velocity, m a$^{-1}$")
     ax.set_ylabel("number of grid cells")
     ax.set_xlim(vmin, vmax)
@@ -1107,8 +1116,8 @@ def print_overall_statistics(experiments):
     print("\nOverall statistics:\n")
 
     rmses = [n.rmse for n in experiments]
-    rmse_min = filter(lambda(x): x.rmse == min(rmses), experiments)
-    rmse_max = filter(lambda(x): x.rmse == max(rmses), experiments)
+    rmse_min = filter(lambda x: x.rmse == min(rmses), experiments)
+    rmse_max = filter(lambda x: x.rmse == max(rmses), experiments)
 
     print("    - smallest rmse = %3.2f" % rmse_min[0].rmse)
     print_info(rmse_min[0])
@@ -1118,6 +1127,7 @@ def print_overall_statistics(experiments):
 
 
 class DataObject(object):
+
     '''
     A base class for experiments and observations.
 
@@ -1128,6 +1138,7 @@ class DataObject(object):
     bins : numpy array with bins, e.g.
            bins = np.linspace(0,10,11)
     '''
+
     def __init__(self, file_name, variable_name, bins, *args, **kwargs):
         super(DataObject, self).__init__(*args, **kwargs)
         self.file_name = file_name
@@ -1236,6 +1247,7 @@ class DataObject(object):
 
 
 class Experiment(DataObject):
+
     '''
     A derived class for experiments
 
@@ -1369,6 +1381,7 @@ class Experiment(DataObject):
 
 
 class Observation(DataObject):
+
     """
     A derived class for observations.
 
