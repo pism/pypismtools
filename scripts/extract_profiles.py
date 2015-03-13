@@ -21,7 +21,7 @@ from netCDF4 import Dataset as NC
 
 try:
     import pypismtools.pypismtools as ppt
-except ImportError:
+except ImportError:             # pragma: nocover
     import pypismtools as ppt
 
 profiledim = 'profile'
@@ -403,6 +403,37 @@ def flipped_y_interpolation_test():
     assert np.max(np.fabs(z_interpolated - Z(px, py))) < 1e-12
 
 
+def create_dummy_profile(input_filename):
+    "Create a dummy profile for testing."
+    # create a profile to extract
+    import netCDF4
+    nc = netCDF4.Dataset(input_filename, "r")
+    x = nc.variables["x"][:]
+    y = nc.variables["y"][:]
+    proj4 = nc.proj4
+    nc.close()
+    import pyproj
+    projection = pyproj.Proj(str(proj4))
+
+    n_points = 4
+    # move points slightly to make sure we can interpolate
+    epsilon = 0.1
+    x_profile = np.linspace(x[0] + epsilon, x[-1] - epsilon, n_points)
+    y_profile = np.linspace(y[0] + epsilon, y[-1] - epsilon, n_points)
+    x_center = 0.5 * (x_profile[0] + x_profile[-1])
+    y_center = 0.5 * (y_profile[0] + y_profile[-1])
+
+    lon, lat = projection(x_profile, y_profile, inverse=True)
+    clon, clat = projection(x_center, y_center, inverse=True)
+
+    flightline = 2
+    glaciertype = 5
+    flowtype = 2
+
+    return Profile("test profile", lat, lon, clat, clon,
+                   flightline, glaciertype, flowtype, projection)
+
+
 def profile_extraction_test():
     """Test extract_profile() by using an input file with fake data."""
 
@@ -420,34 +451,12 @@ def profile_extraction_test():
 
     create_dummy_input_file(filename, F)
 
-    # create a profile to extract
     import netCDF4
-    nc = netCDF4.Dataset(filename, "r")
-    x = nc.variables["x"][:]
-    y = nc.variables["y"][:]
+    nc = netCDF4.Dataset(filename)
+
+    profile = create_dummy_profile(filename)
+    n_points = len(profile.x)
     z = nc.variables["z"][:]
-    proj4 = nc.proj4
-    import pyproj
-    projection = pyproj.Proj(str(proj4))
-
-    n_points = 4
-    # move points slightly to make sure we can interpolate
-    epsilon = 0.1
-    x_profile = np.linspace(x[0] + epsilon, x[-1] - epsilon, n_points)
-    y_profile = np.linspace(y[0] + epsilon, y[-1] - epsilon, n_points)
-    x_center = 0.5 * (x_profile[0] + x_profile[-1])
-    y_center = 0.5 * (y_profile[0] + y_profile[-1])
-
-    lon, lat = projection(x_profile, y_profile, inverse=True)
-    clon, clat = projection(x_center, y_center, inverse=True)
-
-    # these arguments are ignored
-    flightline = None
-    glaciertype = None
-    flowtype = None
-
-    profile = Profile("test profile", lat, lon, clat, clon,
-                      flightline, glaciertype, flowtype, projection)
 
     desired_result = F(profile.x, profile.y, 0.0)
 
@@ -483,6 +492,7 @@ def profile_extraction_test():
                     desired_3d_result)) < 1e-9
     finally:
         os.remove(filename)
+        nc.close()
 
 
 def create_dummy_input_file(filename, F):
@@ -517,8 +527,27 @@ def create_dummy_input_file(filename, F):
         "Write test data to the file using given storage order."
         name = prefix + "_".join(dimensions)
 
-        variable = nc.createVariable(name, "f8", dimensions)
+        slices = {"x": slice(0, Mx),
+                  "y": slice(0, My),
+                  "time": 0,
+                  "z": None}
+
+        if "z" in dimensions:
+            # set fill_value and coordinates in variables with the z
+            # dimensions and not others (just so that we can get
+            # better test coverage)
+            variable = nc.createVariable(
+                name, "f8", dimensions, fill_value=-2e9)
+            variable.coordinates = "lon lat"
+        else:
+            variable = nc.createVariable(name, "f8", dimensions)
+
+        variable.long_name = name + " (let's make it long!)"
+
+        # set indexes for all dimensions (z index will be re-set below)
         indexes = [Ellipsis] * len(dimensions)
+        for k, d in enumerate(dimensions):
+            indexes[k] = slices[d]
 
         # transpose 2D array if needed
         if dimensions.index("y") < dimensions.index("x"):
@@ -853,6 +882,51 @@ def copy_global_attributes(in_file, out_file):
         setattr(out_file, attribute, getattr(in_file, attribute))
 
 
+def file_handling_test():
+    """Test functions that copy variable metadata, define variables, etc."""
+
+    in_filename = "metadata_test_file_1.nc"
+    out_filename = "metadata_test_file_2.nc"
+
+    create_dummy_input_file(in_filename, lambda x, y, z: 0)
+
+    try:
+        import netCDF4
+        input_file = netCDF4.Dataset(in_filename, 'r')
+        output_file = netCDF4.Dataset(out_filename, 'w')
+
+        define_profile_variables(output_file)
+
+        copy_global_attributes(input_file, output_file)
+
+        copy_dimensions(input_file, output_file, ["time"])
+        copy_dimensions(input_file, output_file, ["x", "y", "z"])
+
+        copy_time_dimension(input_file, output_file, "time")
+
+        create_variable_like(input_file, "test_2D_x_y", output_file)
+        create_variable_like(input_file, "test_2D_x_y_time", output_file)
+        create_variable_like(input_file, "test_3D_x_y_z", output_file)
+        create_variable_like(input_file, "test_3D_x_y_z_time", output_file)
+
+        create_variable_like(input_file, "test_2D_y_x", output_file,
+                             output_dimensions(input_file.variables["test_2D_y_x"].dimensions))
+
+        print output_dimensions(("x", "y"))
+        print output_dimensions(("x", "y", "time"))
+        print output_dimensions(("x", "y", "z"))
+        print output_dimensions(("x", "y", "z", "time"))
+
+        write_profile(output_file, 0, create_dummy_profile(in_filename))
+
+        input_file.close()
+        output_file.close()
+    finally:
+        import os
+        os.remove(in_filename)
+        os.remove(out_filename)
+
+
 def extract_profile(variable, profile):
     """Extract values of variable along a profile.  """
     xdim, ydim, zdim, tdim = get_dims_from_variable(variable.dimensions)
@@ -955,6 +1029,7 @@ def create_variable_like(in_file, var_name, out_file, dimensions=None,
     try:
         fill_value = var_in._FillValue
     except AttributeError:
+        # fill_value was set elsewhere
         pass
 
     if dimensions is None:
@@ -974,19 +1049,17 @@ def copy_time_dimension(in_file, out_file, name):
     an out_file.
 
     """
-    var_out = create_variable_like(nc_in, name, out_file)
-    var_out[:] = nc_in.variables[name][:]
+    var_in = in_file.variables[name]
+    var_out = create_variable_like(in_file, name, out_file)
+    var_out[:] = in_file.variables[name][:]
 
     try:
         bounds_name = var_in.bounds
         var_out = create_variable_like(bounds_name, in_file, out_file)
         var_out[:] = in_file.variables[bounds_name][:]
-
     except AttributeError:
         # we get here if var_in does not have a bounds attribute
         pass
-    except Exception as e:
-        print "Got an unexpected exception", e
 
 
 def write_profile(out_file, index, profile):
