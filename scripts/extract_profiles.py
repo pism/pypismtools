@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2012-2013, 2015 Andy Aschwanden
+# Copyright (C) 2015 Constantine Khroulev and Andy Aschwanden
 #
 
 # nosetests --with-coverage --cover-branches --cover-html
