@@ -750,14 +750,17 @@ def read_shapefile(filename):
             pt = geometry.GetPoint(i)
             lon.append(pt[0])
             lat.append(pt[1])
-        profiles.append([lat,
-                         lon,
-                         name,
-                         clat,
-                         clon,
-                         flightline,
-                         glaciertype,
-                         flowtype])
+
+        # skip features with less than 2 points:
+        if len(lat) > 1:
+            profiles.append([lat,
+                             lon,
+                             name,
+                             clat,
+                             clon,
+                             flightline,
+                             glaciertype,
+                             flowtype])
     return profiles
 
 
