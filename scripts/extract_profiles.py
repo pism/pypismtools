@@ -63,6 +63,11 @@ class Profile(object):
         self.flightline = flightline
         self.glaciertype = glaciertype
         self.flowtype = flowtype
+
+        assert len(lon) > 1
+        assert len(lat) > 1
+        assert len(lon) == len(lat)
+
         if flip:
             self.lat = lat[::-1]
             self.lon = lon[::-1]
