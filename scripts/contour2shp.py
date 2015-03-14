@@ -92,6 +92,8 @@ parser.add_argument("-c", "--countour_level", dest="contour_level",
                   help='''Contour-level to extract, default = 0.''', default=0.)
 parser.add_argument("-s","--single",dest="single", action="store_true",
                   help="save only the longest contour line, Default=False", default=False)
+parser.add_argument("-p","--plot",dest="plot", action="store_true",
+                  help="plot results, Default=False", default=False)
 
 
 options = parser.parse_args()
@@ -150,15 +152,16 @@ save(shp_filename, contour_points)
 
 
 # display result
-fig = plt.figure()
-ax = fig.add_subplot(111)
-xx, yy = np.meshgrid(x_var, y_var)
-ax.pcolormesh(xx, yy, contour_var, cmap=plt.cm.Blues_r)
-for k in range(0,len(contour_points)):
-    plt.plot(contours_x[k], contours_y[k], linewidth=2, color='r')
-plt.axis('image')
-plt.xticks([])
-plt.yticks([])
-plt.show()
+if options.plot:
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    xx, yy = np.meshgrid(x_var, y_var)
+    ax.pcolormesh(xx, yy, contour_var, cmap=plt.cm.Blues_r)
+    for k in range(0,len(contour_points)):
+        plt.plot(contours_x[k], contours_y[k], linewidth=2, color='r')
+    plt.axis('image')
+    plt.xticks([])
+    plt.yticks([])
+    plt.show()
 
 nc.close()
