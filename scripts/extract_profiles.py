@@ -55,8 +55,9 @@ class Profile(object):
 
     """
 
-    def __init__(self, name, lat, lon, center_lat, center_lon,
+    def __init__(self, id, name, lat, lon, center_lat, center_lon,
                  flightline, glaciertype, flowtype, projection, flip=False):
+        self.id = id
         self.name = name
         self.center_lat = center_lat
         self.center_lon = center_lon
@@ -435,7 +436,7 @@ def create_dummy_profile(input_filename):
     glaciertype = 5
     flowtype = 2
 
-    return Profile("test profile", lat, lon, clat, clon,
+    return Profile(0, "test profile", lat, lon, clat, clon,
                    flightline, glaciertype, flowtype, projection)
 
 
@@ -596,7 +597,7 @@ def profile_test():
     glaciertype = None
     flowtype = None
 
-    profile = Profile("test_profile", lat, lon, center_lat, center_lon,
+    profile = Profile(0, "test_profile", lat, lon, center_lat, center_lon,
                       flightline, glaciertype, flowtype, projection)
 
     assert profile.nx[0] == -1.0 / np.sqrt(2.0)
@@ -610,7 +611,7 @@ def profile_test():
     x = -1.0 * x
     lon, lat = projection(x, y, inverse=True)
 
-    profile = Profile("flipped_profile", lat, lon, center_lat, center_lon,
+    profile = Profile(0, "flipped_profile", lat, lon, center_lat, center_lon,
                       flightline, glaciertype, flowtype, projection,
                       flip=True)
 
@@ -621,7 +622,7 @@ def profile_test():
     y = np.zeros_like(x)
     lon, lat = projection(x, y, inverse=True)
 
-    profile = Profile("test_profile", lat, lon, center_lat, center_lon,
+    profile = Profile(0, "test_profile", lat, lon, center_lat, center_lon,
                       flightline, glaciertype, flowtype, projection)
 
     assert profile.nx[0] == 0.0
@@ -811,8 +812,8 @@ def define_profile_variables(nc):
     nc.createDimension(profiledim)
     nc.createDimension(stationdim)
 
-    variables = [ ("id", "f", (stationdim),
-                  {"long_name": "profile id"),
+    variables = [("profile_id", "i", (stationdim),
+                  {"long_name": "profile id"}),
 
                  ("profile_name", str, (stationdim),
                   {"cf_role": "timeseries_id",
