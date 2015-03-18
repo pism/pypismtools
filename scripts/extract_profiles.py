@@ -647,10 +647,11 @@ def load_profiles(filename, projection, flip):
     list of proviles with
     """
     profiles = []
-    for lat, lon, name, clat, clon, flightline, glaciertype, flowtype in read_shapefile(
+    for lat, lon, id, name, clat, clon, flightline, glaciertype, flowtype in read_shapefile(
             filename):
         profiles.append(
             Profile(
+                id,
                 name,
                 lat,
                 lon,
@@ -710,6 +711,10 @@ def read_shapefile(filename):
     for pt in range(0, cnt):
         feature = layer.GetFeature(pt)
         try:
+            id = feature.id
+        except:
+            id = str(pt)
+        try:
             name = feature.name
         except:
             name = str(pt)
@@ -755,6 +760,7 @@ def read_shapefile(filename):
         if len(lat) > 1:
             profiles.append([lat,
                              lon,
+                             id,
                              name,
                              clat,
                              clon,
@@ -805,7 +811,10 @@ def define_profile_variables(nc):
     nc.createDimension(profiledim)
     nc.createDimension(stationdim)
 
-    variables = [("profile_name", str, (stationdim),
+    variables = [ ("id", "f", (stationdim),
+                  {"long_name": "profile id"),
+
+                 ("profile_name", str, (stationdim),
                   {"cf_role": "timeseries_id",
                    "long_name": "profile name"}),
 
@@ -1089,6 +1098,7 @@ def write_profile(out_file, index, profile):
     out_file.variables['ny'][index, 0:pl] = np.squeeze(profile.ny)
     out_file.variables['lon'][index, 0:pl] = np.squeeze(profile.lon)
     out_file.variables['lat'][index, 0:pl] = np.squeeze(profile.lat)
+    out_file.variables['profile_id'][index] = profile.id
     out_file.variables['profile_name'][index] = profile.name
     out_file.variables['clat'][index] = profile.center_lat
     out_file.variables['clon'][index] = profile.center_lon
