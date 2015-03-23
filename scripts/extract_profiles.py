@@ -1158,18 +1158,18 @@ if __name__ == "__main__":
     mapplane_dim_names = (xdim, ydim)
 
     print("Creating dimensions")
-    nc = NC(options.OUTPUTFILE[0], 'w', format='NETCDF4')
-    copy_global_attributes(nc_in, nc)
+    nc_out = NC(options.OUTPUTFILE[0], 'w', format='NETCDF4')
+    copy_global_attributes(nc_in, nc_out)
 
     # define variables storing profile information
-    define_profile_variables(nc)
+    define_profile_variables(nc_out)
     # fill these variables
     for k, profile in enumerate(profiles):
-        write_profile(nc, k, profile)
+        write_profile(nc_out, k, profile)
 
     # re-create dimensions from an input file in an output file, but
     # skip x and y dimensions and dimensions that are already present
-    copy_dimensions(nc_in, nc, mapplane_dim_names)
+    copy_dimensions(nc_in, nc_out, mapplane_dim_names)
 
     # figure out which variables do not need to be copied to the new file.
     # mapplane coordinate variables
@@ -1194,7 +1194,7 @@ if __name__ == "__main__":
             last = vars_not_copied[i]
 
     if tdim is not None:
-        copy_time_dimension(nc_in, nc, tdim)
+        copy_time_dimension(nc_in, nc_out, tdim)
 
     print("Copying variables")
     if options.all_vars:
@@ -1222,7 +1222,7 @@ if __name__ == "__main__":
             var_out = create_variable_like(
                 nc_in,
                 var_name,
-                nc,
+                nc_out,
                 dimensions=out_dims)
 
             for k, profile in enumerate(profiles):
@@ -1235,7 +1235,7 @@ if __name__ == "__main__":
                 exec('var_out[%s] = p_values' % access_str)
         else:
             # it is a scalar or a 1D variable; just copy it
-            var_out = create_variable_like(nc_in, var_name, nc)
+            var_out = create_variable_like(nc_in, var_name, nc_out)
             var_out[:] = var_in[:]
 
         copy_attributes(var_in, var_out)
@@ -1251,10 +1251,10 @@ if __name__ == "__main__":
                                ' '.join([str(l) for l in sys.argv[1:]])])
     if hasattr(nc_in, 'history'):
         history = nc_in.history
-        nc.history = script_command + '\n ' + history
+        nc_out.history = script_command + '\n ' + history
     else:
-        nc.history = script_command
+        nc_out.history = script_command
 
     nc_in.close()
-    nc.close()
+    nc_out.close()
     print("Extracted profiles to file %s" % options.OUTPUTFILE[0])
