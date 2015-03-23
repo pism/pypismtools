@@ -1114,7 +1114,9 @@ if __name__ == "__main__":
     The profile must be given as a ESRI shape file.'''
     parser = ArgumentParser()
     parser.description = description
-    parser.add_argument("FILE", nargs='*')
+    parser.add_argument("INPUTFILE", nargs=1, help="input NetCDF file with gridded data")
+    parser.add_argument("SHAPEFILE", nargs=1, help="input shapefile defining profiles to extract")
+    parser.add_argument("OUTPUTFILE", nargs=1, help="output NetCDF file name", default="profile.nc")
     parser.add_argument(
         "-f", "--flip", dest="flip", action="store_true",
         help='''Flip profile direction, Default=False''',
@@ -1128,41 +1130,19 @@ if __name__ == "__main__":
         default=False)
 
     options = parser.parse_args()
-    args = options.FILE
     fill_value = -2e9
     variables = options.variables.split(',')
-    all_vars = options.all_vars
-    n_args = len(args)
-    required_no_args = 2
-    max_no_args = 3
-    if n_args < required_no_args:
-        print(("received %i arguments, at least %i expected"
-               % (n_args, required_no_args)))
-        import sys
-        sys.exit()
-    elif n_args > max_no_args:
-        print(("received %i arguments, no more thant %i accepted"
-               % (n_args, max_no_args)))
-        import sys
-        sys.exit()
-    else:
-        p_filename = args[0]
-        in_filename = args[1]
-        if n_args == 2:
-            out_filename = 'profile.nc'
-        else:
-            out_filename = args[2]
 
     print("-----------------------------------------------------------------")
     print("Running script %s ..." % __file__.split('/')[-1])
     print("-----------------------------------------------------------------")
-    print("Opening NetCDF file %s ..." % in_filename)
+    print("Opening NetCDF file %s ..." % options.INPUTFILE[0])
     try:
         # open netCDF file in 'read' mode
-        nc_in = NC(in_filename, 'r')
+        nc_in = NC(options.INPUTFILE[0], 'r')
     except:
         print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
-               % in_filename))
+               % options.INPUTFILE[0]))
         import sys
         sys.exit()
 
@@ -1172,13 +1152,13 @@ if __name__ == "__main__":
     projection = ppt.get_projection_from_file(nc_in)
 
     # Read in profile data
-    print("  reading profile from %s" % p_filename)
-    profiles = load_profiles(p_filename, projection, options.flip)
+    print("  reading profile from %s" % options.SHAPEFILE[0])
+    profiles = load_profiles(options.SHAPEFILE[0], projection, options.flip)
 
     mapplane_dim_names = (xdim, ydim)
 
     print("Creating dimensions")
-    nc = NC(out_filename, 'w', format='NETCDF4')
+    nc = NC(options.OUTPUTFILE[0], 'w', format='NETCDF4')
     copy_global_attributes(nc_in, nc)
 
     # define variables storing profile information
@@ -1217,7 +1197,7 @@ if __name__ == "__main__":
         copy_time_dimension(nc_in, nc, tdim)
 
     print("Copying variables")
-    if all_vars:
+    if options.all_vars:
         vars_list = nc_in.variables
         vars_not_found = ()
     else:
@@ -1262,13 +1242,13 @@ if __name__ == "__main__":
         print("  - done with %s" % var_name)
 
     print("The following variables were not copied because they could not be found in {}:".format(
-        in_filename))
+        options.INPUTFILE[0]))
     print vars_not_found
 
     # writing global attributes
-    import time
+    import time, sys
     script_command = ' '.join([time.ctime(), ':', __file__.split('/')[-1],
-                               ' '.join([str(l) for l in args])])
+                               ' '.join([str(l) for l in sys.argv[1:]])])
     if hasattr(nc_in, 'history'):
         history = nc_in.history
         nc.history = script_command + '\n ' + history
@@ -1277,4 +1257,4 @@ if __name__ == "__main__":
 
     nc_in.close()
     nc.close()
-    print("Extracted profiles to file %s" % out_filename)
+    print("Extracted profiles to file %s" % options.OUTPUTFILE[0])
