@@ -223,11 +223,15 @@ class ProfileInterpolationMatrix(object):
             alpha = (x_k - x[C]) / dx
             beta = (y_k - y[R]) / dy
 
-            assert alpha >= 0.0
-            assert alpha <= 1.0
+            if alpha < 0.0:
+                alpha = 0.0
+            elif alpha > 1.0:
+                alpha = 1.0
 
-            assert beta >= 0.0
-            assert beta <= 1.0
+            if beta < 0.0:
+                beta = 0.0
+            elif beta > 1.0:
+                beta = 1.0
 
             # indexes within the subset needed for interpolation
             c = C - self.c_min
