@@ -1118,8 +1118,8 @@ if __name__ == "__main__":
     The profile must be given as a ESRI shape file.'''
     parser = ArgumentParser()
     parser.description = description
-    parser.add_argument("INPUTFILE", nargs=1, help="input NetCDF file with gridded data")
     parser.add_argument("SHAPEFILE", nargs=1, help="input shapefile defining profiles to extract")
+    parser.add_argument("INPUTFILE", nargs=1, help="input NetCDF file with gridded data")
     parser.add_argument("OUTPUTFILE", nargs=1, help="output NetCDF file name", default="profile.nc")
     parser.add_argument(
         "-f", "--flip", dest="flip", action="store_true",
