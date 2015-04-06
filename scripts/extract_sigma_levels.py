@@ -25,6 +25,85 @@ except ImportError:             # pragma: nocover
     import pypismtools as ppt
 
 
+## {{{ http://code.activestate.com/recipes/496938/ (r1)
+"""
+A module that helps to inject time profiling code
+in other modules to measures actual execution times
+of blocks of code.
+
+"""
+
+__author__ = "Anand B. Pillai"
+__version__ = "0.1"
+
+import time
+
+def timeprofile():
+    """ A factory function to return an instance of TimeProfiler """
+
+    return TimeProfiler()
+
+class TimeProfiler:
+    """ A utility class for profiling execution time for code """
+    
+    def __init__(self):
+        # Dictionary with times in seconds
+        self.timedict = {}
+
+    def mark(self, slot=''):
+        """ Mark the current time into the slot 'slot' """
+
+        # Note: 'slot' has to be string type
+        # we are not checking it here.
+        
+        self.timedict[slot] = time.time()
+
+    def unmark(self, slot=''):
+        """ Unmark the slot 'slot' """
+        
+        # Note: 'slot' has to be string type
+        # we are not checking it here.
+
+        if self.timedict.has_key(slot):
+            del self.timedict[slot]
+
+    def lastdiff(self):
+        """ Get time difference between now and the latest marked slot """
+
+        # To get the latest slot, just get the max of values
+        return time.time() - max(self.timedict.values())
+    
+    def elapsed(self, slot=''):
+        """ Get the time difference between now and a previous
+        time slot named 'slot' """
+
+        # Note: 'slot' has to be marked previously
+        return time.time() - self.timedict.get(slot)
+
+    def diff(self, slot1, slot2):
+        """ Get the time difference between two marked time
+        slots 'slot1' and 'slot2' """
+
+        return self.timedict.get(slot2) - self.timedict.get(slot1)
+
+    def maxdiff(self):
+        """ Return maximum time difference marked """
+
+        # Difference of max time with min time
+        times = self.timedict.values()
+        return max(times) - min(times)
+    
+    def timegap(self):
+        """ Return the full time-gap since we started marking """
+
+        # Return now minus min
+        times = self.timedict.values()
+        return time.time() - min(times)
+
+    def cleanup(self):
+        """ Cleanup the dictionary of all marks """
+
+        self.timedict.clear()
 
 
 def output_dimensions(input_dimensions):
@@ -220,6 +299,8 @@ if __name__ == "__main__":
         import sys
         sys.exit()
 
+    # get file format
+    format = nc_in.file_format
     # get the dimensions
     xdim, ydim, zdim, tdim = ppt.get_dims(nc_in)
     # read projection information
@@ -227,23 +308,26 @@ if __name__ == "__main__":
     # new sigma coordinate with n_levels
     z_out = np.linspace(0, 1, n_levels)
     
+    nt = len(nc_in.dimensions[tdim])
+    nx = len(nc_in.dimensions[xdim])
+    ny = len(nc_in.dimensions[ydim])
+
     # We should bail here if no z-dim is found
     if zdim is not None:
         z = nc_in.variables[zdim][:]
-    
-    mapplane_dim_names = (xdim, ydim)
 
+    # use same file format as input file
     print("Creating dimensions")
-    nc_out = NC(options.OUTPUTFILE[0], 'w', format='NETCDF3_64BIT')
+    nc_out = NC(options.OUTPUTFILE[0], 'w', format=format)
     copy_global_attributes(nc_in, nc_out)
 
 
     # re-create dimensions from an input file in an output file, but
-    # skip x and y dimensions and dimensions that are already present
-    # copy_dimensions(nc_in, nc_out, mapplane_dim_names)
+    # skip vertical dimension
     copy_dimensions(nc_in, nc_out, zdim)
     # create new zdim
     nc_out.createDimension(zdim, n_levels)
+    out_dims = (tdim, zdim, ydim, xdim)
 
     # copy mapplane dimension variables
     for var_name in (xdim, ydim):
@@ -274,7 +358,8 @@ if __name__ == "__main__":
             myvar = name
             pass
 
-    thickness = nc_in.variables[myvar]
+
+    thickness = ppt.permute(nc_in.variables[myvar], output_order=out_dims)
     thk_min = z[2]
     
     print(("    - reading variable %s" % (myvar)))
@@ -284,31 +369,48 @@ if __name__ == "__main__":
     for var_name in variables:
 
         print("  Reading variable %s" % var_name)
-
+        profiler = timeprofile()
         var_in = nc_in.variables[var_name]
         in_dims = var_in.dimensions
         datatype = var_in.dtype
+        profiler.mark('transpose')
+        var_in_data = ppt.permute(var_in, output_order=out_dims)
+        p = profiler.elapsed('transpose')
+        print("    - transposed array in %3.4f s" % p)
 
-        # Here we should have an assert to check if dims contain x,y
-        # and either z or zb.
-
-        nt, nx, ny, nz = var_in.shape
-        data = np.zeros((nt, n_levels, ny, nx))
-        mask = np.ones((nt, n_levels, ny, nx))
-        out_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
-        out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(tdim, zdim, ydim, xdim))
-        for t in range(nt):
-            for m in range(nx):
-                for n in range(ny):
-                    thk = thickness[t,m,n]
-                    v = var_in[t,m,n,:]
+        if tdim is not None:
+            data = np.zeros((nt, n_levels, ny, nx))
+            mask = np.ones((nt, n_levels, ny, nx))
+            out_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
+            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=out_dims)
+            for t in range(nt):
+                for m in range(ny):
+                    for n in range(nx):
+                        thk = thickness[t,m,n]
+                        v = var_in_data[t,:,m,n]
+                        if thk > thk_min:
+                            z_in = z[z<thk] / z[z<thk][-1]
+                            v_in = v[z<thk]
+                            f = interp1d(z_in, v_in)
+                            v_out = f(z_out)
+                            v_out[np.nonzero(v_out<0)] = 0
+                            out_var[t,:,m,n] = v_out
+        elif:
+            data = np.zeros((n_levels, ny, nx))
+            mask = np.ones((n_levels, ny, nx))
+            out_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
+            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=out_dims)
+            for m in range(ny):
+                for n in range(nx):
+                    thk = thickness[m,n]
+                    v = var_in_data[:,m,n]
                     if thk > thk_min:
                         z_in = z[z<thk] / z[z<thk][-1]
                         v_in = v[z<thk]
                         f = interp1d(z_in, v_in)
                         v_out = f(z_out)
                         v_out[np.nonzero(v_out<0)] = 0
-                        out_var[t,:,n,m] = v_out
+                        out_var[:,m,n] = v_out
                         
     
         
@@ -324,4 +426,4 @@ if __name__ == "__main__":
 
     nc_in.close()
     nc_out.close()
-    print("Extracted 3D var to file %s" % options.OUTPUTFILE[0])
+    print("Extracted 3D variable(s) {} to file {}".format(variables, options.OUTPUTFILE[0]))
