@@ -269,7 +269,7 @@ if __name__ == "__main__":
     parser.add_argument("OUTPUTFILE", nargs=1, help="output NetCDF file name", default="out.nc")
     parser.add_argument("-n", "--n_levels", dest="n_levels",
                         help="no. of levels",
-                        default=11)
+                        default=25)
     parser.add_argument("-a", "--age_iso", dest="age_iso",
                         help="list of increasing iso age levels",
                         default=[11700, 29000,115000])
@@ -305,7 +305,8 @@ if __name__ == "__main__":
     # read projection information
     projection = ppt.get_projection_from_file(nc_in)
     # new sigma coordinate with n_levels
-    z_out = np.linspace(0, 1, n_levels)
+    depth_out = np.linspace(0, 1, n_levels+1)[1:]
+    nd = len(depth_out)
     
     nt = len(nc_in.dimensions[tdim])
     nx = len(nc_in.dimensions[xdim])
@@ -320,12 +321,11 @@ if __name__ == "__main__":
     nc_out = NC(options.OUTPUTFILE[0], 'w', format=format)
     copy_global_attributes(nc_in, nc_out)
 
-
     # re-create dimensions from an input file in an output file, but
     # skip vertical dimension
     copy_dimensions(nc_in, nc_out, zdim)
-    # create new zdim
-    nc_out.createDimension(zdim, n_levels)
+    ddim = 'depth'
+    nc_out.createDimension(ddim, nd)
     isodim = 'n_iso'
     nc_out.createDimension(isodim, n_age_iso) 
 
@@ -341,11 +341,11 @@ if __name__ == "__main__":
         var_out[:] = nc_in.variables[var_name][:]
         
     # create new sigma coordinate
-    sigma_var = nc_out.createVariable(zdim, 'd', dimensions=(zdim,))
-    sigma_var.long_name = 'Sigma-coordinate in Cartesion system'
+    sigma_var = nc_out.createVariable(ddim, 'd', dimensions=(ddim,))
+    sigma_var.long_name = 'depth below surface'
     sigma_var.axis = 'Z'
-    sigma_var.positive = 'up'
-    sigma_var[:] = z_out
+    sigma_var.positive = 'down'
+    sigma_var[:] = depth_out
     
     if tdim is not None:
         copy_time_dimension(nc_in, nc_out, tdim)
@@ -387,7 +387,7 @@ if __name__ == "__main__":
             data = np.zeros((nt, n_levels, ny, nx))
             mask = np.ones((nt, n_levels, ny, nx))
             out_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
-            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(tdim, zdim, ydim, xdim))
+            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(tdim, ddim, ydim, xdim))
             
             data = np.zeros((nt, n_age_iso, ny, nx))
             mask = np.ones((nt, n_age_iso, ny, nx))
@@ -401,22 +401,18 @@ if __name__ == "__main__":
                         v = var_in_data[t,:,m,n]
                         if thk > thk_min:
                             z_surf = z[z<thk][-1]
-                            z_in = z[z<thk] / z_surf
+                            depth_in = 1 - z[z<thk] / z_surf
                             v_in = v[z<thk]
-                            f = interp1d(z_in, v_in)
-                            v_out = f(z_out)
+                            f = interp1d(depth_in, v_in)
+                            v_out = f(depth_out)
                             v_out[np.nonzero(v_out<0)] = 0
                             out_var[t,:,m,n] = v_out
-                            depth_in = z_surf - z[z<thk]
-                            fi = interp1d(v_in, depth_in)
-                            vi_out = fi(age_iso)
-                            print vi_out
                             
         else:
             data = np.zeros((n_levels, ny, nx))
             mask = np.ones((n_levels, ny, nx))
             out_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
-            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(zdim, ydim, xdim))
+            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(ddim, ydim, xdim))
             data = np.zeros((n_age_iso, ny, nx))
             mask = np.ones((n_age_iso, ny, nx))
             out_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
@@ -426,10 +422,11 @@ if __name__ == "__main__":
                     thk = thickness[m,n]
                     v = var_in_data[:,m,n]
                     if thk > thk_min:
-                        z_in = z[z<thk] / z[z<thk][-1]
+                        z_surf = z[z<thk][-1]
+                        depth_in = 1 - z[z<thk] / z_surf
                         v_in = v[z<thk]
-                        f = interp1d(z_in, v_in)
-                        v_out = f(z_out)
+                        f = interp1d(depth_in, v_in)
+                        v_out = f(depth_out)
                         v_out[np.nonzero(v_out<0)] = 0
                         out_var[:,m,n] = v_out
         p = profiler.elapsed('interpolation')
