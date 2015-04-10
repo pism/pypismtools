@@ -1,16 +1,10 @@
 #!/usr/bin/env python
-# Copyright (C) 2015 Constantine Khroulev and Andy Aschwanden
+# Copyright (C) 2015 Andy Aschwanden
 #
 
-# nosetests --with-coverage --cover-branches --cover-html
-# --cover-package=extract_profiles scripts/extract_profiles.py
 
-# pylint -d C0301,C0103,C0325,W0621 --msg-template="{path}:{line}:
-# [{msg_id}({symbol}), {obj}] {msg}" extract_profiles.py > lint.txt
 
-"""This script containts tools for extracting 'profiles', that is
-sampling 2D and 3D fields on a regular grid at points along a flux
-gate or a flight line.
+"""This script containts tools for extracting sigma level.
 """
 
 from argparse import ArgumentParser
@@ -276,6 +270,9 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--n_levels", dest="n_levels",
                         help="no. of levels",
                         default=11)
+    parser.add_argument("-a", "--age_iso", dest="age_iso",
+                        help="list of increasing iso age levels",
+                        default=[11700, 29000,115000])
     parser.add_argument("-v", "--variable", dest="variables",
                         help="comma-separated list with variables",
                         default='age')
@@ -284,6 +281,8 @@ if __name__ == "__main__":
     fill_value = -2e9
     variables = options.variables.split(',')
     n_levels = options.n_levels
+    age_iso = np.array(options.age_iso)
+    n_age_iso = len(age_iso)
     
 
     print("-----------------------------------------------------------------")
@@ -327,8 +326,11 @@ if __name__ == "__main__":
     copy_dimensions(nc_in, nc_out, zdim)
     # create new zdim
     nc_out.createDimension(zdim, n_levels)
-    out_dims = (tdim, zdim, ydim, xdim)
+    isodim = 'n_iso'
+    nc_out.createDimension(isodim, n_age_iso) 
 
+    out_dims = (tdim, zdim, ydim, xdim)
+    
     # copy mapplane dimension variables
     for var_name in (xdim, ydim):
         var_out = create_variable_like(
@@ -361,6 +363,8 @@ if __name__ == "__main__":
 
     thickness = ppt.permute(nc_in.variables[myvar], output_order=out_dims)
     thk_min = z[2]
+
+    iso_name = 'depth_iso'
     
     print(("    - reading variable %s" % (myvar)))
         
@@ -378,28 +382,45 @@ if __name__ == "__main__":
         p = profiler.elapsed('transpose')
         print("    - transposed array in %3.4f s" % p)
 
+        profiler.mark('interpolation')
         if tdim is not None:
             data = np.zeros((nt, n_levels, ny, nx))
             mask = np.ones((nt, n_levels, ny, nx))
             out_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
-            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=out_dims)
+            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(tdim, zdim, ydim, xdim))
+            
+            data = np.zeros((nt, n_age_iso, ny, nx))
+            mask = np.ones((nt, n_age_iso, ny, nx))
+            iso_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
+            iso_var = nc_out.createVariable(iso_name, datatype='double', dimensions=(tdim, isodim, ydim, xdim))
+
             for t in range(nt):
                 for m in range(ny):
                     for n in range(nx):
                         thk = thickness[t,m,n]
                         v = var_in_data[t,:,m,n]
                         if thk > thk_min:
-                            z_in = z[z<thk] / z[z<thk][-1]
+                            z_surf = z[z<thk][-1]
+                            z_in = z[z<thk] / z_surf
                             v_in = v[z<thk]
                             f = interp1d(z_in, v_in)
                             v_out = f(z_out)
                             v_out[np.nonzero(v_out<0)] = 0
                             out_var[t,:,m,n] = v_out
-        elif:
+                            depth_in = z_surf - z[z<thk]
+                            fi = interp1d(v_in, depth_in)
+                            vi_out = fi(age_iso)
+                            print vi_out
+                            
+        else:
             data = np.zeros((n_levels, ny, nx))
             mask = np.ones((n_levels, ny, nx))
             out_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
-            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=out_dims)
+            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(zdim, ydim, xdim))
+            data = np.zeros((n_age_iso, ny, nx))
+            mask = np.ones((n_age_iso, ny, nx))
+            out_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
+            out_var = nc_out.createVariable(iso_name, datatype='double', dimensions=(isodim, ydim, xdim))
             for m in range(ny):
                 for n in range(nx):
                     thk = thickness[m,n]
@@ -411,7 +432,8 @@ if __name__ == "__main__":
                         v_out = f(z_out)
                         v_out[np.nonzero(v_out<0)] = 0
                         out_var[:,m,n] = v_out
-                        
+        p = profiler.elapsed('interpolation')
+        print("    - interpolated in %3.4f s" % p)                     
     
         
     # writing global attributes

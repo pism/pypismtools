@@ -87,6 +87,9 @@ parser.add_argument("--extend", dest="extend", nargs=2, type=float,
 parser.add_argument("--N", dest="N", type=int,
                     help='''
                   a * logspace(vmin, vmax, N''', default=1022)
+parser.add_argument("--topo2000m", dest="topo2000m", action="store_true",
+                    help='''
+                  Topo''', default=False)
 parser.add_argument("-r", "--reverse", dest="reverse", action="store_true",
                     help="reverse color scale", default=False)
 parser.add_argument("--orientation", dest="orientation", choices=['horizontal', 'vertical'],
@@ -99,6 +102,7 @@ joughin_speed_10k = options.joughin_speed_10k
 joughin_speed_1k = options.joughin_speed_1k
 habermann_tauc = options.habermann_tauc
 bath_topo = options.bath_topo
+topo2000m = options.topo2000m
 a = options.a
 log = options.log
 extend = options.extend
@@ -178,6 +182,17 @@ for k in range(len(args)):
         data_values = a * np.linspace(vmin, vmax, N)
         norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
         ticks = None
+        format = None
+        cb_extend = 'both'
+        colorbar_label = 'm a.s.l.'
+    elif topo2000m:
+        # This is a little duck-punching to get a QGIS colormap
+        # similar to Joughin (2010)
+        vmin = 0
+        vmax = 2000
+        data_values = a * np.linspace(vmin, vmax, N)
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+        ticks = [0, 500, 1000, 1500, 2000]
         format = None
         cb_extend = 'both'
         colorbar_label = 'm a.s.l.'
