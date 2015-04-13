@@ -214,7 +214,7 @@ for k in range(len(args)):
     else:
         data_values = a * np.linspace(vmin, vmax, N)
         norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-        ticks = np.arange(-2.25, 2.5, 0.5)
+        ticks = [-0.5, -0.1, -0.05, 0, 0.05, 0.1, 0.5]
         format = None
         cb_extend = cb_extend
 
@@ -223,8 +223,8 @@ for k in range(len(args)):
     # you could apply a function to the colormap, e.g. to desaturate the colormap:
     # cmap = cmap_map(lambda x: x/2+0.5, cmap)
 
-    matplotlib.rc("font", **{"sans-serif": ["Arial"]})  # "size": fontsize}
-    matplotlib.rc("font", **{"size": 14})
+    matplotlib.rc("font", **{"sans-serif": ["Helvetica"]})  # "size": fontsize}
+    matplotlib.rc("font", **{"size": 10})
     # create the colorbar
     fig = plt.figure()
     if orientation == 'horizontal':

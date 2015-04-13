@@ -272,7 +272,7 @@ if __name__ == "__main__":
                         default=25)
     parser.add_argument("-a", "--age_iso", dest="age_iso",
                         help="list of increasing iso age levels",
-                        default=[11700, 29000,115000])
+                        default=[11700, 29000,57000,115000])
     parser.add_argument("-v", "--variable", dest="variables",
                         help="comma-separated list with variables",
                         default='age')
@@ -362,7 +362,7 @@ if __name__ == "__main__":
 
 
     thickness = ppt.permute(nc_in.variables[myvar], output_order=out_dims)
-    thk_min = z[2]
+    thk_min = 500  # m (minimum ice thickness)
 
     iso_name = 'depth_iso'
     
@@ -377,22 +377,12 @@ if __name__ == "__main__":
         var_in = nc_in.variables[var_name]
         in_dims = var_in.dimensions
         datatype = var_in.dtype
-        profiler.mark('transpose')
         var_in_data = ppt.permute(var_in, output_order=out_dims)
-        p = profiler.elapsed('transpose')
-        print("    - transposed array in %3.4f s" % p)
 
         profiler.mark('interpolation')
         if tdim is not None:
-            data = np.zeros((nt, n_levels, ny, nx))
-            mask = np.ones((nt, n_levels, ny, nx))
-            out_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
-            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(tdim, ddim, ydim, xdim))
-            
-            data = np.zeros((nt, n_age_iso, ny, nx))
-            mask = np.ones((nt, n_age_iso, ny, nx))
-            iso_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
-            iso_var = nc_out.createVariable(iso_name, datatype='double', dimensions=(tdim, isodim, ydim, xdim))
+            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(tdim, ddim, ydim, xdim))           
+            iso_var = nc_out.createVariable(iso_name, datatype='double', dimensions=(tdim, isodim, ydim, xdim), fill_value=fill_value)
 
             for t in range(nt):
                 for m in range(ny):
@@ -407,16 +397,21 @@ if __name__ == "__main__":
                             v_out = f(depth_out)
                             v_out[np.nonzero(v_out<0)] = 0
                             out_var[t,:,m,n] = v_out
+                            # depth of isochrone
+                            depth_in = z_surf - z[z<thk]
+                            f = interp1d(v_in[2:], depth_in[2:], fill_value=fill_value)
+                            for k, age_level in enumerate(age_iso):
+                                try:
+                                    d_out = f(age_level)
+                                except:
+                                    d_out = fill_value
+                                iso_var[t,k,m,n] = d_out
+                            
                             
         else:
-            data = np.zeros((n_levels, ny, nx))
-            mask = np.ones((n_levels, ny, nx))
-            out_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
             out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(ddim, ydim, xdim))
-            data = np.zeros((n_age_iso, ny, nx))
-            mask = np.ones((n_age_iso, ny, nx))
-            out_var = np.ma.array(data=data, mask=mask, fill_value=fill_value)
-            out_var = nc_out.createVariable(iso_name, datatype='double', dimensions=(isodim, ydim, xdim))
+            iso_var = nc_out.createVariable(iso_name, datatype='double', dimensions=(isodim, ydim, xdim), fill_value=fill_value)
+
             for m in range(ny):
                 for n in range(nx):
                     thk = thickness[m,n]
@@ -429,6 +424,16 @@ if __name__ == "__main__":
                         v_out = f(depth_out)
                         v_out[np.nonzero(v_out<0)] = 0
                         out_var[:,m,n] = v_out
+                        # depth of isochrone
+                        depth_in = z_surf - z[z<thk]
+                        f = interp1d(v_in[2:], depth_in[2:], fill_value=fill_value)
+                        for k, age_level in enumerate(age_iso):
+                            try:
+                                d_out = f(age_level)
+                            except:
+                                d_out = fill_value
+                            iso_var[k,m,n] = d_out
+                            
         p = profiler.elapsed('interpolation')
         print("    - interpolated in %3.4f s" % p)                     
     
