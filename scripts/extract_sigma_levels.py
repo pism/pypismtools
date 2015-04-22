@@ -272,7 +272,7 @@ if __name__ == "__main__":
                         default=25)
     parser.add_argument("-a", "--age_iso", dest="age_iso",
                         help="list of increasing iso age levels",
-                        default=[11700, 29000,57000,115000])
+                        default=[9000, 11700, 29000, 57000, 115000])
     parser.add_argument("-v", "--variable", dest="variables",
                         help="comma-separated list with variables",
                         default='age')
@@ -365,6 +365,7 @@ if __name__ == "__main__":
     thk_min = 500  # m (minimum ice thickness)
 
     iso_name = 'depth_iso'
+    iso_name_norm = 'depth_iso_norm'
     
     print(("    - reading variable %s" % (myvar)))
         
@@ -383,6 +384,7 @@ if __name__ == "__main__":
         if tdim is not None:
             out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(tdim, ddim, ydim, xdim))           
             iso_var = nc_out.createVariable(iso_name, datatype='double', dimensions=(tdim, isodim, ydim, xdim), fill_value=fill_value)
+            iso_var_norm = nc_out.createVariable(iso_name_norm, datatype='double', dimensions=(tdim, isodim, ydim, xdim), fill_value=fill_value)
 
             for t in range(nt):
                 for m in range(ny):
@@ -397,6 +399,13 @@ if __name__ == "__main__":
                             v_out = f(depth_out)
                             v_out[np.nonzero(v_out<0)] = 0
                             out_var[t,:,m,n] = v_out
+                            f = interp1d(v_in[2:], depth_in[2:], fill_value=fill_value)
+                            for k, age_level in enumerate(age_iso):
+                                try:
+                                    d_out = f(age_level)
+                                except:
+                                    d_out = fill_value
+                                iso_var_norm[t,k,m,n] = d_out
                             # depth of isochrone
                             depth_in = z_surf - z[z<thk]
                             f = interp1d(v_in[2:], depth_in[2:], fill_value=fill_value)
@@ -411,6 +420,7 @@ if __name__ == "__main__":
         else:
             out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(ddim, ydim, xdim))
             iso_var = nc_out.createVariable(iso_name, datatype='double', dimensions=(isodim, ydim, xdim), fill_value=fill_value)
+            iso_var_norm = nc_out.createVariable(iso_name_norm, datatype='double', dimensions=(isodim, ydim, xdim), fill_value=fill_value)
 
             for m in range(ny):
                 for n in range(nx):
@@ -424,6 +434,13 @@ if __name__ == "__main__":
                         v_out = f(depth_out)
                         v_out[np.nonzero(v_out<0)] = 0
                         out_var[:,m,n] = v_out
+                        f = interp1d(v_in[2:], depth_in[2:], fill_value=fill_value)
+                        for k, age_level in enumerate(age_iso):
+                            try:
+                                d_out = f(age_level)
+                            except:
+                                d_out = fill_value
+                            iso_var_norm[t,k,m,n] = d_out
                         # depth of isochrone
                         depth_in = z_surf - z[z<thk]
                         f = interp1d(v_in[2:], depth_in[2:], fill_value=fill_value)

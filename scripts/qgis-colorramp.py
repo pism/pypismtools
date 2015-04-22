@@ -215,6 +215,7 @@ for k in range(len(args)):
         data_values = a * np.linspace(vmin, vmax, N)
         norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
         ticks = [-0.5, -0.1, -0.05, 0, 0.05, 0.1, 0.5]
+        ticks = [-250, 0, 250]
         format = None
         cb_extend = cb_extend
 
