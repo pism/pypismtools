@@ -10,7 +10,7 @@
 
 """This script containts tools for extracting 'profiles', that is
 sampling 2D and 3D fields on a regular grid at points along a flux
-gate or a flight line.
+gate or a any kind of profile.
 """
 
 from argparse import ArgumentParser
@@ -47,6 +47,17 @@ def normal(point0, point1):
 
     return n
 
+def tangential(point0, point1):
+    '''Compute the unit tangential vector to (point1-point0),
+    pointing 'to the right' of (point1-point0).
+
+    '''
+
+    a = point0 - point1
+    t = a / np.linalg.norm(a)
+    
+    return t
+
 
 class Profile(object):
 
@@ -79,6 +90,7 @@ class Profile(object):
 
         self.distance_from_start = self._distance_from_start()
         self.nx, self.ny = self._compute_normals()
+        self.tx, self.ty = self._compute_tangentials()
 
     def _compute_normals(self):
         '''
@@ -96,6 +108,22 @@ class Profile(object):
         ns[-1] = normal(p[-2], p[-1])
 
         return ns[:, 0], ns[:, 1]
+
+    def _compute_tangentials(self):
+        '''
+        Compute tangetials to a flux gate described by 'p'.
+        '''
+
+        p = np.vstack((self.x, self.y)).T
+
+        ts = np.zeros_like(p)
+        ts[0] = tangential(p[0], p[1])
+        for j in range(1, len(p) - 1):
+            ts[j] = tangential(p[j - 1], p[j + 1])
+            
+        ts[-1] = tangential(p[-2], p[-1])
+
+        return ts[:, 0], ts[:, 1]
 
     def _distance_from_start(self):
         "Initialize the distance along a profile."
@@ -871,7 +899,13 @@ def define_profile_variables(nc):
                   {"long_name": "x-component of the right-hand-pointing normal vector"}),
 
                  ("ny", "f", (stationdim, profiledim),
-                  {"long_name": "y-component of the right-hand-pointing normal vector"})]
+                  {"long_name": "y-component of the right-hand-pointing normal vector"}),
+
+                 ("tx", "f", (stationdim, profiledim),
+                  {"long_name": "x-component of the unit tangential vector"}),
+
+                 ("ty", "f", (stationdim, profiledim),
+                  {"long_name": "y-component of the tangential vector"})]
 
     for name, datatype, dimensions, attributes in variables:
         variable = nc.createVariable(name, datatype, dimensions)
@@ -1101,6 +1135,8 @@ def write_profile(out_file, index, profile):
         profile.distance_from_start)
     out_file.variables['nx'][index, 0:pl] = np.squeeze(profile.nx)
     out_file.variables['ny'][index, 0:pl] = np.squeeze(profile.ny)
+    out_file.variables['tx'][index, 0:pl] = np.squeeze(profile.tx)
+    out_file.variables['ty'][index, 0:pl] = np.squeeze(profile.ty)
     out_file.variables['lon'][index, 0:pl] = np.squeeze(profile.lon)
     out_file.variables['lat'][index, 0:pl] = np.squeeze(profile.lat)
     out_file.variables['profile_id'][index] = profile.id
