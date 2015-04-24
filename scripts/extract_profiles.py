@@ -53,7 +53,7 @@ def tangential(point0, point1):
 
     '''
 
-    a = point0 - point1
+    a = point1 - point0
     t = a / np.linalg.norm(a)
     
     return t
