@@ -223,7 +223,7 @@ for in_varname in variables:
         
         xlabel = "{0} ({1})".format(profile_axis_name, profile_axis_out_units)
         ax.set_xlabel(xlabel)
-        ax.set_ylabel('altitude (m a.s.l)')
+        ax.set_ylabel('distance from bed (m)')
 
         cbar = plt.colorbar(c, orientation='horizontal', pad=0.25)
         cbar.solids.set_edgecolor("face")
