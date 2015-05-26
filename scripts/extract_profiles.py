@@ -1175,14 +1175,22 @@ def extract_variable(nc_in, nc_out, profiles, var_name):
             print("    - processing profile {0}".format(profile.name))
             p_values = extract_profile(var_in, profile)
 
-            access_str = 'k,' + \
-                ','.join([':'.join(['0', str(coord)])
-                          for coord in p_values.shape])
-            exec('var_out[%s] = p_values' % access_str)
+            try:
+                access_str = 'k,' + \
+                    ','.join([':'.join(['0', str(coord)])
+                              for coord in p_values.shape])
+                exec('var_out[%s] = p_values' % access_str)
+            except RuntimeError as e:
+                print "extract_profiles failed while writing {}".format(var_name)
+                raise
     else:
         # it is a scalar or a 1D variable; just copy it
         var_out = create_variable_like(nc_in, var_name, nc_out)
-        var_out[:] = var_in[:]
+        try:
+            var_out[:] = var_in[:]
+        except RuntimeError as e:
+            print "extract_profiles failed while writing {}".format(var_name)
+            raise
 
     copy_attributes(var_in, var_out)
     print("  - done with %s" % var_name)
