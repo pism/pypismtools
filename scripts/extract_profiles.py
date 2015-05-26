@@ -905,9 +905,11 @@ def define_profile_variables(nc):
                  ("ty", "f", (stationdim, profiledim),
                   {"long_name": "y-component of the tangential vector"})]
 
+    print "Defining profile variables...",
     for name, datatype, dimensions, attributes in variables:
         variable = nc.createVariable(name, datatype, dimensions)
         variable.setncatts(attributes)
+    print "done."
 
 
 def copy_attributes(var_in, var_out):
@@ -932,8 +934,10 @@ def copy_attributes(var_in, var_out):
 
 def copy_global_attributes(in_file, out_file):
     "Copy global attributes from in_file to out_file."
+    print "Copying global attributes...",
     for attribute in in_file.ncattrs():
         setattr(out_file, attribute, getattr(in_file, attribute))
+    print "done."
 
 
 def file_handling_test():
@@ -1063,6 +1067,7 @@ def extract_profile(variable, profile):
 def copy_dimensions(in_file, out_file, exclude_list):
     """Copy dimensions from in_file to out_file, excluding ones in
     exclude_list."""
+    print "Copying dimensions...",
     for name, dim in in_file.dimensions.iteritems():
         if (name not in exclude_list and
                 name not in out_file.dimensions):
@@ -1070,6 +1075,7 @@ def copy_dimensions(in_file, out_file, exclude_list):
                 out_file.createDimension(name, None)
             else:
                 out_file.createDimension(name, len(dim))
+    print "done."
 
 
 def create_variable_like(in_file, var_name, out_file, dimensions=None,
@@ -1191,6 +1197,8 @@ if __name__ == "__main__":
     parser.add_argument("SHAPEFILE", nargs=1, help="input shapefile defining profiles to extract")
     parser.add_argument("INPUTFILE", nargs=1, help="input NetCDF file with gridded data")
     parser.add_argument("OUTPUTFILE", nargs=1, help="output NetCDF file name", default="profile.nc")
+    parser.add_argument("-n", "--n_cpus", dest="n_cpus", default=1, type=int,
+                        help="Number of workers to use. Requires the multiprocessing module.")
     parser.add_argument(
         "-f", "--flip", dest="flip", action="store_true",
         help='''Flip profile direction, Default=False''',
@@ -1238,8 +1246,10 @@ if __name__ == "__main__":
     # define variables storing profile information
     define_profile_variables(nc_out)
     # fill these variables
+    print "Writing profiles...",
     for k, profile in enumerate(profiles):
         write_profile(nc_out, k, profile)
+    print "done."
 
     # re-create dimensions from an input file in an output file, but
     # skip x and y dimensions and dimensions that are already present
@@ -1270,7 +1280,7 @@ if __name__ == "__main__":
     if tdim is not None:
         copy_time_dimension(nc_in, nc_out, tdim)
 
-    print("Copying variables")
+    print("Copying variables...")
     if options.all_vars:
         vars_list = nc_in.variables
         vars_not_found = ()
@@ -1281,8 +1291,14 @@ if __name__ == "__main__":
     def extract(name):
         extract_variable(nc_in, nc_out, profiles, name)
 
-    for var_name in vars_list:
-        extract(var_name)
+    if options.n_cpus > 1:
+        print "Trying to use {} workers...".format(options.n_cpus)
+        from multiprocessing import Pool
+        p = Pool(options.n_cpus)
+        p.map(extract, vars_list)
+    else:
+        for var_name in vars_list:
+            extract(var_name)
 
     print("The following variables were not copied because they could not be found in {}:".format(
         options.INPUTFILE[0]))
