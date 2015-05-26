@@ -2,11 +2,9 @@
 # Copyright (C) 2015 Constantine Khroulev and Andy Aschwanden
 #
 
-# nosetests --with-coverage --cover-branches --cover-html
-# --cover-package=extract_profiles scripts/extract_profiles.py
+# nosetests --with-coverage --cover-branches --cover-html --cover-package=extract_profiles scripts/extract_profiles.py
 
-# pylint -d C0301,C0103,C0325,W0621 --msg-template="{path}:{line}:
-# [{msg_id}({symbol}), {obj}] {msg}" extract_profiles.py > lint.txt
+# pylint -d C0301,C0103,C0325,W0621 --msg-template="{path}:{line}:[{msg_id}({symbol}), {obj}] {msg}" extract_profiles.py > lint.txt
 
 """This script containts tools for extracting 'profiles', that is
 sampling 2D and 3D fields on a regular grid at points along a flux
@@ -1147,6 +1145,42 @@ def write_profile(out_file, index, profile):
     out_file.variables['glaciertype'][index] = profile.glaciertype
     out_file.variables['flowtype'][index] = profile.flowtype
 
+def extract_variable(nc_in, nc_out, profiles, var_name):
+    "Extract profiles from one variable."
+    if var_name in vars_not_copied:
+        return
+
+    print("  Reading variable %s" % var_name)
+
+    var_in = nc_in.variables[var_name]
+    in_dims = var_in.dimensions
+
+    if in_dims and len(in_dims) > 1:
+        # it is a non-scalar variable and it depends on more
+        # than one dimension, so we probably need to extract profiles
+        out_dims = output_dimensions(in_dims)
+        var_out = create_variable_like(
+            nc_in,
+            var_name,
+            nc_out,
+            dimensions=out_dims)
+
+        for k, profile in enumerate(profiles):
+            print("    - processing profile {0}".format(profile.name))
+            p_values = extract_profile(var_in, profile)
+
+            access_str = 'k,' + \
+                ','.join([':'.join(['0', str(coord)])
+                          for coord in p_values.shape])
+            exec('var_out[%s] = p_values' % access_str)
+    else:
+        # it is a scalar or a 1D variable; just copy it
+        var_out = create_variable_like(nc_in, var_name, nc_out)
+        var_out[:] = var_in[:]
+
+    copy_attributes(var_in, var_out)
+    print("  - done with %s" % var_name)
+
 if __name__ == "__main__":
     # Set up the option parser
     description = '''A script to extract data along (possibly multiple) profile using
@@ -1244,42 +1278,11 @@ if __name__ == "__main__":
         vars_list = [x for x in variables if x in nc_in.variables]
         vars_not_found = [x for x in variables if x not in nc_in.variables]
 
+    def extract(name):
+        extract_variable(nc_in, nc_out, profiles, name)
+
     for var_name in vars_list:
-
-        if var_name in vars_not_copied:
-            continue
-
-        print("  Reading variable %s" % var_name)
-
-        var_in = nc_in.variables[var_name]
-        in_dims = var_in.dimensions
-        datatype = var_in.dtype
-
-        if in_dims and len(in_dims) > 1:
-            # it is a non-scalar variable and it depends on more
-            # than one dimension, so we probably need to extract profiles
-            out_dims = output_dimensions(in_dims)
-            var_out = create_variable_like(
-                nc_in,
-                var_name,
-                nc_out,
-                dimensions=out_dims)
-
-            for k, profile in enumerate(profiles):
-                print("    - processing profile {0}".format(profile.name))
-                p_values = extract_profile(var_in, profile)
-
-                access_str = 'k,' + \
-                    ','.join([':'.join(['0', str(coord)])
-                              for coord in p_values.shape])
-                exec('var_out[%s] = p_values' % access_str)
-        else:
-            # it is a scalar or a 1D variable; just copy it
-            var_out = create_variable_like(nc_in, var_name, nc_out)
-            var_out[:] = var_in[:]
-
-        copy_attributes(var_in, var_out)
-        print("  - done with %s" % var_name)
+        extract(var_name)
 
     print("The following variables were not copied because they could not be found in {}:".format(
         options.INPUTFILE[0]))
