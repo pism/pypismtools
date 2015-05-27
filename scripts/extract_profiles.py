@@ -14,6 +14,7 @@ gate or a any kind of profile.
 from argparse import ArgumentParser
 import numpy as np
 import scipy.sparse
+import time
 
 from netCDF4 import Dataset as NC
 
@@ -1151,6 +1152,16 @@ def write_profile(out_file, index, profile):
     out_file.variables['glaciertype'][index] = profile.glaciertype
     out_file.variables['flowtype'][index] = profile.flowtype
 
+def timing(f):
+    def wrap(*args):
+        time1 = time.time()
+        ret = f(*args)
+        time2 = time.time()
+        print ('{} function took {:0.3f} s'.format(f.func_name, (time2 - time1)))
+        return ret
+    return wrap
+
+@timing
 def extract_variable(nc_in, nc_out, profiles, var_name):
     "Extract profiles from one variable."
     if var_name in vars_not_copied:
@@ -1180,7 +1191,7 @@ def extract_variable(nc_in, nc_out, profiles, var_name):
                     ','.join([':'.join(['0', str(coord)])
                               for coord in p_values.shape])
                 exec('var_out[%s] = p_values' % access_str)
-            except RuntimeError as e:
+            except:
                 print "extract_profiles failed while writing {}".format(var_name)
                 raise
     else:
