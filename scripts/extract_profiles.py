@@ -2,9 +2,12 @@
 # Copyright (C) 2015 Constantine Khroulev and Andy Aschwanden
 #
 
-# nosetests --with-coverage --cover-branches --cover-html --cover-package=extract_profiles scripts/extract_profiles.py
+# nosetests --with-coverage --cover-branches --cover-html
+# --cover-package=extract_profiles scripts/extract_profiles.py
 
-# pylint -d C0301,C0103,C0325,W0621 --msg-template="{path}:{line}:[{msg_id}({symbol}), {obj}] {msg}" extract_profiles.py > lint.txt
+# pylint -d C0301,C0103,C0325,W0621
+# --msg-template="{path}:{line}:[{msg_id}({symbol}), {obj}] {msg}"
+# extract_profiles.py > lint.txt
 
 """This script containts tools for extracting 'profiles', that is
 sampling 2D and 3D fields on a regular grid at points along a flux
@@ -46,6 +49,7 @@ def normal(point0, point1):
 
     return n
 
+
 def tangential(point0, point1):
     '''Compute the unit tangential vector to (point1-point0),
     pointing 'to the right' of (point1-point0).
@@ -54,7 +58,7 @@ def tangential(point0, point1):
 
     a = point1 - point0
     t = a / np.linalg.norm(a)
-    
+
     return t
 
 
@@ -119,7 +123,7 @@ class Profile(object):
         ts[0] = tangential(p[0], p[1])
         for j in range(1, len(p) - 1):
             ts[j] = tangential(p[j - 1], p[j + 1])
-            
+
         ts[-1] = tangential(p[-2], p[-1])
 
         return ts[:, 0], ts[:, 1]
@@ -1152,14 +1156,17 @@ def write_profile(out_file, index, profile):
     out_file.variables['glaciertype'][index] = profile.glaciertype
     out_file.variables['flowtype'][index] = profile.flowtype
 
+
 def timing(f):
     def wrap(*args):
         time1 = time.time()
         ret = f(*args)
         time2 = time.time()
-        print ('{} function took {:0.3f} s'.format(f.func_name, (time2 - time1)))
+        print ('{} function took {:0.3f} s'.format(
+            f.func_name, (time2 - time1)))
         return ret
     return wrap
+
 
 @timing
 def extract_variable(nc_in, nc_out, profiles, var_name):
@@ -1213,9 +1220,12 @@ if __name__ == "__main__":
     The profile must be given as a ESRI shape file.'''
     parser = ArgumentParser()
     parser.description = description
-    parser.add_argument("SHAPEFILE", nargs=1, help="input shapefile defining profiles to extract")
-    parser.add_argument("INPUTFILE", nargs=1, help="input NetCDF file with gridded data")
-    parser.add_argument("OUTPUTFILE", nargs=1, help="output NetCDF file name", default="profile.nc")
+    parser.add_argument(
+        "SHAPEFILE", nargs=1, help="input shapefile defining profiles to extract")
+    parser.add_argument(
+        "INPUTFILE", nargs=1, help="input NetCDF file with gridded data")
+    parser.add_argument(
+        "OUTPUTFILE", nargs=1, help="output NetCDF file name", default="profile.nc")
     parser.add_argument("-n", "--n_cpus", dest="n_cpus", default=1, type=int,
                         help="Number of workers to use. Requires the multiprocessing module.")
     parser.add_argument(
@@ -1324,7 +1334,7 @@ if __name__ == "__main__":
     print vars_not_found
 
     # writing global attributes
-    import time, sys
+    import sys
     script_command = ' '.join([time.ctime(), ':', __file__.split('/')[-1],
                                ' '.join([str(l) for l in sys.argv[1:]])])
     if hasattr(nc_in, 'history'):
