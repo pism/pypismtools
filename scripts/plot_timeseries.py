@@ -6,7 +6,7 @@ import numpy as np
 import pylab as plt
 from argparse import ArgumentParser
 import matplotlib.transforms as transforms
-
+import matplotlib.dates as mdates
 from datetime import datetime
 
 from netcdftime import utime
@@ -160,8 +160,8 @@ for var in variables:
                      "climatic_mass_balance", "nonneg_flux", "discharge_flux"):
             out_units = "Gt year-1"
             var_unit_str = "Gt/yr"
-            ylabel = ("mass change [%s]" % var_unit_str)
-            sle_label = "mass change [mm SLE / yr]"
+            ylabel = ("mass flux [%s]" % var_unit_str)
+            sle_label = "[mm SLE/yr]"
         elif var in ("usurf"):
             out_units = "m"
             var_unit_str = "m a.s.l"
@@ -263,12 +263,15 @@ for l in range(len(variables)):
             ax.set_ylim(bounds[0], bounds[1])
         plt.hold(True)
 
+        yearloc = mdates.YearLocator(10)
+        ax.xaxis.set_major_locator(yearloc)
+
         if time_bounds:
             start_date = datetime(time_bounds[0],1,1)
             end_date = datetime(time_bounds[1],1,1)
             ax.set_xlim(start_date, end_date)
 
-        ax.set_xlabel('ka BP')
+        ax.set_xlabel('years')
     else:
         for k in range(len(var_dates[l])):
             n = k % no_colors
@@ -305,10 +308,11 @@ for l in range(len(variables)):
             axSLE = ax.twinx()
             ax.set_autoscalex_on(False)
             axSLE.set_autoscalex_on(False)
-    ax.set_xlabel('years')
+            
+        ax.set_xlabel('ka BP')
 
-    if bounds:
-        ax.set_ylim(bounds[0], bounds[1])
+        if bounds:
+            ax.set_ylim(bounds[0], bounds[1])
 
 
     ymin, ymax = ax.get_ylim()
