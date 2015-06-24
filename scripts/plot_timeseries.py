@@ -149,15 +149,13 @@ for var in variables:
             ylabel = ("volume [%s]" % var_unit_str)
         elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
                      "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
-                     "climatic_mass_balance_cumulative",
-                     "effective_climatic_mass_balance_cumulative",
-                     "effective_ice_discharge_cumulative", "discharge_flux_cumulative"):
+                     "climatic_mass_balance_flux_cumulative", "discharge_flux_cumulative"):
             out_units = "Gt"
             var_unit_str = "Gt"
             ylabel = ("mass change [%s]" % var_unit_str)
             sle_label = "mass change [mm SLE]"
         elif var in ("dimassdt", "ocean_kill_flux", "surface_ice_flux",
-                     "climatic_mass_balance", "nonneg_flux", "discharge_flux"):
+                     "climatic_mass_balance_flux", "nonneg_flux", "discharge_flux"):
             out_units = "Gt year-1"
             var_unit_str = "Gt/yr"
             ylabel = ("mass flux [%s]" % var_unit_str)
