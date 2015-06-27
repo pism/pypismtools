@@ -10,10 +10,7 @@ import matplotlib.dates as mdates
 from datetime import datetime
 
 from netcdftime import utime
-try:
-    from netCDF4 import Dataset as NC
-except:
-    from netCDF3 import Dataset as NC
+from netCDF4 import Dataset as NC
 
 try:
     from pypismtools import unit_converter, set_mode, colorList, get_golden_mean
@@ -148,6 +145,7 @@ for var in variables:
             var_unit_str = ("10$^{%i}$ km$^{3}$" % scale_exponent)
             ylabel = ("volume [%s]" % var_unit_str)
         elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
+                     "grounded_basal_ice_flux_cumulative", "sub_shelf_ice_flux_cumulative", "effective_discharge_flux_cumulative",
                      "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
                      "climatic_mass_balance_flux_cumulative", "discharge_flux_cumulative"):
             out_units = "Gt"
@@ -155,6 +153,8 @@ for var in variables:
             ylabel = ("mass change [%s]" % var_unit_str)
             sle_label = "mass change [mm SLE]"
         elif var in ("dimassdt", "ocean_kill_flux", "surface_ice_flux",
+                     "grounded_basal_ice_flux", "sub_shelf_ice_flux",
+                     "effective_discharge_flux",
                      "climatic_mass_balance_flux", "nonneg_flux", "discharge_flux"):
             out_units = "Gt year-1"
             var_unit_str = "Gt/yr"
@@ -299,8 +299,10 @@ for l in range(len(variables)):
         date_end = np.max(np.array(date_end))
 
         if labels != None:
-            ax.legend(lines, labels, bbox_to_anchor=(1., 1.),
-                      shadow=True, numpoints=numpoints)
+            ax.legend(lines, labels, loc="upper right",
+                               shadow=True,
+                               bbox_to_anchor=(0, 0, 1, 1),
+                               bbox_transform=plt.gcf().transFigure)
 
         if twinx:
             axSLE = ax.twinx()
