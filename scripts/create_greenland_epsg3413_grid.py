@@ -1,36 +1,35 @@
 #!/usr/bin/env python
 import numpy as np
 from pyproj import Proj
-from optparse import OptionParser
+from argparse import ArgumentParser
 
-# try different netCDF modules
-try:
-    from netCDF4 import Dataset as CDF
-except:
-    from netCDF3 import Dataset as CDF
+from netCDF4 import Dataset as CDF
 
-# default values
-DXY = 1800.  # m
-
-# set up the option parser
-parser = OptionParser()
-parser.usage = "usage: %prog [options] FILE"
+# set up the argument parser
+parser = ArgumentParser()
 parser.description = "Create CDO-compliant grid description"
-parser.add_option("-g", "--grid_spacing", dest="grid_spacing", type='float',
-                  help="use X m grid spacing",
-                  metavar="X", default=DXY)
+parser.add_argument("FILE", nargs='*')
+parser.add_argument("-g", "--grid_spacing", dest="grid_spacing", type=float,
+                    help="use X m grid spacing", default=1800)
+parser.add_argument("-f", "--format", dest="fileformat", type=str.upper,
+                  choices = ['NETCDF4', 'NETCDF4_CLASSIC', 'NETCDF3_CLASSIC', 'NETCDF3_64BIT'],
+                  help="file format out output file", default='netcdf3_64bit')
 
-(options, args) = parser.parse_args()
+options = parser.parse_args()
+args = options.FILE
 grid_spacing = options.grid_spacing  # convert
 
+fileformat = options.fileformat.upper()
+
 if len(args) == 0:
-    nc_outfile = 'grn' + str(grid_spacing / 1e3) + 'km.nc'
+    nc_outfile = 'grn' + str(grid_spacing) + 'm.nc'
 elif len(args) == 1:
     nc_outfile = args[0]
 else:
     print('wrong number arguments, 0 or 1 arguments accepted')
     parser.print_help()
-    exit(0)
+    import sys
+    sys.exit(0)
 
 
 if __name__ == "__main__":
@@ -72,8 +71,8 @@ if __name__ == "__main__":
 
     lon, lat = proj(ee, nn, inverse=True)
 
-    nc = CDF(nc_outfile, 'w')
-
+    nc = CDF(nc_outfile, 'w', format=fileformat)
+        
     nc.createDimension("x", size=easting.shape[0])
     nc.createDimension("y", size=northing.shape[0])
 
