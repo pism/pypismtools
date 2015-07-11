@@ -216,6 +216,7 @@ for k in range(len(args)):
         norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
         ticks = [-0.5, -0.1, -0.05, 0, 0.05, 0.1, 0.5]
         ticks = [-250, 0, 250]
+        ticks = [0, 500, 1000, 1500, 2000, 2500, 3000]
         format = None
         cb_extend = cb_extend
 
