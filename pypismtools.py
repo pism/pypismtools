@@ -1332,12 +1332,18 @@ class Experiment(DataObject):
         print("  - valid cells = %i" % valid_cells)
 
         self.parameter_list = parameter_list
-        self.pism_config = self.nc.variables["pism_config"]
+        pism_config = self.nc.variables["pism_config"]
+        run_stats = self.nc.variables['run_stats']
+        self.config = dict()
+        for attr in pism_config.ncattrs():
+            self.config[attr] = getattr(pism_config, attr)
+        for attr in run_stats.ncattrs():
+            self.config[attr] = getattr(run_stats, attr)
         self.parameter_dict = dict(
-            [(param, self.pism_config.getncattr(param))
+            [(param, self.config[param])
              for param in parameter_list])
         self.parameter_short_dict = dict(
-            [(abbr_dict[param], self.pism_config.getncattr(param))
+            [(abbr_dict[param], self.config[param])
              for param in parameter_list])
         _print_info()
 
