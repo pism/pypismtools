@@ -18,58 +18,6 @@ except:
     import pypismtools as ppt
 
 
-# Shapefile related code is adapted from
-# http://invisibleroads.com/tutorials/gdal-shapefile-points-save.html
-
-def save(shapePath, contour_points, level):
-    '''Save points in the given shapePath'''
-    # Get driver
-    driver = ogr.GetDriverByName('ESRI Shapefile')
-    # Create shapeData
-    shapePath = validateShapePath(shapePath)
-    if os.path.exists(shapePath): 
-        os.remove(shapePath)
-    shapeData = driver.CreateDataSource(shapePath)
-    # Create spatialReference, EPSG 4326 (lonlat)
-    spatialReference = osr.SpatialReference()
-    spatialReference.ImportFromEPSG(4326)
-    layerName = os.path.splitext(os.path.split(shapePath)[1])[0]
-    layer = shapeData.CreateLayer(layerName, spatialReference, ogr.wkbPolygon)
-    layerDefinition = layer.GetLayerDefn()
-    field_defn = ogr.FieldDefn("level", ogr.OFTReal)
-    layer.CreateField(field_defn)
-    field_defn = ogr.FieldDefn("timestamp", ogr.OFTDate)
-    layer.CreateField(field_defn)
-
-    # For each contour
-    polygon = ogr.Geometry(ogr.wkbPolygon)
-    for k in range(0,len(contour_points)):
-        geoLocations = contour_points[k]
-        ring = ogr.Geometry(ogr.wkbLinearRing)
-        # For each point,
-        for pointIndex, geoLocation in enumerate(geoLocations):
-            ring.AddPoint(geoLocation[0], geoLocation[1])
-        ring.CloseRings()
-        polygon.AddGeometry(ring)
-    featureDefn = layer.GetLayerDefn()
-    # Create feature
-    feature = ogr.Feature(featureDefn)
-    feature.SetGeometry(polygon)
-    feature.SetFID(k)
-    i = feature.GetFieldIndex("level")
-    feature.SetField(i, level)
-
-    # Save feature
-    layer.CreateFeature(feature)
-    # Cleanup
-    polygon = None
-    feature = None
-    # Cleanup
-    shapeData = None
-    # Return
-    return shapePath
-
-
 def validateShapePath(shapePath):
     '''Validate shapefile extension'''
     return os.path.splitext(str(shapePath))[0] + '.shp'
@@ -92,7 +40,7 @@ class ShapeDataError(Exception):
 
 def get_contours(array, x, y, projection, level):
     '''
-    Find contours
+    Find contours for a given level
     '''
 
     # Find contours at a constant value
@@ -105,7 +53,7 @@ def get_contours(array, x, y, projection, level):
     lon = []
     lat = []
     contour_points = []
-    for k in range(0,len(contours)):
+    for k in range(0, len(contours)):
         contour = contours[k]
         contour_x = x[0] + contour[:,1] * (x[-1]-x[0])/(len(i)-1)
         contour_y = y[0] + contour[:,0] * (y[-1]-y[0])/(len(j)-1)
@@ -125,7 +73,6 @@ def get_contours(array, x, y, projection, level):
 
 
 
-
 parser = ArgumentParser(description='''A script to extract a (closed) contour line from a variable in a netCDF file, and save it as a shapefile (polygon).''')
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-o", "--output_filename", dest="out_file",
@@ -137,8 +84,6 @@ parser.add_argument("-c", "--countour_levels", nargs='*',
                     help='''Contour-levels to extract, default = 0.''', default='0')
 parser.add_argument("-s","--single",dest="single", action="store_true",
                   help="save only the longest contour line, Default=False", default=False)
-parser.add_argument("-p","--plot",dest="plot", action="store_true",
-                  help="plot results, Default=False", default=False)
 
 
 options = parser.parse_args()
@@ -181,11 +126,11 @@ if tdim:
     time_units = time.units
     time_calendar = time.calendar
     cdftime = utime(time_units, time_calendar)
-    for t in time:
+    for k, t in enumerate(time):
         timestamp = cdftime.num2date(t)
-        print timestamp
+        print('Processing {}'.format(timestamp))
         for level in contour_levels:
-            contour_var = np.array(np.squeeze(ppt.permute(nc.variables[varname], var_order)), order='C')
+            contour_var = np.array(ppt.permute(nc.variables[varname], var_order), order='C')[k, Ellipsis]
             contour_points = get_contours(contour_var, x, y, nc_projection, level)
             # For each contour
             polygon = ogr.Geometry(ogr.wkbPolygon)
