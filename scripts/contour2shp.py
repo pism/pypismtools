@@ -6,7 +6,7 @@ from skimage import measure
 from argparse import ArgumentParser
 
 from netCDF4 import Dataset as NC
-
+from netcdftime import utime
 import ogr
 import osr
 import os
@@ -149,6 +149,7 @@ varname = options.varname
 single = options.single
 
 nc = NC(filename, 'r')
+nc_projection = ppt.get_projection_from_file(nc)
 
 xdim, ydim, zdim, tdim = ppt.get_dims(nc)
 var_order = (tdim, zdim, ydim, xdim)
@@ -157,15 +158,91 @@ x = np.squeeze(nc.variables[xdim])
 y = np.squeeze(nc.variables[ydim])
 
 
-nc_projection = ppt.get_projection_from_file(nc)
+# Get driver
+driver = ogr.GetDriverByName('ESRI Shapefile')
+# Create shapeData
+shp_filename = validateShapePath(shp_filename)
+if os.path.exists(shp_filename): 
+    os.remove(shp_filename)
+shapeData = driver.CreateDataSource(shp_filename)
+# Create spatialReference, EPSG 4326 (lonlat)
+spatialReference = osr.SpatialReference()
+spatialReference.ImportFromEPSG(4326)
+layerName = os.path.splitext(os.path.split(shp_filename)[1])[0]
+layer = shapeData.CreateLayer(layerName, spatialReference, ogr.wkbPolygon)
+layerDefinition = layer.GetLayerDefn()
+field_defn = ogr.FieldDefn("level", ogr.OFTReal)
+layer.CreateField(field_defn)
+field_defn = ogr.FieldDefn("timestamp", ogr.OFTDateTime)
+layer.CreateField(field_defn)
+
+if tdim:
+    time = nc.variables['time']
+    time_units = time.units
+    time_calendar = time.calendar
+    cdftime = utime(time_units, time_calendar)
+    for t in time:
+        timestamp = cdftime.num2date(t)
+        print timestamp
+        for level in contour_levels:
+            contour_var = np.array(np.squeeze(ppt.permute(nc.variables[varname], var_order)), order='C')
+            contour_points = get_contours(contour_var, x, y, nc_projection, level)
+            # For each contour
+            polygon = ogr.Geometry(ogr.wkbPolygon)
+            for k in range(0,len(contour_points)):
+                geoLocations = contour_points[k]
+                ring = ogr.Geometry(ogr.wkbLinearRing)
+                # For each point,
+                for pointIndex, geoLocation in enumerate(geoLocations):
+                    ring.AddPoint(geoLocation[0], geoLocation[1])
+                ring.CloseRings()
+                polygon.AddGeometry(ring)
+            # Create feature
+            featureDefn = layer.GetLayerDefn()
+            feature = ogr.Feature(featureDefn)
+            feature.SetGeometry(polygon)
+            feature.SetFID(k)
+            i = feature.GetFieldIndex("level")
+            feature.SetField(i, level)
+            i = feature.GetFieldIndex("timestamp")
+            feature.SetField(i, str(timestamp))
+            polygon = None
+            # Save feature
+            layer.CreateFeature(feature)
+            # Cleanup
+            feature = None
+else:
+    for level in contour_levels:
+        contour_var = np.array(np.squeeze(ppt.permute(nc.variables[varname], var_order)), order='C')
+        contour_points = get_contours(contour_var, x, y, nc_projection, level)
+        # For each contour
+        polygon = ogr.Geometry(ogr.wkbPolygon)
+        for k in range(0,len(contour_points)):
+            geoLocations = contour_points[k]
+            ring = ogr.Geometry(ogr.wkbLinearRing)
+            # For each point,
+            for pointIndex, geoLocation in enumerate(geoLocations):
+                ring.AddPoint(geoLocation[0], geoLocation[1])
+            ring.CloseRings()
+            polygon.AddGeometry(ring)
+        # Create feature
+        featureDefn = layer.GetLayerDefn()
+        feature = ogr.Feature(featureDefn)
+        feature.SetGeometry(polygon)
+        feature.SetFID(k)
+        i = feature.GetFieldIndex("level")
+        feature.SetField(i, level)
+        polygon = None
+        # Save feature
+        layer.CreateFeature(feature)
+        # Cleanup
+        feature = None
+# Cleanup
+shapeData = None
+    
 
 
-
-for level in contour_levels:
-    contour_var = np.array(np.squeeze(ppt.permute(nc.variables[varname], var_order)), order='C')
-    contour_points = get_contours(contour_var, x, y, nc_projection, level)
-
-save(shp_filename, contour_points, level)
+# save(shp_filename, contour_points, level)
 
 
 nc.close()
