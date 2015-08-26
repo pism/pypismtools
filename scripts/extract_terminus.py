@@ -68,12 +68,17 @@ dst_fieldname = 'mask'
 ts_fieldname = 'timestamp'
 
 nc = NC(filename, 'r')
+xdim, ydim, zdim, tdim = ppt.get_dims(nc)
 
-time = nc.variables['time']
-time_units = time.units
-time_calendar = time.calendar
-cdftime = utime(time_units, time_calendar)
-timestamps = cdftime.num2date(time[:])
+if tdim:
+    time = nc.variables[tdim]
+    time_units = time.units
+    time_calendar = time.calendar
+    cdftime = utime(time_units, time_calendar)
+    timestamps = cdftime.num2date(time[:])
+    has_time = True
+else:
+    tdim = None
 nc.close()
 
 src_ds = gdal.Open('NETCDF:{}:{}'.format(filename, dst_fieldname))
@@ -104,7 +109,10 @@ ocean_value = 4
 floating_value = 3
             
 for k in range(src_ds.RasterCount):
-    timestamp = timestamps[k]
+    if tdim is None:
+        timestamp = '0-0-0'
+    else:
+        timestamp = timestamps[k]
     print('Processing {}'.format(timestamp))
     srcband = src_ds.GetRasterBand(k+1)
     poly_layer, dst_field = create_memory_layer(dst_fieldname)
