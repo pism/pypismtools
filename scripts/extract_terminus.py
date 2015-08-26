@@ -72,142 +72,21 @@ src_ds = gdal.Open('NETCDF:{}:{}'.format(filename, dst_fieldname))
 mem_driver = ogr.GetDriverByName('Memory')
 mem_ds = mem_driver.CreateDataSource('memory_layer')
 
-def create_memory_layer():
-    try:
-        layer = mem_ds.GetLayerByName(dst_layername)
-    except:
-        layer = None
-
-    if layer is None:
-
-        srs = None
-        if src_ds.GetProjectionRef() != '':
-            srs = osr.SpatialReference()
-            srs.ImportFromWkt(src_ds.GetProjection())
-
-        layer = mem_ds.CreateLayer('poly', srs, ogr.wkbPolygon)
-
-        if dst_fieldname is None:
-            dst_fieldname = 'DN'
-
-        fd = ogr.FieldDefn(dst_fieldname, ogr.OFTInteger)
-        layer.CreateField(fd)
-        dst_field = 0
-    else:
-        if dst_fieldname is not None:
-            dst_field = layer.GetLayerDefn().GetFieldIndex(dst_fieldname)
-            if dst_field < 0:
-                print("Warning: cannot find field '%s' in layer '%s'" % (dst_fieldname, dst_layername))
-    return layer
-
-try:
-    poly_layer = mem_ds.GetLayerByName(dst_layername)
-except:
-    poly_layer = None
-
-if poly_layer is None:
-
+def create_memory_layer(dst_fieldname):
     srs = None
     if src_ds.GetProjectionRef() != '':
         srs = osr.SpatialReference()
         srs.ImportFromWkt(src_ds.GetProjection())
 
-    poly_layer = mem_ds.CreateLayer('poly', srs, ogr.wkbPolygon)
+    layer = mem_ds.CreateLayer('poly', srs, ogr.wkbPolygon)
 
-    if dst_fieldname is None:
-        dst_fieldname = 'DN'
-        
     fd = ogr.FieldDefn(dst_fieldname, ogr.OFTInteger)
-    poly_layer.CreateField(fd)
-    poly_dst_field = 0
-else:
-    if dst_fieldname is not None:
-        poly_dst_field = poly_layer.GetLayerDefn().GetFieldIndex(dst_fieldname)
-        if poly_dst_field < 0:
-            print("Warning: cannot find field '%s' in layer '%s'" % (dst_fieldname, dst_layername))
+    layer.CreateField(fd)
+    dst_field = 0
 
-try:
-    ocean_layer = mem_ds.GetLayerByName(dst_layername)
-except:
-    ocean_layer = None
-
-if ocean_layer is None:
-
-    srs = None
-    if src_ds.GetProjectionRef() != '':
-        srs = osr.SpatialReference()
-        srs.ImportFromWkt(src_ds.GetProjection())
-
-    ocean_layer = mem_ds.CreateLayer('ocean', srs, ogr.wkbPolygon)
-
-    if dst_fieldname is None:
-        dst_fieldname = 'DN'
-        
-    fd = ogr.FieldDefn(dst_fieldname, ogr.OFTInteger)
-    ocean_layer.CreateField(fd)
-    ocean_dst_field = 0
-else:
-    if dst_fieldname is not None:
-        ocean_dst_field = ocean_layer.GetLayerDefn().GetFieldIndex(dst_fieldname)
-        if ocean_dst_field < 0:
-            print("Warning: cannot find field '%s' in layer '%s'" % (dst_fieldname, dst_layername))
-
-try:
-    floating_layer = mem_ds.GetLayerByName(dst_layername)
-except:
-    floating_layer = None
-
-if floating_layer is None:
-
-    srs = None
-    if src_ds.GetProjectionRef() != '':
-        srs = osr.SpatialReference()
-        srs.ImportFromWkt(src_ds.GetProjection())
-
-    floating_layer = mem_ds.CreateLayer('floating', srs, ogr.wkbPolygon)
-
-    if dst_fieldname is None:
-        dst_fieldname = 'DN'
-        
-    fd = ogr.FieldDefn(dst_fieldname, ogr.OFTInteger)
-    floating_layer.CreateField(fd)
-    floating_dst_field = 0
-else:
-    if dst_fieldname is not None:
-        floating_dst_field = floating_layer.GetLayerDefn().GetFieldIndex(dst_fieldname)
-        if floating_dst_field < 0:
-            print("Warning: cannot find field '%s' in layer '%s'" % (dst_fieldname, dst_layername))
-
-try:
-    tmp_layer = mem_ds.GetLayerByName(dst_layername)
-except:
-    tmp_layer = None
-
-if tmp_layer is None:
-
-    srs = None
-    if src_ds.GetProjectionRef() != '':
-        srs = osr.SpatialReference()
-        srs.ImportFromWkt(src_ds.GetProjection())
-
-    tmp_layer = mem_ds.CreateLayer('floating', srs, ogr.wkbPolygon)
-
-    if dst_fieldname is None:
-        dst_fieldname = 'DN'
-        
-    fd = ogr.FieldDefn(dst_fieldname, ogr.OFTInteger)
-    tmp_layer.CreateField(fd)
-    tmp_dst_field = 0
-    fd = ogr.FieldDefn(ts_fieldname, ogr.OFTDate)
-    tmp_layer.CreateField(fd)
-    tmp_dst_field = 0
+    return layer, dst_field
 
 
-else:
-    if dst_fieldname is not None:
-        tmp_dst_field = tmp_layer.GetLayerDefn().GetFieldIndex(dst_fieldname)
-        if tmp_dst_field < 0:
-            print("Warning: cannot find field '%s' in layer '%s'" % (dst_fieldname, dst_layername))
 
 # Get driver
 shp_driver = ogr.GetDriverByName('ESRI Shapefile')
@@ -223,7 +102,6 @@ if src_ds.GetProjectionRef() != '':
 
 
 terminus_layer = shp_ds.CreateLayer('terminus', srs, ogr.wkbPolygon)
-
 fd = ogr.FieldDefn(ts_fieldname, ogr.OFTDate)
 terminus_layer.CreateField(fd)
 terminus_dst_field = 0
@@ -235,45 +113,50 @@ floating_value = 3
             
 # for k, t in enumerate(time):
 for k in range(src_ds.RasterCount):
-    if k<2:
-        timestamp = timestamps[k]
-        print('Processing {}'.format(timestamp))
-        srcband = src_ds.GetRasterBand(k+1)
-        poly_layer = create_memory_layer()
-        result = gdal.Polygonize(srcband, None, poly_layer, poly_dst_field, [],
-                          callback = gdal.TermProgress)
-        poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, ocean_value))
-        featureDefn = ocean_layer.GetLayerDefn()
-        for m, feature in enumerate(poly_layer):
-            ingeom = feature.GetGeometryRef()
-            geomBuffer = ingeom.Buffer(bufferDist)
+    timestamp = timestamps[k]
+    print('Processing {}'.format(timestamp))
+    srcband = src_ds.GetRasterBand(k+1)
+    poly_layer, dst_field = create_memory_layer(dst_fieldname)
+    result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [],
+                      callback = gdal.TermProgress)
+    poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, ocean_value))
+    ocean_layer, dst_field = create_memory_layer(dst_fieldname)
+    featureDefn = ocean_layer.GetLayerDefn()
+    for m, feature in enumerate(poly_layer):
+        ingeom = feature.GetGeometryRef()
+        geomBuffer = ingeom.Buffer(bufferDist)
 
-            outFeature = ogr.Feature(featureDefn)
-            outFeature.SetGeometry(geomBuffer)
-            ocean_layer.CreateFeature(outFeature)
+        outFeature = ogr.Feature(featureDefn)
+        outFeature.SetGeometry(geomBuffer)
+        ocean_layer.CreateFeature(outFeature)
 
-        poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, floating_value))
-        featureDefn = ocean_layer.GetLayerDefn()
-        for m, feature in enumerate(poly_layer):
-            ingeom = feature.GetGeometryRef()
-            geomBuffer = ingeom.Buffer(bufferDist)
+    poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, floating_value))
+    floating_layer, dst_field = create_memory_layer(dst_fieldname)
+    featureDefn = floating_layer.GetLayerDefn()
+    for m, feature in enumerate(poly_layer):
+        ingeom = feature.GetGeometryRef()
+        geomBuffer = ingeom.Buffer(bufferDist)
 
-            outFeature = ogr.Feature(featureDefn)
-            outFeature.SetGeometry(geomBuffer)
-            floating_layer.CreateFeature(outFeature)
+        outFeature = ogr.Feature(featureDefn)
+        outFeature.SetGeometry(geomBuffer)
+        floating_layer.CreateFeature(outFeature)
 
-        # Now clip them
-        ocean_layer.Clip(floating_layer, tmp_layer)
-        
-        featureDefn = terminus_layer.GetLayerDefn()
-        for feature in tmp_layer:
-            # create a new feature
-            outFeature = ogr.Feature(featureDefn)
-            outFeature.SetGeometry(feature.GetGeometryRef())
-            i = outFeature.GetFieldIndex(ts_fieldname)
-            outFeature.SetField(i, str(timestamp))
-            # add the feature to the output layer
-            terminus_layer.CreateFeature(outFeature)
+    # Now clip them
+    tmp_layer, dst_field = create_memory_layer(dst_fieldname)
+    ocean_layer.Clip(floating_layer, tmp_layer)
+    poly_layer = None
+    ocean_layer = None
+    floating_layer = None
+
+    featureDefn = terminus_layer.GetLayerDefn()
+    for feature in tmp_layer:
+        # create a new feature
+        outFeature = ogr.Feature(featureDefn)
+        outFeature.SetGeometry(feature.GetGeometryRef())
+        i = outFeature.GetFieldIndex(ts_fieldname)
+        outFeature.SetField(i, str(timestamp))
+        # add the feature to the output layer
+        terminus_layer.CreateFeature(outFeature)
 
         
         
