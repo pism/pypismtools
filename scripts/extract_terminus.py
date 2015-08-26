@@ -17,6 +17,24 @@ except:
     import pypismtools as ppt
 
 
+def create_memory_layer(dst_fieldname):
+    '''
+    Create a in-memory layer with 1 OFTInteger field
+    '''
+
+    srs = None
+    if src_ds.GetProjectionRef() != '':
+        srs = osr.SpatialReference()
+        srs.ImportFromWkt(src_ds.GetProjection())
+
+    layer = mem_ds.CreateLayer('poly', srs, ogr.wkbPolygon)
+
+    fd = ogr.FieldDefn(dst_fieldname, ogr.OFTInteger)
+    layer.CreateField(fd)
+    dst_field = 0
+
+    return layer, dst_field
+
 def validateShapePath(shapePath):
     '''Validate shapefile extension'''
     return os.path.splitext(str(shapePath))[0] + '.shp'
@@ -37,11 +55,10 @@ class ShapeDataError(Exception):
     pass
 
 
-parser = ArgumentParser(description='''A script to extract a (closed) contour line from a variable in a netCDF file, and save it as a shapefile (polygon).''')
+parser = ArgumentParser(description='''A script the terminus in a (possibly) PISM netCDF file, and save it as a shapefile (polygon).''')
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-o", "--output_filename", dest="out_file",
-                  help="Name of the output shape file", default='countour.shp')
-
+                  help="Name of the output shape file", default='terminus.shp')
 
 
 options = parser.parse_args()
@@ -51,14 +68,6 @@ dst_fieldname = 'mask'
 ts_fieldname = 'timestamp'
 
 nc = NC(filename, 'r')
-nc_projection = ppt.get_projection_from_file(nc)
-
-xdim, ydim, zdim, tdim = ppt.get_dims(nc)
-var_order = (tdim, zdim, ydim, xdim)
-
-x = np.squeeze(nc.variables[xdim])
-y = np.squeeze(nc.variables[ydim])
-
 
 time = nc.variables['time']
 time_units = time.units
@@ -69,26 +78,11 @@ nc.close()
 
 src_ds = gdal.Open('NETCDF:{}:{}'.format(filename, dst_fieldname))
 
+# Get Memory Driver
 mem_driver = ogr.GetDriverByName('Memory')
 mem_ds = mem_driver.CreateDataSource('memory_layer')
 
-def create_memory_layer(dst_fieldname):
-    srs = None
-    if src_ds.GetProjectionRef() != '':
-        srs = osr.SpatialReference()
-        srs.ImportFromWkt(src_ds.GetProjection())
-
-    layer = mem_ds.CreateLayer('poly', srs, ogr.wkbPolygon)
-
-    fd = ogr.FieldDefn(dst_fieldname, ogr.OFTInteger)
-    layer.CreateField(fd)
-    dst_field = 0
-
-    return layer, dst_field
-
-
-
-# Get driver
+# Get SHP Driver
 shp_driver = ogr.GetDriverByName('ESRI Shapefile')
 shp_filename = validateShapePath(shp_filename)
 if os.path.exists(shp_filename): 
@@ -100,18 +94,15 @@ if src_ds.GetProjectionRef() != '':
     srs = osr.SpatialReference()
     srs.ImportFromWkt(src_ds.GetProjection())
 
-
 terminus_layer = shp_ds.CreateLayer('terminus', srs, ogr.wkbPolygon)
 fd = ogr.FieldDefn(ts_fieldname, ogr.OFTDate)
 terminus_layer.CreateField(fd)
 terminus_dst_field = 0
 
-
 bufferDist = 1
 ocean_value = 4
 floating_value = 3
             
-# for k, t in enumerate(time):
 for k in range(src_ds.RasterCount):
     timestamp = timestamps[k]
     print('Processing {}'.format(timestamp))
@@ -141,7 +132,7 @@ for k in range(src_ds.RasterCount):
         outFeature.SetGeometry(geomBuffer)
         floating_layer.CreateFeature(outFeature)
 
-    # Now clip them
+    # Now clip layers
     tmp_layer, dst_field = create_memory_layer(dst_fieldname)
     ocean_layer.Clip(floating_layer, tmp_layer)
     poly_layer = None
@@ -159,7 +150,7 @@ for k in range(src_ds.RasterCount):
         terminus_layer.CreateFeature(outFeature)
 
         
-        
+# Clean-up
 poly_layer = None
 terminus_layer = None
 mem_ds = None
