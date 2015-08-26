@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 import numpy as np
-import pylab as plt
-from skimage import measure
 from argparse import ArgumentParser
 
 from netCDF4 import Dataset as NC
@@ -49,8 +47,8 @@ parser.add_argument("-o", "--output_filename", dest="out_file",
 options = parser.parse_args()
 filename = options.FILE[0]
 shp_filename = options.out_file
-
 dst_fieldname = 'mask'
+ts_fieldname = 'timestamp'
 
 nc = NC(filename, 'r')
 nc_projection = ppt.get_projection_from_file(nc)
@@ -66,11 +64,41 @@ time = nc.variables['time']
 time_units = time.units
 time_calendar = time.calendar
 cdftime = utime(time_units, time_calendar)
+timestamps = cdftime.num2date(time[:])
+nc.close()
 
 src_ds = gdal.Open('NETCDF:{}:{}'.format(filename, dst_fieldname))
 
 mem_driver = ogr.GetDriverByName('Memory')
 mem_ds = mem_driver.CreateDataSource('memory_layer')
+
+def create_memory_layer():
+    try:
+        layer = mem_ds.GetLayerByName(dst_layername)
+    except:
+        layer = None
+
+    if layer is None:
+
+        srs = None
+        if src_ds.GetProjectionRef() != '':
+            srs = osr.SpatialReference()
+            srs.ImportFromWkt(src_ds.GetProjection())
+
+        layer = mem_ds.CreateLayer('poly', srs, ogr.wkbPolygon)
+
+        if dst_fieldname is None:
+            dst_fieldname = 'DN'
+
+        fd = ogr.FieldDefn(dst_fieldname, ogr.OFTInteger)
+        layer.CreateField(fd)
+        dst_field = 0
+    else:
+        if dst_fieldname is not None:
+            dst_field = layer.GetLayerDefn().GetFieldIndex(dst_fieldname)
+            if dst_field < 0:
+                print("Warning: cannot find field '%s' in layer '%s'" % (dst_fieldname, dst_layername))
+    return layer
 
 try:
     poly_layer = mem_ds.GetLayerByName(dst_layername)
@@ -150,67 +178,56 @@ else:
         if floating_dst_field < 0:
             print("Warning: cannot find field '%s' in layer '%s'" % (dst_fieldname, dst_layername))
 
-# Get driver
-shp_driver = ogr.GetDriverByName('ESRI Shapefile')
-shp_filename = validateShapePath(shp_filename)
-if os.path.exists(shp_filename): 
-    os.remove(shp_filename)
-    shp_ds = shp_driver.CreateDataSource(shp_filename)
 try:
-    terminus_layer = shp_ds.GetLayerByName(dst_layername)
+    tmp_layer = mem_ds.GetLayerByName(dst_layername)
 except:
-    terminus_layer = None
+    tmp_layer = None
 
-if terminus_layer is None:
+if tmp_layer is None:
 
     srs = None
     if src_ds.GetProjectionRef() != '':
         srs = osr.SpatialReference()
         srs.ImportFromWkt(src_ds.GetProjection())
 
-
-    terminus_layer = shp_ds.CreateLayer('terminus', srs, ogr.wkbPolygon)
-
-    if dst_fieldname is None:
-        dst_fieldname = 'DN'
-        
-    fd = ogr.FieldDefn(dst_fieldname, ogr.OFTInteger)
-    terminus_layer.CreateField(fd)
-    terminus_dst_field = 0
-    fd = ogr.FieldDefn("timestamp", ogr.OFTDateTime)
-    terminus_layer.CreateField(fd)
-    terminus_dst_field = 0
-else:
-    if dst_fieldname is not None:
-        terminus_dst_field = terminus_layer.GetLayerDefn().GetFieldIndex(dst_fieldname)
-        if terminus_dst_field < 0:
-            print("Warning: cannot find field '%s' in layer '%s'" % (dst_fieldname, dst_layername))
-
-try:
-    line_layer = mem_ds.GetLayerByName(dst_layername)
-except:
-    line_layer = None
-
-if line_layer is None:
-
-    srs = None
-    if src_ds.GetProjectionRef() != '':
-        srs = osr.SpatialReference()
-        srs.ImportFromWkt(src_ds.GetProjectionRef())
-        
-    line_layer = mem_ds.CreateLayer('line', srs, ogr.wkbMultiLineString)
+    tmp_layer = mem_ds.CreateLayer('floating', srs, ogr.wkbPolygon)
 
     if dst_fieldname is None:
         dst_fieldname = 'DN'
         
     fd = ogr.FieldDefn(dst_fieldname, ogr.OFTInteger)
-    line_layer.CreateField(fd)
-    line_dst_field = 0
+    tmp_layer.CreateField(fd)
+    tmp_dst_field = 0
+    fd = ogr.FieldDefn(ts_fieldname, ogr.OFTDate)
+    tmp_layer.CreateField(fd)
+    tmp_dst_field = 0
+
+
 else:
     if dst_fieldname is not None:
-        line_dst_field = line_layer.GetLayerDefn().GetFieldIndex(dst_fieldname)
-        if line_dst_field < 0:
+        tmp_dst_field = tmp_layer.GetLayerDefn().GetFieldIndex(dst_fieldname)
+        if tmp_dst_field < 0:
             print("Warning: cannot find field '%s' in layer '%s'" % (dst_fieldname, dst_layername))
+
+# Get driver
+shp_driver = ogr.GetDriverByName('ESRI Shapefile')
+shp_filename = validateShapePath(shp_filename)
+if os.path.exists(shp_filename): 
+    os.remove(shp_filename)
+shp_ds = shp_driver.CreateDataSource(shp_filename)
+
+srs = None
+if src_ds.GetProjectionRef() != '':
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(src_ds.GetProjection())
+
+
+terminus_layer = shp_ds.CreateLayer('terminus', srs, ogr.wkbPolygon)
+
+fd = ogr.FieldDefn(ts_fieldname, ogr.OFTDate)
+terminus_layer.CreateField(fd)
+terminus_dst_field = 0
+
 
 bufferDist = 1
 ocean_value = 4
@@ -218,10 +235,11 @@ floating_value = 3
             
 # for k, t in enumerate(time):
 for k in range(src_ds.RasterCount):
-    if k==0:
-        #timestamp = cdftime.num2date(t)
-        #print('Processing {}'.format(timestamp))
+    if k<2:
+        timestamp = timestamps[k]
+        print('Processing {}'.format(timestamp))
         srcband = src_ds.GetRasterBand(k+1)
+        poly_layer = create_memory_layer()
         result = gdal.Polygonize(srcband, None, poly_layer, poly_dst_field, [],
                           callback = gdal.TermProgress)
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, ocean_value))
@@ -244,14 +262,22 @@ for k in range(src_ds.RasterCount):
             outFeature.SetGeometry(geomBuffer)
             floating_layer.CreateFeature(outFeature)
 
-        ocean_layer.Clip(floating_layer, terminus_layer)
+        # Now clip them
+        ocean_layer.Clip(floating_layer, tmp_layer)
+        
+        featureDefn = terminus_layer.GetLayerDefn()
+        for feature in tmp_layer:
+            # create a new feature
+            outFeature = ogr.Feature(featureDefn)
+            outFeature.SetGeometry(feature.GetGeometryRef())
+            i = outFeature.GetFieldIndex(ts_fieldname)
+            outFeature.SetField(i, str(timestamp))
+            # add the feature to the output layer
+            terminus_layer.CreateFeature(outFeature)
 
         
         
 poly_layer = None
 terminus_layer = None
 mem_ds = None
-
-
-
-nc.close()
+src_ds = None
