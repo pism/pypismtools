@@ -127,8 +127,8 @@ if __name__ == "__main__":
     mapping.false_northing = 0.
     mapping.grid_mapping_name = "polar_stereographic"
     mapping.latitude_of_projection_origin = 90.
-    mapping.standard_parallel = 71.
-    mapping.straight_vertical_longitude_from_pole = -39.
+    mapping.standard_parallel = 70.
+    mapping.straight_vertical_longitude_from_pole = -45.
 
     from time import asctime
     historystr = 'Created ' + asctime() + '\n'
