@@ -3,7 +3,6 @@
 #
 
 
-
 """This script containts tools for extracting sigma level.
 """
 
@@ -19,7 +18,7 @@ except ImportError:             # pragma: nocover
     import pypismtools as ppt
 
 
-## {{{ http://code.activestate.com/recipes/496938/ (r1)
+# {{{ http://code.activestate.com/recipes/496938/ (r1)
 """
 A module that helps to inject time profiling code
 in other modules to measures actual execution times
@@ -32,14 +31,17 @@ __version__ = "0.1"
 
 import time
 
+
 def timeprofile():
     """ A factory function to return an instance of TimeProfiler """
 
     return TimeProfiler()
 
+
 class TimeProfiler:
+
     """ A utility class for profiling execution time for code """
-    
+
     def __init__(self):
         # Dictionary with times in seconds
         self.timedict = {}
@@ -49,12 +51,12 @@ class TimeProfiler:
 
         # Note: 'slot' has to be string type
         # we are not checking it here.
-        
+
         self.timedict[slot] = time.time()
 
     def unmark(self, slot=''):
         """ Unmark the slot 'slot' """
-        
+
         # Note: 'slot' has to be string type
         # we are not checking it here.
 
@@ -66,7 +68,7 @@ class TimeProfiler:
 
         # To get the latest slot, just get the max of values
         return time.time() - max(self.timedict.values())
-    
+
     def elapsed(self, slot=''):
         """ Get the time difference between now and a previous
         time slot named 'slot' """
@@ -86,7 +88,7 @@ class TimeProfiler:
         # Difference of max time with min time
         times = self.timedict.values()
         return max(times) - min(times)
-    
+
     def timegap(self):
         """ Return the full time-gap since we started marking """
 
@@ -181,7 +183,7 @@ def copy_time_dimension(in_file, out_file, name):
         # we get here if var_in does not have a bounds attribute
         pass
 
-    
+
 def create_variable_like(in_file, var_name, out_file, dimensions=None,
                          fill_value=-2e9):
     """Create a variable in an out_file that is the same var_name in
@@ -225,7 +227,7 @@ def copy_attributes(var_in, var_out):
         else:
             setattr(var_out, att, getattr(var_in, att))
 
-            
+
 def copy_global_attributes(in_file, out_file):
     "Copy global attributes from in_file to out_file."
     for attribute in in_file.ncattrs():
@@ -266,7 +268,8 @@ if __name__ == "__main__":
     parser.description = description
 
     parser.add_argument("INPUTFILE", nargs=1, help="input NetCDF file name")
-    parser.add_argument("OUTPUTFILE", nargs=1, help="output NetCDF file name", default="out.nc")
+    parser.add_argument(
+        "OUTPUTFILE", nargs=1, help="output NetCDF file name", default="out.nc")
     parser.add_argument("-n", "--n_levels", dest="n_levels",
                         help="no. of levels",
                         default=25)
@@ -283,7 +286,6 @@ if __name__ == "__main__":
     n_levels = options.n_levels
     age_iso = np.array(options.age_iso)
     n_age_iso = len(age_iso)
-    
 
     print("-----------------------------------------------------------------")
     print("Running script %s ..." % __file__.split('/')[-1])
@@ -305,9 +307,9 @@ if __name__ == "__main__":
     # read projection information
     projection = ppt.get_projection_from_file(nc_in)
     # new sigma coordinate with n_levels
-    depth_out = np.linspace(0, 1, n_levels+1)[1:]
+    depth_out = np.linspace(0, 1, n_levels + 1)[1:]
     nd = len(depth_out)
-    
+
     nt = len(nc_in.dimensions[tdim])
     nx = len(nc_in.dimensions[xdim])
     ny = len(nc_in.dimensions[ydim])
@@ -327,10 +329,10 @@ if __name__ == "__main__":
     ddim = 'depth'
     nc_out.createDimension(ddim, nd)
     isodim = 'n_iso'
-    nc_out.createDimension(isodim, n_age_iso) 
+    nc_out.createDimension(isodim, n_age_iso)
 
     out_dims = (tdim, zdim, ydim, xdim)
-    
+
     # copy mapplane dimension variables
     for var_name in (xdim, ydim):
         var_out = create_variable_like(
@@ -339,17 +341,16 @@ if __name__ == "__main__":
             nc_out,
             dimensions=(var_name,))
         var_out[:] = nc_in.variables[var_name][:]
-        
+
     # create new sigma coordinate
     sigma_var = nc_out.createVariable(ddim, 'd', dimensions=(ddim,))
     sigma_var.long_name = 'depth below surface'
     sigma_var.axis = 'Z'
     sigma_var.positive = 'down'
     sigma_var[:] = depth_out
-    
+
     if tdim is not None:
         copy_time_dimension(nc_in, nc_out, tdim)
-
 
     standard_name = 'land_ice_thickness'
     for name in nc_in.variables.keys():
@@ -360,15 +361,14 @@ if __name__ == "__main__":
             myvar = name
             pass
 
-
     thickness = ppt.permute(nc_in.variables[myvar], output_order=out_dims)
     thk_min = 500  # m (minimum ice thickness)
 
     iso_name = 'depth_iso'
     iso_name_norm = 'depth_iso_norm'
-    
+
     print(("    - reading variable %s" % (myvar)))
-        
+
     print("Copying variables")
 
     for var_name in variables:
@@ -382,81 +382,90 @@ if __name__ == "__main__":
 
         profiler.mark('interpolation')
         if tdim is not None:
-            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(tdim, ddim, ydim, xdim))           
-            iso_var = nc_out.createVariable(iso_name, datatype='double', dimensions=(tdim, isodim, ydim, xdim), fill_value=fill_value)
-            iso_var_norm = nc_out.createVariable(iso_name_norm, datatype='double', dimensions=(tdim, isodim, ydim, xdim), fill_value=fill_value)
+            out_var = create_variable_like(
+                nc_in, var_name, nc_out, dimensions=(tdim, ddim, ydim, xdim))
+            iso_var = nc_out.createVariable(iso_name, datatype='double', dimensions=(
+                tdim, isodim, ydim, xdim), fill_value=fill_value)
+            iso_var_norm = nc_out.createVariable(iso_name_norm, datatype='double', dimensions=(
+                tdim, isodim, ydim, xdim), fill_value=fill_value)
 
             for t in range(nt):
                 for m in range(ny):
                     for n in range(nx):
-                        thk = thickness[t,m,n]
-                        v = var_in_data[t,:,m,n]
+                        thk = thickness[t, m, n]
+                        v = var_in_data[t, :, m, n]
                         if thk > thk_min:
-                            z_surf = z[z<thk][-1]
-                            depth_in = 1 - z[z<thk] / z_surf
-                            v_in = v[z<thk]
+                            z_surf = z[z < thk][-1]
+                            depth_in = 1 - z[z < thk] / z_surf
+                            v_in = v[z < thk]
                             f = interp1d(depth_in, v_in)
                             v_out = f(depth_out)
-                            v_out[np.nonzero(v_out<0)] = 0
-                            out_var[t,:,m,n] = v_out
-                            f = interp1d(v_in[2:], depth_in[2:], fill_value=fill_value)
+                            v_out[np.nonzero(v_out < 0)] = 0
+                            out_var[t, :, m, n] = v_out
+                            f = interp1d(
+                                v_in[2:], depth_in[2:], fill_value=fill_value)
                             for k, age_level in enumerate(age_iso):
                                 try:
                                     d_out = f(age_level)
                                 except:
                                     d_out = fill_value
-                                iso_var_norm[t,k,m,n] = d_out
+                                iso_var_norm[t, k, m, n] = d_out
                             # depth of isochrone
-                            depth_in = z_surf - z[z<thk]
-                            f = interp1d(v_in[2:], depth_in[2:], fill_value=fill_value)
+                            depth_in = z_surf - z[z < thk]
+                            f = interp1d(
+                                v_in[2:], depth_in[2:], fill_value=fill_value)
                             for k, age_level in enumerate(age_iso):
                                 try:
                                     d_out = f(age_level)
                                 except:
                                     d_out = fill_value
-                                iso_var[t,k,m,n] = d_out
-                            
-                            
+                                iso_var[t, k, m, n] = d_out
+
         else:
-            out_var = create_variable_like(nc_in, var_name, nc_out, dimensions=(ddim, ydim, xdim))
-            iso_var = nc_out.createVariable(iso_name, datatype='double', dimensions=(isodim, ydim, xdim), fill_value=fill_value)
-            iso_var_norm = nc_out.createVariable(iso_name_norm, datatype='double', dimensions=(isodim, ydim, xdim), fill_value=fill_value)
+            out_var = create_variable_like(
+                nc_in, var_name, nc_out, dimensions=(ddim, ydim, xdim))
+            iso_var = nc_out.createVariable(iso_name, datatype='double', dimensions=(
+                isodim, ydim, xdim), fill_value=fill_value)
+            iso_var_norm = nc_out.createVariable(iso_name_norm, datatype='double', dimensions=(
+                isodim, ydim, xdim), fill_value=fill_value)
 
             for m in range(ny):
                 for n in range(nx):
-                    thk = thickness[m,n]
-                    v = var_in_data[:,m,n]
+                    thk = thickness[m, n]
+                    v = var_in_data[:, m, n]
                     if thk > thk_min:
-                        z_surf = z[z<thk][-1]
-                        depth_in = 1 - z[z<thk] / z_surf
-                        v_in = v[z<thk]
+                        z_surf = z[z < thk][-1]
+                        depth_in = 1 - z[z < thk] / z_surf
+                        v_in = v[z < thk]
                         f = interp1d(depth_in, v_in)
                         v_out = f(depth_out)
-                        v_out[np.nonzero(v_out<0)] = 0
-                        out_var[:,m,n] = v_out
-                        f = interp1d(v_in[2:], depth_in[2:], fill_value=fill_value)
+                        v_out[np.nonzero(v_out < 0)] = 0
+                        out_var[:, m, n] = v_out
+                        f = interp1d(
+                            v_in[2:], depth_in[2:], fill_value=fill_value)
                         for k, age_level in enumerate(age_iso):
                             try:
                                 d_out = f(age_level)
                             except:
                                 d_out = fill_value
-                            iso_var_norm[t,k,m,n] = d_out
+                            iso_var_norm[t, k, m, n] = d_out
                         # depth of isochrone
-                        depth_in = z_surf - z[z<thk]
-                        f = interp1d(v_in[2:], depth_in[2:], fill_value=fill_value)
+                        depth_in = z_surf - z[z < thk]
+                        f = interp1d(
+                            v_in[2:], depth_in[2:], fill_value=fill_value)
                         for k, age_level in enumerate(age_iso):
                             try:
                                 d_out = f(age_level)
                             except:
                                 d_out = fill_value
-                            iso_var[k,m,n] = d_out
-                            
+                            iso_var[k, m, n] = d_out
+
         p = profiler.elapsed('interpolation')
-        print("    - interpolated in %3.4f s" % p)                     
-    
-        
+        print("    - interpolated in %3.4f s" % p)
+
     # writing global attributes
-    import time, sys
+    import time
+    import sys
     script_command = ' '.join([time.ctime(), ':', __file__.split('/')[-1],
                                ' '.join([str(l) for l in sys.argv[1:]])])
     if hasattr(nc_in, 'history'):
@@ -467,4 +476,5 @@ if __name__ == "__main__":
 
     nc_in.close()
     nc_out.close()
-    print("Extracted 3D variable(s) {} to file {}".format(variables, options.OUTPUTFILE[0]))
+    print("Extracted 3D variable(s) {} to file {}".format(
+        variables, options.OUTPUTFILE[0]))

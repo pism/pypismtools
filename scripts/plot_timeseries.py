@@ -23,40 +23,40 @@ parser = ArgumentParser()
 parser.description = "A script for PISM output files to time series plots using pylab/matplotlib."
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
-                  help="lower and upper bound for ordinate, eg. -1 1", default=None)
+                    help="lower and upper bound for ordinate, eg. -1 1", default=None)
 parser.add_argument("--time_bounds", dest="time_bounds", nargs=2, type=int,
-                  help="lower and upper bound for abscissa, eg. 1990 2000", default=None)
-parser.add_argument("-l", "--labels",dest="labels",
-                  help="comma-separated list with labels, put in quotes like 'label 1,label 2'",default=None)
+                    help="lower and upper bound for abscissa, eg. 1990 2000", default=None)
+parser.add_argument("-l", "--labels", dest="labels",
+                    help="comma-separated list with labels, put in quotes like 'label 1,label 2'", default=None)
 parser.add_argument("--index_ij", dest="index_ij", nargs=2, type=int,
-                  help="i and j index for spatial fields, eg. 10 10", default=[35, 93])
-parser.add_argument("-f", "--output_format",dest="out_formats",
-                      help="Comma-separated list with output graphics suffix, default = pdf",default='pdf')
-parser.add_argument("-n", "--normalize",dest="normalize",action="store_true",
-                  help="Normalize to beginning of time series, Default=False",default=False)
-parser.add_argument("-o", "--output_file",dest="outfile",
-                  help="output file name without suffix, i.e. ts_control -> ts_control_variable",default='unnamed')
-parser.add_argument("-p", "--print_size",dest="print_mode",
-                  help="sets figure size and font size, available options are: \
-                  'onecol','publish','medium','presentation','twocol'",default="medium")
+                    help="i and j index for spatial fields, eg. 10 10", default=[0, 0])
+parser.add_argument("-f", "--output_format", dest="out_formats",
+                    help="Comma-separated list with output graphics suffix, default = pdf", default='pdf')
+parser.add_argument("-n", "--normalize", dest="normalize", action="store_true",
+                    help="Normalize to beginning of time series, Default=False", default=False)
+parser.add_argument("-o", "--output_file", dest="outfile",
+                    help="output file name without suffix, i.e. ts_control -> ts_control_variable", default='unnamed')
+parser.add_argument("-p", "--print_size", dest="print_mode",
+                    help="sets figure size and font size, available options are: \
+                  'onecol','publish','medium','presentation','twocol'", default="medium")
 parser.add_argument("--step", dest="step", type=int,
-                  help="step for plotting values, if time-series is very long", default=1)
-parser.add_argument("--show",dest="show",action="store_true",
-                  help="show figure (in addition to save), Default=False",default=False)
+                    help="step for plotting values, if time-series is very long", default=1)
+parser.add_argument("--show", dest="show", action="store_true",
+                    help="show figure (in addition to save), Default=False", default=False)
 parser.add_argument("--shadow", dest="shadow", action="store_true",
-                  help='''add drop shadow to line plots, Default=False''',
-                  default=False)
+                    help='''add drop shadow to line plots, Default=False''',
+                    default=False)
 parser.add_argument("--rotate_xticks", dest="rotate_xticks", action="store_true",
-                  help="rotate x-ticks by 30 degrees, Default=False",
-                  default=False)
+                    help="rotate x-ticks by 30 degrees, Default=False",
+                    default=False)
 parser.add_argument("-r", "--output_resolution", dest="out_res",
-                  help='''Resolution ofoutput graphics in dots per
+                    help='''Resolution ofoutput graphics in dots per
                   inch (DPI), default = 300''', default=300)
 parser.add_argument("-t", "--twinx", dest="twinx", action="store_true",
-                  help='''adds a second ordinate with units mmSLE,
+                    help='''adds a second ordinate with units mmSLE,
                   Default=False''', default=False)
-parser.add_argument("-v", "--variable",dest="variables",
-                  help="comma-separated list with variables",default='ivol')
+parser.add_argument("-v", "--variable", dest="variables",
+                    help="comma-separated list with variables", default='ivol')
 
 options = parser.parse_args()
 args = options.FILE
@@ -66,7 +66,7 @@ else:
     labels = None
 bounds = options.bounds
 index_i, index_j = options.index_ij[0], options.index_ij[1]
-time_bounds = options.time_bounds    
+time_bounds = options.time_bounds
 golden_mean = get_golden_mean()
 normalize = options.normalize
 out_res = options.out_res
@@ -94,7 +94,7 @@ numpoints = 1
 
 colors = colorList()
 
-aspect_ratio = golden_mean*.8
+aspect_ratio = golden_mean * .8
 
 # set the print mode
 lw, pad_inches = set_mode(print_mode, aspect_ratio=aspect_ratio)
@@ -111,7 +111,7 @@ for var in variables:
     values = []
     for k in range(len(args)):
         print("opening file %s" % args[k])
-        nc = NC(args[k],'r')
+        nc = NC(args[k], 'r')
         try:
             t = nc.variables["time"][:]
             calendar = nc.variables["time"].calendar
@@ -126,7 +126,7 @@ for var in variables:
             var_units = nc.variables[var].units
         except:
             var_units = None
-        ## temporary fix for spin-ups with non-Gregorian calendars
+        # temporary fix for spin-ups with non-Gregorian calendars
         ## calendar = 'gregorian'
         cdftime = utime(units, calendar)
         try:
@@ -135,7 +135,7 @@ for var in variables:
         except:
             date = t[:]
             usedates = False
-            date = np.arange(-len(t[:]), 0) /1e3
+            date = np.arange(-len(t[:]), 0) / 1e3
         dates.append(date)
 
         if var in ("ivol"):
@@ -180,7 +180,7 @@ for var in variables:
             out_units = "year-1"
             var_unit_str = "a$^{-1}$"
             ylabel = ("strain rate [%s]" % var_unit_str)
-        elif var in ("taud", "taud_mag", "taud_x", "taud_y", 
+        elif var in ("taud", "taud_mag", "taud_x", "taud_y",
                      "bwp", "tauc"):
             out_units = "Pa"
             var_unit_str = "Pa"
@@ -189,6 +189,10 @@ for var in variables:
             out_units = "m year-1"
             var_unit_str = "m a$^{-1}$"
             ylabel = ("speed [%s]" % var_unit_str)
+        elif var in ("RU"):
+            out_units = "km3"
+            var_unit_str = "km$^3$"
+            ylabel = ("runoff [%s]" % var_unit_str)
         else:
             print("unit %s not recognized" % var_units)
             ylabel = ("%s [%s]" % (var, var_units))
@@ -196,13 +200,14 @@ for var in variables:
 
         if (nc.variables[var].ndim == 3):
             if var_units is not None:
-                var_vals = unit_converter(np.squeeze(nc.variables[var][:,index_j,index_i]),
-                                      var_units, out_units)
+                var_vals = unit_converter(np.squeeze(nc.variables[var][:, index_j, index_i]),
+                                          var_units, out_units)
             else:
-                var_vals = np.squeeze(nc.variables[var][:,index_j,index_i])
+                var_vals = np.squeeze(nc.variables[var][:, index_j, index_i])
         else:
             if var_units is not None:
-                var_vals = unit_converter(np.squeeze(nc.variables[var][:]), var_units, out_units)
+                var_vals = unit_converter(
+                    np.squeeze(nc.variables[var][:]), var_units, out_units)
             else:
                 var_vals = np.squeeze(nc.variables[var][:])
         if normalize:
@@ -223,19 +228,21 @@ for l in range(len(variables)):
         for k in range(len(var_dates[l])):
             n = k % no_colors
             if var in ("ivol"):
-                line, = ax.plot_date(var_dates[l][k][::step], var_values[l][k][::step] / scale, color=colors[n])
+                line, = ax.plot_date(
+                    var_dates[l][k][::step], var_values[l][k][::step] / scale, color=colors[n])
             else:
-                line, = ax.plot_date(var_dates[l][k][::step], var_values[l][k][::step], '-', color=colors[n])
+                line, = ax.plot_date(
+                    var_dates[l][k][::step], var_values[l][k][::step], '-', color=colors[n])
             lines.append(line)
 
             if shadow:
                 shadow_transform = ax.transData + offset
                 if var in ("ivol"):
                     ax.plot_date(var_dates[l][k][::step], var_values[l][k][::step] / scale, color=shadow_color, transform=shadow_transform,
-                            zorder=0.5 * line.get_zorder())
+                                 zorder=0.5 * line.get_zorder())
                 else:
                     ax.plot_date(var_dates[l][k][::step], var_values[l][k][::step], color=shadow_color, transform=shadow_transform,
-                            zorder=0.5 * line.get_zorder())
+                                 zorder=0.5 * line.get_zorder())
 
         nd = len(var_dates[l])
         date_start = []
@@ -265,8 +272,8 @@ for l in range(len(variables)):
         ax.xaxis.set_major_locator(yearloc)
 
         if time_bounds:
-            start_date = datetime(time_bounds[0],1,1)
-            end_date = datetime(time_bounds[1],1,1)
+            start_date = datetime(time_bounds[0], 1, 1)
+            end_date = datetime(time_bounds[1], 1, 1)
             ax.set_xlim(start_date, end_date)
 
         ax.set_xlabel('years')
@@ -274,9 +281,11 @@ for l in range(len(variables)):
         for k in range(len(var_dates[l])):
             n = k % no_colors
             if var in ("ivol"):
-                line, = ax.plot(var_dates[l][k][::step], var_values[l][k][::step] / scale, color=colors[n])
+                line, = ax.plot(
+                    var_dates[l][k][::step], var_values[l][k][::step] / scale, color=colors[n])
             else:
-                line, = ax.plot(var_dates[l][k][::step], var_values[l][k][::step], '-', color=colors[n])
+                line, = ax.plot(
+                    var_dates[l][k][::step], var_values[l][k][::step], '-', color=colors[n])
             lines.append(line)
 
             if shadow:
@@ -300,20 +309,19 @@ for l in range(len(variables)):
 
         if labels != None:
             ax.legend(lines, labels, loc="upper right",
-                               shadow=True,
-                               bbox_to_anchor=(0, 0, 1, 1),
-                               bbox_transform=plt.gcf().transFigure)
+                      shadow=True,
+                      bbox_to_anchor=(0, 0, 1, 1),
+                      bbox_transform=plt.gcf().transFigure)
 
         if twinx:
             axSLE = ax.twinx()
             ax.set_autoscalex_on(False)
             axSLE.set_autoscalex_on(False)
-            
+
         ax.set_xlabel('ka BP')
 
         if bounds:
             ax.set_ylim(bounds[0], bounds[1])
-
 
     ymin, ymax = ax.get_ylim()
     if twinx:
@@ -338,7 +346,6 @@ for l in range(len(variables)):
     for out_format in out_formats:
         out_file = outfile + '_' + variables[l] + '.' + out_format
         print "  - writing image %s ..." % out_file
-        fig.savefig(out_file ,bbox_inches='tight', dpi=out_res)
+        fig.savefig(out_file, bbox_inches='tight', dpi=out_res)
     if show:
         plt.show()
-

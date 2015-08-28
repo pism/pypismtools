@@ -28,38 +28,39 @@ parser = ArgumentParser()
 parser.description = '''A script for profile time-series plots using pylab/matplotlib.'''
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
-                  help="lower and upper bound for ordinate, eg. -1 1", default=None)
+                    help="lower and upper bound for ordinate, eg. -1 1", default=None)
 parser.add_argument("--x_bounds", dest="x_bounds", nargs=2, type=int,
-                  help="lower and upper bound for abscissa, eg. 0 200", default=None)
-parser.add_argument("-l", "--labels",dest="labels",
-                  help="comma-separated list with labels, put in quotes like 'label 1,label 2'",default=None)
+                    help="lower and upper bound for abscissa, eg. 0 200", default=None)
+parser.add_argument("-l", "--labels", dest="labels",
+                    help="comma-separated list with labels, put in quotes like 'label 1,label 2'", default=None)
 parser.add_argument("--index_ij", dest="index_ij", nargs=2, type=float,
-                  help="i and j index for spatial fields, eg. 10 10", default=[36, 92])
-parser.add_argument("-f", "--output_format",dest="out_formats",
-                      help="Comma-separated list with output graphics suffix, default = pdf",default='pdf')
-parser.add_argument("-n", "--normalize",dest="normalize",action="store_true",
-                  help="Normalize to beginning of time series, Default=False",default=False)
-parser.add_argument("-o", "--output_file",dest="outfile",
-                  help="output file name without suffix, i.e. ts_control -> ts_control_variable",default='foo')
-parser.add_argument("-p", "--print_size",dest="print_mode",
-                    choices=['onecol','medium','twocol','height','presentation','small_font'],
-                    help="sets figure size and font size.'",default="medium")
-parser.add_argument("--show",dest="show",action="store_true",
-                  help="show figure (in addition to save), Default=False",default=False)
+                    help="i and j index for spatial fields, eg. 10 10", default=[36, 92])
+parser.add_argument("-f", "--output_format", dest="out_formats",
+                    help="Comma-separated list with output graphics suffix, default = pdf", default='pdf')
+parser.add_argument("-n", "--normalize", dest="normalize", action="store_true",
+                    help="Normalize to beginning of time series, Default=False", default=False)
+parser.add_argument("-o", "--output_file", dest="outfile",
+                    help="output file name without suffix, i.e. ts_control -> ts_control_variable", default='foo')
+parser.add_argument("-p", "--print_size", dest="print_mode",
+                    choices=['onecol', 'medium', 'twocol',
+                             'height', 'presentation', 'small_font'],
+                    help="sets figure size and font size.'", default="medium")
+parser.add_argument("--show", dest="show", action="store_true",
+                    help="show figure (in addition to save), Default=False", default=False)
 parser.add_argument("--shadow", dest="shadow", action="store_true",
-                  help='''add drop shadow to line plots, Default=False''',
-                  default=False)
+                    help='''add drop shadow to line plots, Default=False''',
+                    default=False)
 parser.add_argument("--rotate_xticks", dest="rotate_xticks", action="store_true",
-                  help="rotate x-ticks by 30 degrees, Default=False",
-                  default=False)
+                    help="rotate x-ticks by 30 degrees, Default=False",
+                    default=False)
 parser.add_argument("-r", "--output_resolution", dest="out_res",
-                  help='''Resolution ofoutput graphics in dots per
+                    help='''Resolution ofoutput graphics in dots per
                   inch (DPI), default = 300''', default=300)
 parser.add_argument("-t", "--twinx", dest="twinx", action="store_true",
-                  help='''adds a second ordinate with units mmSLE,
+                    help='''adds a second ordinate with units mmSLE,
                   Default=False''', default=False)
-parser.add_argument("-v", "--variable",dest="variables",
-                  help="comma-separated list with variables",default='csurf')
+parser.add_argument("-v", "--variable", dest="variables",
+                    help="comma-separated list with variables", default='csurf')
 
 options = parser.parse_args()
 args = options.FILE
@@ -69,7 +70,7 @@ else:
     labels = None
 bounds = options.bounds
 index_i, index_j = options.index_ij[0], options.index_ij[1]
-x_bounds = options.x_bounds    
+x_bounds = options.x_bounds
 golden_mean = get_golden_mean()
 normalize = options.normalize
 out_res = options.out_res
@@ -111,7 +112,7 @@ var_ylabels = []
 var_longnames = []
 
 print("opening file %s" % args[0])
-nc = NC(args[0],'r')
+nc = NC(args[0], 'r')
 t = nc.variables["time"][:]
 calendar = nc.variables["time"].calendar
 units = nc.variables["time"].units
@@ -121,7 +122,8 @@ date = cdftime.num2date(t[:])
 profile = nc.variables["profile"]
 profile_units = profile.units
 profile_outunits = 'km'
-profile_axis = np.squeeze(unit_converter(profile[:], profile_units, profile_outunits))
+profile_axis = np.squeeze(
+    unit_converter(profile[:], profile_units, profile_outunits))
 
 for var in variables:
     var_units = nc.variables[var].units
@@ -166,10 +168,10 @@ for var in variables:
 
     try:
         var_vals = unit_converter(np.squeeze(permute(nc.variables[var],
-                                                     output_order=output_order)),var_units, out_units)
+                                                     output_order=output_order)), var_units, out_units)
     except:
         var_vals = unit_converter(np.squeeze(permute(nc.variables[var],
-                                                     output_order=output_order_cdo)),var_units, out_units)
+                                                     output_order=output_order_cdo)), var_units, out_units)
     if normalize:
         var_vals -= var_vals[0]
 
@@ -177,7 +179,7 @@ for var in variables:
 
 nc.close()
 
-nt = len(var_values[0][0,:])
+nt = len(var_values[0][0, :])
 
 aspect_ratio = golden_mean
 
@@ -200,12 +202,13 @@ for k in range(len(variables)):
 
     lines = []
     for idx in range(nt):
-        line = var_values[k][:,idx]
+        line = var_values[k][:, idx]
         colorVal = scalarMap.to_rgba(idx)
         if nt > len(my_colors):
-            retLine, = ax.plot(profile_axis[::skip],line[::skip], color=colorVal)
+            retLine, = ax.plot(
+                profile_axis[::skip], line[::skip], color=colorVal)
         else:
-            retLine, = ax.plot(profile_axis,line, color=my_colors[idx])
+            retLine, = ax.plot(profile_axis, line, color=my_colors[idx])
         lines.append(retLine)
     ax.set_xlabel("distance along profile [%s]" % profile_outunits)
     ax.set_ylabel(var_ylabels[k])
@@ -218,6 +221,4 @@ for k in range(len(variables)):
     for out_format in out_formats:
         out_file = outfile + '_' + variables[k] + '.' + out_format
         print "  - writing image %s ..." % out_file
-        fig.savefig(out_file ,bbox_inches='tight', dpi=out_res)
-
-
+        fig.savefig(out_file, bbox_inches='tight', dpi=out_res)

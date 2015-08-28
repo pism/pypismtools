@@ -22,6 +22,7 @@ except:
 
 
 class Variable(object):
+
     '''
     A class containing variable-specific stuff such as colorbars, tickmarks, etc
     '''
@@ -36,7 +37,7 @@ class Variable(object):
         for key in list(kwargs.keys()):
             if key in expected_args:
                 kwargsdict[key] = kwargs[key]
-                
+
         if 'ticks' in kwargsdict:
             self.ticks = kwargsdict['ticks']
 
@@ -51,7 +52,7 @@ class Variable(object):
 
         if 'vmax' in kwargsdict:
             self.vmax = kwargsdict['vmax']
-            
+
         if 'extend' in kwargsdict:
             self.extend = kwargsdict['extend']
 
@@ -65,58 +66,59 @@ class Variable(object):
 parser = ArgumentParser()
 parser.description = "A script to plot a variable in a netCDF file using imshow."
 parser.add_argument("FILE", nargs='*')
-parser.add_argument("--alpha",dest="alpha",
-                  help="transparency of overlay", default=1.)
+parser.add_argument("--alpha", dest="alpha",
+                    help="transparency of overlay", default=1.)
 parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
-                  help="lower and upper bound for colorbar, eg. -1 1", default=None)
+                    help="lower and upper bound for colorbar, eg. -1 1", default=None)
 parser.add_argument("--boundary_tol", dest="boundary_tol", nargs=1, type=float,
-                  help='''if set, color areas brown where obs <= boundary_tol but data >= boundary_tol,
+                    help='''if set, color areas brown where obs <= boundary_tol but data >= boundary_tol,
                   works for difference plots only.''', default=None)
-parser.add_argument("--colorbar_position", dest="colorbar_position", choices=['bottom','right','upper','left'],
-                  help="position of the colorbar for n x m plots", default='bottom')
-parser.add_argument("--obs_file",dest="obs_file",
-                  help='''
+parser.add_argument("--colorbar_position", dest="colorbar_position", choices=['bottom', 'right', 'upper', 'left'],
+                    help="position of the colorbar for n x m plots", default='bottom')
+parser.add_argument("--obs_file", dest="obs_file",
+                    help='''
                   file with observations for difference plot,
 experiment - observation. Must be on same grid as experiments. Default is None''', default=None)
-parser.add_argument("--colormap",dest="colormap",
-                  help='''path to a cpt colormap, or a pylab colormap,
+parser.add_argument("--colormap", dest="colormap",
+                    help='''path to a cpt colormap, or a pylab colormap,
                   e.g. Blues''', default=None)
 parser.add_argument("-c", "--colorbar", dest="colorbar", action="store_true",
-                  help="saves a colorbar seperately", default=False)
+                    help="saves a colorbar seperately", default=False)
 parser.add_argument("--colorbar_label", dest="colorbar_label", action="store_true",
-                  help="saves a colorbar seperately", default=False)
+                    help="saves a colorbar seperately", default=False)
 parser.add_argument("--inner_titles", dest="inner_titles",
-                  help="add an inner title, give a list like --inner_title 'a),b),c)'", default=None)
+                    help="add an inner title, give a list like --inner_title 'a),b),c)'", default=None)
 parser.add_argument("--singlerow", dest="singlerow", action="store_true",
-                  help="all plots on a single row", default=False)
+                    help="all plots on a single row", default=False)
 parser.add_argument("--singlecolumn", dest="singlecolumn", action="store_true",
-                  help="all plots on a single column", default=False)
+                    help="all plots on a single column", default=False)
 parser.add_argument("-o", "--output_filename", dest="out_file",
-                  help="Name of the output file. Suffix defines output format", default='foo.png')
+                    help="Name of the output file. Suffix defines output format", default='foo.png')
 parser.add_argument("--out_unit", dest="outunit",
-                  help="Output unit, default is unit in file", default=None)
+                    help="Output unit, default is unit in file", default=None)
 parser.add_argument("-p", "--print_size", dest="print_mode",
-                    choices=['onecol','medium','twocol','height','presentation', 'small_font'],
+                    choices=['onecol', 'medium', 'twocol',
+                             'height', 'presentation', 'small_font'],
                     help="sets figure size and font size, available options are: \
                     'onecol','medium','twocol','presentation'", default="twocol")
 parser.add_argument("-r", "--output_resolution", dest="out_res",
-                  help='''
+                    help='''
                   Graphics resolution in dots per inch (DPI), default
                   = 300''', default=300)
 parser.add_argument("--relative", dest="relative", action="store_true",
-                  help="do relative differences.", default=False)
+                    help="do relative differences.", default=False)
 parser.add_argument("--no_rasterize", dest="rasterized", action="store_false",
-                  help="Don't rasterize plot. Slow.", default=True)
+                    help="Don't rasterize plot. Slow.", default=True)
 parser.add_argument("--tol", dest="tol", type=float,
-                  help="tolerance", default=None)
+                    help="tolerance", default=None)
 parser.add_argument("--level", dest="level", type=int,
-                  help="level, for 3D data only. Default = 0", default=0)
+                    help="level, for 3D data only. Default = 0", default=0)
 parser.add_argument("-s", "--shaded", dest="shaded", action="store_true",
-                  help='''Shaded topography. CAREFUL, this options is experimental.
+                    help='''Shaded topography. CAREFUL, this options is experimental.
                   It uses imshow, which does not support masked arrays,
                   and we also get the projection slighly wrong.''', default=False)
 parser.add_argument("-v", "--variable", dest="varname",
-                  help='''Variable to plot, default = 'csurf'.''', default='csurf')
+                    help='''Variable to plot, default = 'csurf'.''', default='csurf')
 
 options = parser.parse_args()
 args = options.FILE
@@ -126,12 +128,12 @@ required_no_args = 0
 max_no_args = 24
 if (nt < required_no_args):
     print(("received $i arguments, at least %i expected"
-          % (nt, required_no_args)))
+           % (nt, required_no_args)))
     import sys.exit
     sys.exit
 elif (nt > max_no_args):
     print(("received $i arguments, no more thant %i accepted"
-          % (nt, max_no_args)))
+           % (nt, max_no_args)))
     import sys.exit
     sys.exit
 else:
@@ -170,25 +172,27 @@ if colormap is not None:
         # import and convert colormap
         cdict = ppt.gmtColormap(colormap)
     cmap = colors.LinearSegmentedColormap('my_colormap', cdict)
-            
+
 # check output format
 suffix = out_file.split('.')[-1]
 if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
     print(('Requested output format %s not supported, try png, pdf, svg, ps, eps'
-          % suffix))
+           % suffix))
     import sys.exit
     sys.exit
 
-vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag', 'velbase_mag', 
+vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag', 'velbase_mag',
               'velsurf_mag', 'velshear_mag')
-vars_dem = ('thk', 'usurf', 'usrf', 'surface_altitude', 'surface', 'land_ice_thickness')
+vars_dem = ('thk', 'usurf', 'usrf', 'surface_altitude',
+            'surface', 'land_ice_thickness')
 vars_topo = ('topg', 'bedrock_altitude', 'bed')
 vars_dh = ('dhdt', 'climatic_mass_balance_cumulative')
 vars_cmb = ('climatic_mass_balance', 'climatic_mass_balance_original')
-vars_temp = ('ice_surface_temp', 'temppabase','temppa', 'temp_pa')
+vars_temp = ('ice_surface_temp', 'temppabase', 'temppa', 'temp_pa')
 vars_melt = ('bmelt')
 vars_heat = ('bheatflx')
-vars_div = ('divQ', 'divHU', 'divUH', 'divHU_umt', 'divHU_cresis', 'divHU_searise', 'res_flux')
+vars_div = ('divQ', 'divHU', 'divUH', 'divHU_umt',
+            'divHU_cresis', 'divHU_searise', 'res_flux')
 vars_tempice = ('tempicethk_basal')
 vars_stress = ('tauc', 'tauc_mag', 'taub_mag')
 vars_hydro = ('tillwat')
@@ -201,11 +205,11 @@ if varname in vars_speed:
 
     if cmap is None:
         try:
-            basedir =  ppt.__file__.split(ppt.__package__)
+            basedir = ppt.__file__.split(ppt.__package__)
             cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
                                     '/colormaps/Full_saturation_spectrum_CCW_orange.cpt')
             cmap = colors.LinearSegmentedColormap('my_colormap',
-        cdict)
+                                                  cdict)
         except:
             cmap = plt.cm.Blues
 
@@ -263,7 +267,7 @@ elif varname in vars_stress:
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
-    attr_vals = ([0,1e3,1e4,1e5,1e6,1e7], cmap,
+    attr_vals = ([0, 1e3, 1e4, 1e5, 1e6, 1e7], cmap,
                  norm, vmin, vmax, 'both', '%1.0e', 'Pa')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
@@ -320,7 +324,7 @@ elif varname in vars_dh:
 
     if cmap is None:
         cmap = plt.cm.RdBu
-        
+
     vmin = None
     vmax = None
     norm = None
@@ -336,14 +340,15 @@ elif varname in vars_cmb:
 
     if cmap is None:
         cmap = plt.cm.RdBu
-        
+
     vmin = None
     vmax = None
     norm = None
 
     attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format',
                  'colorbar_label')
-    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, 'kg m$^{\mathregular{2}}$ yr$^{\mathregular{-1}}$')
+    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None,
+                 'kg m$^{\mathregular{2}}$ yr$^{\mathregular{-1}}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -351,7 +356,7 @@ elif varname in vars_temp:
 
     if cmap is None:
         cmap = plt.cm.gist_rainbow_r
-        
+
     vmin = None
     vmax = None
     norm = None
@@ -373,7 +378,8 @@ elif varname in vars_div:
 
     attr_keys = ('ticks', 'cmap', 'norm', 'vmin', 'vmax', 'extend', 'format',
                  'colorbar_label')
-    attr_vals = (None, cmap, norm, vmin, vmax, 'both', None, 'm yr$^{\mathregular{-1}}$')
+    attr_vals = (
+        None, cmap, norm, vmin, vmax, 'both', None, 'm yr$^{\mathregular{-1}}$')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -488,7 +494,6 @@ if obs_file is not None:
     variable.ticks = None
 
 
-
 if obs_file is not None:
     print("  opening NetCDF file %s ..." % obs_file)
     try:
@@ -496,10 +501,10 @@ if obs_file is not None:
         nc = NC(obs_file, 'r')
     except:
         print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
-              % obs_file))
+               % obs_file))
         import sys
         sys.exit()
-        
+
     # get the dimensions
     xdim, ydim, zdim, tdim = ppt.get_dims(nc)
     # set up dimension ordering
@@ -517,35 +522,35 @@ if obs_file is not None:
         data = np.squeeze(ppt.permute(nc.variables[myvar], dim_order))
     except:
         print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
-              % (variable.var_name, obs_file)))
+               % (variable.var_name, obs_file)))
         exit(2)
 
     try:
         inunit = str(nc.variables[var].units)
     except:
         print(("ERROR:  units not found in variable '%s' in file %s ... ending ..."
-              % (variable.var_name, obs_file)))
+               % (variable.var_name, obs_file)))
         exit(2)
 
     if outunit is not None:
-              data = ppt.unit_converter(data, inunit, outunit)
+        data = ppt.unit_converter(data, inunit, outunit)
 
     if variable.var_name in vars_dem:
         mask = (data <= variable.vmin)
-        obs_values = np.ma.array(data, mask = mask)
+        obs_values = np.ma.array(data, mask=mask)
     elif variable.var_name in vars_topo:
         obs_values = data
     else:
         try:
-            fill  = nc.variables[var]._FillValue
+            fill = nc.variables[var]._FillValue
             mask = (data == fill)
         except:
             mask = np.zeros_like(data)
             mask[data <= tol] = 1
         if tol:
             mask[data <= tol] = 1
-        obs_values = np.ma.array(data, mask = mask)
-    
+        obs_values = np.ma.array(data, mask=mask)
+
     nc.close()
 
 
@@ -563,7 +568,7 @@ for k in range(0, nt):
         nc = NC(filename, 'r')
     except:
         print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
-              % filename))
+               % filename))
         import sys
         sys.exit(1)
 
@@ -587,10 +592,10 @@ for k in range(0, nt):
     try:
         data = np.squeeze(ppt.permute(nc.variables[myvar], dim_order))
         if (data.ndim == 3):
-            data = data[level,:]
+            data = data[level, :]
     except:
         print(("ERROR:  unknown or not-found variable '%s' in file %s ... ending ..."
-              % (variable.var_name, filename)))
+               % (variable.var_name, filename)))
         import sys
         sys.exit(1)
 
@@ -598,7 +603,7 @@ for k in range(0, nt):
         inunit = str(nc.variables[myvar].units)
     except:
         print(("ERROR:  units not found in variable '%s' in file %s ... ending ..."
-              % (myvar, filename)))
+               % (myvar, filename)))
         import sys
         sys.exit(1)
 
@@ -607,12 +612,12 @@ for k in range(0, nt):
 
     if variable.var_name in vars_dem:
         mask = (data <= variable.vmin)
-        values.append(np.ma.array(data, mask = mask))
+        values.append(np.ma.array(data, mask=mask))
     else:
         try:
-            fill  = nc.variables[var]._FillValue
+            fill = nc.variables[var]._FillValue
             mask = (data == fill)
-            values.append(np.ma.array(data, mask = mask))
+            values.append(np.ma.array(data, mask=mask))
         except:
             values.append(data)
 
@@ -627,13 +632,13 @@ for k in range(0, nt):
 # set the print mode
 if print_mode in 'height':
     ntn = nt
-    if (ntn==2):
+    if (ntn == 2):
         lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.75)
-    if (ntn==3):
+    if (ntn == 3):
         lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.55)
-    elif (ntn==4):
+    elif (ntn == 4):
         lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.35)
-    elif (ntn==5):
+    elif (ntn == 5):
         lw, pad_inches = ppt.set_mode(print_mode, aspect_ratio=.25)
     else:
         lw, pad_inches = ppt.set_mode(print_mode)
@@ -662,29 +667,29 @@ if colorbar:
 # create the figure
 fig = plt.figure()
 if singlerow:
-    grid = ImageGrid(fig, 111, # similar to subplot(111)
-                    nrows_ncols = (1, nt), # creates 1 x nt grid of axes
-                    axes_pad=0.05, # pad between axes in inch.
-                    cbar_mode='single',
-                    cbar_size=0.115,
-                    cbar_location='right',
-                    share_all=True)
+    grid = ImageGrid(fig, 111,  # similar to subplot(111)
+                     nrows_ncols=(1, nt),  # creates 1 x nt grid of axes
+                     axes_pad=0.05,  # pad between axes in inch.
+                     cbar_mode='single',
+                     cbar_size=0.115,
+                     cbar_location='right',
+                     share_all=True)
 elif singlecolumn:
-    grid = ImageGrid(fig, 111, # similar to subplot(111)
-                    nrows_ncols = (nt, 1), # creates nt x 1 grid of axes
-                    axes_pad=0.05, # pad between axes in inch.
-                    cbar_mode='single',
-                    cbar_size=0.115,
-                    cbar_location='bottom',
-                    share_all=True)
+    grid = ImageGrid(fig, 111,  # similar to subplot(111)
+                     nrows_ncols=(nt, 1),  # creates nt x 1 grid of axes
+                     axes_pad=0.05,  # pad between axes in inch.
+                     cbar_mode='single',
+                     cbar_size=0.115,
+                     cbar_location='bottom',
+                     share_all=True)
 else:
-    grid = ImageGrid(fig, 111, # similar to subplot(111)
-                    nrows_ncols = (3, nt/3), # creates 3 x nt/3 grid of axes
-                    axes_pad=0.05, # pad between axes in inch.
-                    cbar_mode='single',
-                    cbar_size=0.115,
-                    cbar_location=colorbar_position,
-                    share_all=True)
+    grid = ImageGrid(fig, 111,  # similar to subplot(111)
+                     nrows_ncols=(3, nt / 3),  # creates 3 x nt/3 grid of axes
+                     axes_pad=0.05,  # pad between axes in inch.
+                     cbar_mode='single',
+                     cbar_size=0.115,
+                     cbar_location=colorbar_position,
+                     share_all=True)
 
 
 if variable.var_name not in (vars_speed, vars_dem, vars_topo) and (bounds is None):
@@ -706,24 +711,25 @@ for k in range(0, nt):
     if boundary_tol and obs_file:
         boundary_mask = np.zeros_like(data)
         b_mask = np.ones_like(data)
-        b_mask[np.logical_and((obs_values <=  boundary_tol), (values[k] > boundary_tol))] = 0
+        b_mask[
+            np.logical_and((obs_values <= boundary_tol), (values[k] > boundary_tol))] = 0
         b_mask[ocean_mask[k] == 4] = 1
         boundary_mask = np.ma.array(data=boundary_mask, mask=b_mask)
         b = ax.imshow(boundary_mask, cmap=plt.cm.BrBG,
-                         alpha=alpha, rasterized=rasterized, origin='lower')
+                      alpha=alpha, rasterized=rasterized, origin='lower')
 
     # If observations are given, calculate absolute or relative differences
     if obs_file:
         if relative:
             data = (values[k] - obs_values) / obs_values
             cs = ax.imshow(data, cmap=variable.cmap,
-                              alpha=alpha, norm=variable.norm,
-                              rasterized=rasterized, origin='lower')
+                           alpha=alpha, norm=variable.norm,
+                           rasterized=rasterized, origin='lower')
         else:
             data = values[k] - obs_values
             cs = ax.imshow(data, cmap=variable.cmap,
-                              alpha=alpha, norm=variable.norm,
-                              rasterized=rasterized, origin='lower')
+                           alpha=alpha, norm=variable.norm,
+                           rasterized=rasterized, origin='lower')
     else:
         # otherwise just plot data
         data = values[k]
@@ -732,19 +738,19 @@ for k in range(0, nt):
             # create light source object.
             lightsource = LightSource(azdeg=315, altdeg=30,
                                       hsv_min_val=.1, hsv_max_val=.9,
-                hsv_min_sat=.85, hsv_max_sat=.15)
+                                      hsv_min_sat=.85, hsv_max_sat=.15)
             # convert data to rgba array including shading from light source.
             # (must specify color map)
             data = lightsource.shade(data, variable.cmap)
             cs = ax.imshow(data, cmap=variable.cmap, alpha=alpha,
-                          norm=variable.norm, rasterized=rasterized, origin='lower')
+                           norm=variable.norm, rasterized=rasterized, origin='lower')
         else:
             cs = ax.imshow(data, cmap=variable.cmap, alpha=alpha,
-                          norm=variable.norm, rasterized=rasterized, origin='lower')
+                           norm=variable.norm, rasterized=rasterized, origin='lower')
 
     plt.setp(ax.get_xticklabels(), visible=False)
     plt.setp(ax.get_yticklabels(), visible=False)
-    
+
     if inner_titles:
         for ax in range(0, nt):
             t = ppt.add_inner_title(fig.axes[ax], inner_titles[ax], loc=2)
@@ -752,34 +758,34 @@ for k in range(0, nt):
 
 if singlerow:
     cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
-                                         cmap=variable.cmap,
-                                         norm=variable.norm,
-                                         extend=variable.extend,
-                                         orientation='vertical',
-                                         drawedges=False,
-                                         ticks=variable.ticks,
-                                         format=variable.format)
+                                                cmap=variable.cmap,
+                                                norm=variable.norm,
+                                                extend=variable.extend,
+                                                orientation='vertical',
+                                                drawedges=False,
+                                                ticks=variable.ticks,
+                                                format=variable.format)
 elif singlecolumn:
     cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
-                                         cmap=variable.cmap,
-                                         norm=variable.norm,
-                                         extend=variable.extend,
-                                         orientation='horizontal',
-                                         drawedges=False,
-                                         ticks=variable.ticks)
+                                                cmap=variable.cmap,
+                                                norm=variable.norm,
+                                                extend=variable.extend,
+                                                orientation='horizontal',
+                                                drawedges=False,
+                                                ticks=variable.ticks)
 else:
     if colorbar_position in ('bottom', 'upper'):
         orientation = 'horizontal'
     else:
         orientation = 'vertical'
     cbar = plt.matplotlib.colorbar.ColorbarBase(fig.axes[nt],
-                                         cmap=variable.cmap,
-                                         norm=variable.norm,
-                                         extend=variable.extend,
-                                         orientation=orientation,
-                                         drawedges=False,
-                                         ticks=variable.ticks,
-                                         format=variable.format)
+                                                cmap=variable.cmap,
+                                                norm=variable.norm,
+                                                extend=variable.extend,
+                                                orientation=orientation,
+                                                drawedges=False,
+                                                ticks=variable.ticks,
+                                                format=variable.format)
 
 # to prevent the pdf file having white lines
 cbar.solids.set_edgecolor("face")

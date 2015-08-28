@@ -35,6 +35,7 @@ def create_memory_layer(dst_fieldname):
 
     return layer, dst_field
 
+
 def validateShapePath(shapePath):
     '''Validate shapefile extension'''
     return os.path.splitext(str(shapePath))[0] + '.shp'
@@ -55,10 +56,11 @@ class ShapeDataError(Exception):
     pass
 
 
-parser = ArgumentParser(description='''A script the terminus in a (possibly) PISM netCDF file, and save it as a shapefile (polygon).''')
+parser = ArgumentParser(
+    description='''A script the terminus in a (possibly) PISM netCDF file, and save it as a shapefile (polygon).''')
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-o", "--output_filename", dest="out_file",
-                  help="Name of the output shape file", default='terminus.shp')
+                    help="Name of the output shape file", default='terminus.shp')
 
 
 options = parser.parse_args()
@@ -90,7 +92,7 @@ mem_ds = mem_driver.CreateDataSource('memory_layer')
 # Get SHP Driver
 shp_driver = ogr.GetDriverByName('ESRI Shapefile')
 shp_filename = validateShapePath(shp_filename)
-if os.path.exists(shp_filename): 
+if os.path.exists(shp_filename):
     os.remove(shp_filename)
 shp_ds = shp_driver.CreateDataSource(shp_filename)
 
@@ -107,17 +109,17 @@ terminus_dst_field = 0
 bufferDist = 1
 ocean_value = 4
 floating_value = 3
-            
+
 for k in range(src_ds.RasterCount):
     if tdim is None:
         timestamp = '0-0-0'
     else:
         timestamp = timestamps[k]
     print('Processing {}'.format(timestamp))
-    srcband = src_ds.GetRasterBand(k+1)
+    srcband = src_ds.GetRasterBand(k + 1)
     poly_layer, dst_field = create_memory_layer(dst_fieldname)
     result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [],
-                      callback = gdal.TermProgress)
+                             callback=gdal.TermProgress)
     poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, ocean_value))
     ocean_layer, dst_field = create_memory_layer(dst_fieldname)
     featureDefn = ocean_layer.GetLayerDefn()
@@ -129,7 +131,8 @@ for k in range(src_ds.RasterCount):
         outFeature.SetGeometry(geomBuffer)
         ocean_layer.CreateFeature(outFeature)
 
-    poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, floating_value))
+    poly_layer.SetAttributeFilter(
+        "{} = {}".format(dst_fieldname, floating_value))
     floating_layer, dst_field = create_memory_layer(dst_fieldname)
     featureDefn = floating_layer.GetLayerDefn()
     for m, feature in enumerate(poly_layer):
@@ -157,7 +160,7 @@ for k in range(src_ds.RasterCount):
         # add the feature to the output layer
         terminus_layer.CreateFeature(outFeature)
 
-        
+
 # Clean-up
 poly_layer = None
 terminus_layer = None

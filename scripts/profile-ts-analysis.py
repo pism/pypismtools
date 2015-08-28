@@ -30,40 +30,41 @@ parser = ArgumentParser()
 parser.description = '''A script for profile time-series plots using pylab/matplotlib.'''
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
-                  help="lower and upper bound for ordinate, eg. -1 1", default=None)
+                    help="lower and upper bound for ordinate, eg. -1 1", default=None)
 parser.add_argument("--x_bounds", dest="x_bounds", nargs=2,
-                  help="lower and upper bound for abscissa, eg. 0 200", default=None)
-parser.add_argument("-l", "--labels",dest="labels",
-                  help="comma-separated list with labels, put in quotes like 'label 1,label 2'",default=None)
+                    help="lower and upper bound for abscissa, eg. 0 200", default=None)
+parser.add_argument("-l", "--labels", dest="labels",
+                    help="comma-separated list with labels, put in quotes like 'label 1,label 2'", default=None)
 parser.add_argument("--index_ij", dest="index_ij", nargs=2, type=float,
-                  help="i and j index for spatial fields, eg. 10 10", default=[36, 92])
-parser.add_argument("-f", "--output_format",dest="out_formats",
-                      help="Comma-separated list with output graphics suffix, default = pdf",default='pdf')
-parser.add_argument("-n", "--normalize",dest="normalize",action="store_true",
-                  help="Normalize to beginning of time series, Default=False",default=False)
-parser.add_argument("-d", "--plot_detrended",dest="plot_detrended",action="store_true",
-                  help="Plot detrended time series, Default=False",default=False)
-parser.add_argument("-o", "--output_file",dest="outfile",
-                  help="output file name without suffix, i.e. ts_control -> ts_control_variable",default='foo')
-parser.add_argument("-p", "--print_size",dest="print_mode",
-                    choices=['onecol','medium','twocol','height','presentation','small_font'],
-                    help="sets figure size and font size.'",default="medium")
-parser.add_argument("--show",dest="show",action="store_true",
-                  help="show figure (in addition to save), Default=False",default=False)
+                    help="i and j index for spatial fields, eg. 10 10", default=[36, 92])
+parser.add_argument("-f", "--output_format", dest="out_formats",
+                    help="Comma-separated list with output graphics suffix, default = pdf", default='pdf')
+parser.add_argument("-n", "--normalize", dest="normalize", action="store_true",
+                    help="Normalize to beginning of time series, Default=False", default=False)
+parser.add_argument("-d", "--plot_detrended", dest="plot_detrended", action="store_true",
+                    help="Plot detrended time series, Default=False", default=False)
+parser.add_argument("-o", "--output_file", dest="outfile",
+                    help="output file name without suffix, i.e. ts_control -> ts_control_variable", default='foo')
+parser.add_argument("-p", "--print_size", dest="print_mode",
+                    choices=['onecol', 'medium', 'twocol',
+                             'height', 'presentation', 'small_font'],
+                    help="sets figure size and font size.'", default="medium")
+parser.add_argument("--show", dest="show", action="store_true",
+                    help="show figure (in addition to save), Default=False", default=False)
 parser.add_argument("--shadow", dest="shadow", action="store_true",
-                  help='''add drop shadow to line plots, Default=False''',
-                  default=False)
+                    help='''add drop shadow to line plots, Default=False''',
+                    default=False)
 parser.add_argument("--rotate_xticks", dest="rotate_xticks", action="store_true",
-                  help="rotate x-ticks by 30 degrees, Default=False",
-                  default=False)
+                    help="rotate x-ticks by 30 degrees, Default=False",
+                    default=False)
 parser.add_argument("-r", "--output_resolution", dest="out_res",
-                  help='''Resolution ofoutput graphics in dots per
+                    help='''Resolution ofoutput graphics in dots per
                   inch (DPI), default = 300''', default=300)
 parser.add_argument("-t", "--twinx", dest="twinx", action="store_true",
-                  help='''adds a second ordinate with units mmSLE,
+                    help='''adds a second ordinate with units mmSLE,
                   Default=False''', default=False)
-parser.add_argument("-v", "--variable",dest="variables",
-                  help="comma-separated list with variables",default='csurf')
+parser.add_argument("-v", "--variable", dest="variables",
+                    help="comma-separated list with variables", default='csurf')
 
 options = parser.parse_args()
 args = options.FILE
@@ -73,7 +74,7 @@ else:
     labels = None
 bounds = options.bounds
 index_i, index_j = options.index_ij[0], options.index_ij[1]
-x_bounds = options.x_bounds    
+x_bounds = options.x_bounds
 golden_mean = get_golden_mean()
 normalize = options.normalize
 plot_detrended = options.plot_detrended
@@ -116,7 +117,7 @@ var_ylabels = []
 var_longnames = []
 var_units_strings = []
 print("opening file %s" % args[0])
-nc = NC(args[0],'r')
+nc = NC(args[0], 'r')
 calendar = nc.variables["time"].calendar
 time_units = nc.variables["time"].units
 time_outunits = 'years since 1960-1-1'
@@ -136,7 +137,8 @@ if profile_var in nc.variables.keys():
     profile = nc.variables["profile"]
     profile_units = profile.units
     profile_outunits = 'km'
-    profile_axis = np.squeeze(unit_converter(profile[:], profile_units, profile_outunits))
+    profile_axis = np.squeeze(
+        unit_converter(profile[:], profile_units, profile_outunits))
 
 for var in variables:
     try:
@@ -193,10 +195,10 @@ for var in variables:
     var_units_strings.append(var_units_str)
     try:
         var_vals = unit_converter(np.squeeze(permute(nc.variables[var],
-                                                     output_order=output_order)),var_units, out_units)
+                                                     output_order=output_order)), var_units, out_units)
     except:
         var_vals = unit_converter(np.squeeze(permute(nc.variables[var],
-                                                     output_order=output_order_cdo)),var_units, out_units)
+                                                     output_order=output_order_cdo)), var_units, out_units)
     if normalize:
         var_vals -= var_vals[0]
 
@@ -205,7 +207,7 @@ for var in variables:
 nc.close()
 
 try:
-    no_profiles = len(var_values[0][:,0])
+    no_profiles = len(var_values[0][:, 0])
 except:
     no_profiles = 1
 
@@ -219,11 +221,11 @@ plt.rcParams['legend.fancybox'] = True
 my_colors = colorList()
 ## my_colors_light = []
 ## color_converter = colors.ColorConverter()
-## for c in my_colors:
+# for c in my_colors:
 ##     rgb = color_converter.to_rgb(c)
 ##     hsv = np.asarray(colorsys.rgb_to_hsv(*rgb))
 ##     rgb_light = color_converter.to_rgb(hsv)
-##     my_colors_light.append(rgb_light)
+# my_colors_light.append(rgb_light)
 
 jet = cm = plt.get_cmap('jet')
 cNorm = colors.Normalize(vmin=0, vmax=len(date))
@@ -237,7 +239,7 @@ for k in range(len(variables)):
 
     for m in range(no_profiles):
         try:
-            y = var_values[k][m,:]
+            y = var_values[k][m, :]
         except:
             y = var_values[0][:]
         out = trend_estimator(t, y)
@@ -249,35 +251,38 @@ for k in range(len(variables)):
         lag = p[3]
         trend_err = np.abs(np.sqrt(cov[1][1]) * trend)
         amplitude_err = np.abs(np.sqrt(cov[2][2]) * amplitude)
-        units_str = ('%s %s$^{-1}$' % (var_units_strings[k], time_units_str)) 
+        units_str = ('%s %s$^{-1}$' % (var_units_strings[k], time_units_str))
         if plot_detrended:
             label = ('%4.0f$\pm$%2.0f' % (amplitude, amplitude_err))
             label = profile_names[m]
-            y_detrended = y - (p[0] + p[1]*t)
-            ax.plot_date(date, y_detrended, fmt='.', color=my_colors[m], label=label)
-            ## ax.plot_date(date, p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
-            ##              fmt='-', color='w')
-            ## ax.plot_date(date, p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
-            ##              fmt='-', color=my_colors[m], alpha=0.75)
+            y_detrended = y - (p[0] + p[1] * t)
+            ax.plot_date(
+                date, y_detrended, fmt='.', color=my_colors[m], label=label)
+            # ax.plot_date(date, p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
+            # fmt='-', color='w')
+            # ax.plot_date(date, p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
+            # fmt='-', color=my_colors[m], alpha=0.75)
         else:
-            label = ('%4.0f$\pm$%2.0f, %4.0f$\pm$%2.0f' % (trend, trend_err, amplitude, amplitude_err))
+            label = ('%4.0f$\pm$%2.0f, %4.0f$\pm$%2.0f' %
+                     (trend, trend_err, amplitude, amplitude_err))
             label = profile_names[m]
             ax.plot_date(date, y, fmt='.', color=my_colors[m], label=label)
-            ax.plot_date(date, p[0] + p[1]*t + p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
+            ax.plot_date(date, p[0] + p[1] * t + p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
                          fmt='-', color='w')
-            ax.plot_date(date, p[0] + p[1]*t + p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
+            ax.plot_date(date, p[0] + p[1] * t + p[2] * np.cos(2.0 * np.pi * (t - p[3]) / 1.0),
                          fmt='-', color=my_colors[m], alpha=0.75)
-            ax.plot_date(date, p[0] + p[1]*t, fmt='--', color='w')
-            ax.plot_date(date, p[0] + p[1]*t, fmt='--', color=my_colors[m], alpha=0.75)
+            ax.plot_date(date, p[0] + p[1] * t, fmt='--', color='w')
+            ax.plot_date(
+                date, p[0] + p[1] * t, fmt='--', color=my_colors[m], alpha=0.75)
         print (lag % 1) * 365.2
     ax.set_xlabel("year")
     ax.set_ylabel(var_ylabels[k])
     plt.legend(numpoints=1)
-    ## if plot_detrended:
+    # if plot_detrended:
     ##     plt.legend(numpoints=1, title=('amplitude\n (%s)' % (var_units_strings[k])))
-    ## else:
+    # else:
     ##     plt.legend(numpoints=1, title=('trend, amplitude\n (%s), (%s)' % (units_str, var_units_strings[k])))
-        
+
     if x_bounds:
         x_min = dateutil.parser.parse(x_bounds[0])
         x_max = dateutil.parser.parse(x_bounds[1])
@@ -295,5 +300,3 @@ for k in range(len(variables)):
         out_file = outfile + '_' + variables[k] + '.' + out_format
         print "  - writing image %s ..." % out_file
         fig.savefig(out_file, bbox_inches='tight', dpi=out_res)
-
-

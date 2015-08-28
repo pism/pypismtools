@@ -198,7 +198,7 @@ for k in range(len(args)):
         colorbar_label = 'm a.s.l.'
     elif log:
         data_values = a * np.logspace(vmin, vmax, N)
-        norm = mpl.colors.LogNorm(vmin=(10 ** vmin), vmax = a * (10 ** vmax))
+        norm = mpl.colors.LogNorm(vmin=(10 ** vmin), vmax=a * (10 ** vmax))
         ticks = np.hstack(
             (np.logspace(vmin, vmax, vmax - vmin + 1), a * (10 ** vmax)))
         ticks = [1, 3, 10, 30, 100, 300, 1000, 3000, 10000]
@@ -207,7 +207,7 @@ for k in range(len(args)):
     elif log_color:
         data_values = a * np.logspace(vmin, vmax, N)
         norm = mpl.colors.LogNorm(
-            vmin=(10 ** vmin) - 0.01, vmax = a * (10 ** vmax))
+            vmin=(10 ** vmin) - 0.01, vmax=a * (10 ** vmax))
         ticks = [1, 3, 10, 30, 100, 300, 1000, 3000, 10000]
         format = '%i'
         cb_extend = 'both'

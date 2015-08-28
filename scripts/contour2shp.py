@@ -55,13 +55,15 @@ def get_contours(array, x, y, projection, level):
     contour_points = []
     for k in range(0, len(contours)):
         contour = contours[k]
-        contour_x = x[0] + contour[:,1] * (x[-1]-x[0])/(len(i)-1)
-        contour_y = y[0] + contour[:,0] * (y[-1]-y[0])/(len(j)-1)
+        contour_x = x[0] + contour[:, 1] * (x[-1] - x[0]) / (len(i) - 1)
+        contour_y = y[0] + contour[:, 0] * (y[-1] - y[0]) / (len(j) - 1)
         # Convert to EPSG:4326
-        contour_lon, contour_lat = projection(contour_x, contour_y, inverse=True)
+        contour_lon, contour_lat = projection(
+            contour_x, contour_y, inverse=True)
         lon.append(contour_lon)
         lat.append(contour_lat)
-        points = [(contour_lon[k], contour_lat[k]) for k in range(len(contour_lat))]
+        points = [(contour_lon[k], contour_lat[k])
+                  for k in range(len(contour_lat))]
         contour_points.append(points)
     # reverse direction, last entry (longest contour) first.
     contour_points.reverse()
@@ -72,18 +74,18 @@ def get_contours(array, x, y, projection, level):
     return contour_points
 
 
-
-parser = ArgumentParser(description='''A script to extract a (closed) contour line from a variable in a netCDF file, and save it as a shapefile (polygon).''')
+parser = ArgumentParser(
+    description='''A script to extract a (closed) contour line from a variable in a netCDF file, and save it as a shapefile (polygon).''')
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-o", "--output_filename", dest="out_file",
-                  help="Name of the output shape file", default='countour.shp')
+                    help="Name of the output shape file", default='countour.shp')
 parser.add_argument("-v", "--variable", dest="varname",
-                  help='''Variable to plot, default = 'mask'.''', default='mask')
+                    help='''Variable to plot, default = 'mask'.''', default='mask')
 parser.add_argument("-c", "--countour_levels", nargs='*',
                     dest="contour_levels",
                     help='''Contour-levels to extract, default = 0.''', default='0')
-parser.add_argument("-s","--single",dest="single", action="store_true",
-                  help="save only the longest contour line, Default=False", default=False)
+parser.add_argument("-s", "--single", dest="single", action="store_true",
+                    help="save only the longest contour line, Default=False", default=False)
 
 
 options = parser.parse_args()
@@ -107,7 +109,7 @@ y = np.squeeze(nc.variables[ydim])
 driver = ogr.GetDriverByName('ESRI Shapefile')
 # Create shapeData
 shp_filename = validateShapePath(shp_filename)
-if os.path.exists(shp_filename): 
+if os.path.exists(shp_filename):
     os.remove(shp_filename)
 shapeData = driver.CreateDataSource(shp_filename)
 # Create spatialReference, EPSG 4326 (lonlat)
@@ -130,11 +132,13 @@ if tdim:
         timestamp = cdftime.num2date(t)
         print('Processing {}'.format(timestamp))
         for level in contour_levels:
-            contour_var = np.array(ppt.permute(nc.variables[varname], var_order), order='C')[k, Ellipsis]
-            contour_points = get_contours(contour_var, x, y, nc_projection, level)
+            contour_var = np.array(
+                ppt.permute(nc.variables[varname], var_order), order='C')[k, Ellipsis]
+            contour_points = get_contours(
+                contour_var, x, y, nc_projection, level)
             # For each contour
             polygon = ogr.Geometry(ogr.wkbPolygon)
-            for k in range(0,len(contour_points)):
+            for k in range(0, len(contour_points)):
                 geoLocations = contour_points[k]
                 ring = ogr.Geometry(ogr.wkbLinearRing)
                 # For each point,
@@ -158,11 +162,12 @@ if tdim:
             feature = None
 else:
     for level in contour_levels:
-        contour_var = np.array(np.squeeze(ppt.permute(nc.variables[varname], var_order)), order='C')
+        contour_var = np.array(
+            np.squeeze(ppt.permute(nc.variables[varname], var_order)), order='C')
         contour_points = get_contours(contour_var, x, y, nc_projection, level)
         # For each contour
         polygon = ogr.Geometry(ogr.wkbPolygon)
-        for k in range(0,len(contour_points)):
+        for k in range(0, len(contour_points)):
             geoLocations = contour_points[k]
             ring = ogr.Geometry(ogr.wkbLinearRing)
             # For each point,
@@ -184,7 +189,6 @@ else:
         feature = None
 # Cleanup
 shapeData = None
-    
 
 
 # save(shp_filename, contour_points, level)

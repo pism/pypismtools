@@ -13,7 +13,7 @@ except:
     import pypismtools as ppt
 
 import PISM
-    
+
 # Set up the option parser
 parser = ArgumentParser()
 parser.description = "A script to demonstrate how to convert temperature to enthalpy."
@@ -32,10 +32,12 @@ z = nc.variables['z'][:]
 inunits = nc.variables['temp'].units
 outunits = 'K'
 try:
-    temp = ppt.unit_converter(np.squeeze(nc.variables['temp'][:]), inunits, outunits)
+    temp = ppt.unit_converter(
+        np.squeeze(nc.variables['temp'][:]), inunits, outunits)
 except:
     temp = np.squeeze(nc.variables['temp'][:])
-    print("WARNING: I don't know the units of variable temp, and assume it is Kelvin")
+    print(
+        "WARNING: I don't know the units of variable temp, and assume it is Kelvin")
 
 enthalpy_true = np.squeeze(nc.variables['enthalpy'][:])
 usurf = np.squeeze(nc.variables['usurf'][:])
@@ -54,14 +56,14 @@ p_air = config.get("surface_pressure")
 for m in range(M):
     for l in range(L):
         for k in range(K):
-            depth = topg[k,l] - usurf[k,l] + z[m]
-            if (topg[k,l] + z[m] < usurf[k,l]):
+            depth = topg[k, l] - usurf[k, l] + z[m]
+            if (topg[k, l] + z[m] < usurf[k, l]):
                 p = EC.pressure(depth)
             else:
                 p = p_air
             # liquid water fraction is set to zero because
             # it is not available in this context
-            enthalpy[k,l,m] = EC.enthalpy(temp[k,l,m], 0., p)
+            enthalpy[k, l, m] = EC.enthalpy(temp[k, l, m], 0., p)
 
 # Compare with enthalpy field in file.
 # Note that difference is only zero in the absence of temperate ice

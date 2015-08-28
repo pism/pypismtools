@@ -12,8 +12,9 @@ parser.add_argument("FILE", nargs='*')
 parser.add_argument("-g", "--grid_spacing", dest="grid_spacing", type=float,
                     help="use X m grid spacing", default=1800)
 parser.add_argument("-f", "--format", dest="fileformat", type=str.upper,
-                  choices = ['NETCDF4', 'NETCDF4_CLASSIC', 'NETCDF3_CLASSIC', 'NETCDF3_64BIT'],
-                  help="file format out output file", default='netcdf3_64bit')
+                    choices=[
+                        'NETCDF4', 'NETCDF4_CLASSIC', 'NETCDF3_CLASSIC', 'NETCDF3_64BIT'],
+                    help="file format out output file", default='netcdf3_64bit')
 
 options = parser.parse_args()
 args = options.FILE
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     lon, lat = proj(ee, nn, inverse=True)
 
     nc = CDF(nc_outfile, 'w', format=fileformat)
-        
+
     nc.createDimension("x", size=easting.shape[0])
     nc.createDimension("y", size=northing.shape[0])
 

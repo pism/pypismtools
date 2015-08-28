@@ -23,34 +23,34 @@ except:
 from udunits2 import Converter, System, Unit
 
 
-
 # Set up the option parser
 parser = ArgumentParser()
 parser.description = "A script for profile plots using pylab/matplotlib."
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("-c", "--pcolor_mesh", dest="pc", action="store_true",
-                  help="use pcolormesh instead of contourf. Much slower. Default=False", default=False)
+                    help="use pcolormesh instead of contourf. Much slower. Default=False", default=False)
 parser.add_argument("--x_bounds", dest="x_bounds", nargs=2, type=int,
-                  help="lower and upper bound for abscissa, eg. 0 200", default=None)
+                    help="lower and upper bound for abscissa, eg. 0 200", default=None)
 parser.add_argument("--y_bounds", dest="y_bounds", nargs=2, type=int,
-                  help="lower and upper bound for ordinate, eg. 0 200", default=None)
-parser.add_argument("--colormap",dest="colormap",
-                  help='''path to a cpt colormap, or a pylab colormap,
+                    help="lower and upper bound for ordinate, eg. 0 200", default=None)
+parser.add_argument("--colormap", dest="colormap",
+                    help='''path to a cpt colormap, or a pylab colormap,
                   e.g. Blues''', default='jet')
 parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
-                  help="lower and upper bound for colorbar, eg. -1 1", default=None)
-parser.add_argument("-f", "--output_format",dest="out_formats",
-                      help="Comma-separated list with output graphics suffix, default = pdf",default='pdf')
-parser.add_argument("-o", "--output_file",dest="outfile",
-                  help="output file name without suffix, i.e. ts_control -> ts_control_variable",default='foo')
-parser.add_argument("-p", "--print_size",dest="print_mode",
-                    choices=['onecol','medium','twocol','height','presentation','small_font'],
-                    help="sets figure size and font size. Default=small_font",default="small_font")
+                    help="lower and upper bound for colorbar, eg. -1 1", default=None)
+parser.add_argument("-f", "--output_format", dest="out_formats",
+                    help="Comma-separated list with output graphics suffix, default = pdf", default='pdf')
+parser.add_argument("-o", "--output_file", dest="outfile",
+                    help="output file name without suffix, i.e. ts_control -> ts_control_variable", default='foo')
+parser.add_argument("-p", "--print_size", dest="print_mode",
+                    choices=['onecol', 'medium', 'twocol',
+                             'height', 'presentation', 'small_font'],
+                    help="sets figure size and font size. Default=small_font", default="small_font")
 parser.add_argument("-r", "--output_resolution", dest="out_res",
-                  help='''Resolution ofoutput graphics in dots per
+                    help='''Resolution ofoutput graphics in dots per
                   inch (DPI), default = 300''', default=300)
-parser.add_argument("-v", "--variable",dest="variables",
-                  help="comma-separated list with variables",default='vel_tangential')
+parser.add_argument("-v", "--variable", dest="variables",
+                    help="comma-separated list with variables", default='vel_tangential')
 
 options = parser.parse_args()
 args = options.FILE
@@ -102,7 +102,7 @@ scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cmap)
 norm = None
 if bounds:
     norm = colors.Normalize(vmin=bounds[0], vmax=bounds[-1])
-    
+
 
 profile_axis_o_units = 'm'
 
@@ -112,7 +112,7 @@ try:
     nc0 = NC(filename, 'r')
 except:
     print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
-          % filename))
+           % filename))
     import sys
     sys.exit(1)
 profile_names = nc0.variables['profile_name'][:]
@@ -146,7 +146,7 @@ for in_varname in variables:
         nc = NC(filename, 'r')
     except:
         print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
-              % filename))
+               % filename))
         import sys
         sys.exit(1)
 
@@ -169,7 +169,8 @@ for in_varname in variables:
         profile_axis_name = nc.variables['profile'].long_name
 
         profile_axis_out_units = 'km'
-        profile_axis = np.squeeze(unit_converter(profile_axis[:], profile_axis_units, profile_axis_out_units))
+        profile_axis = np.squeeze(
+            unit_converter(profile_axis[:], profile_axis_units, profile_axis_out_units))
 
         my_var = nc.variables[varname]
         my_var_units = my_var.units
@@ -177,16 +178,15 @@ for in_varname in variables:
         data = np.squeeze(my_var_p[profile_id, 0, Ellipsis])
         data = unit_converter(data, my_var_units, o_units)
 
-        
-        ## stuff needed for masking
+        # stuff needed for masking
         z = np.squeeze(nc.variables['z'][:])
         b = np.squeeze(nc.variables['topg'][:])
         s = np.squeeze(nc.variables['usurf'][:])
         ss = np.tile(s, [len(z), 1])
 
         x = profile_axis
-        xx = np.squeeze(np.tile(x,[len(z),1])).transpose()
-        zz = np.squeeze((np.tile(z,[len(x),1])).transpose() + b)
+        xx = np.squeeze(np.tile(x, [len(z), 1])).transpose()
+        zz = np.squeeze((np.tile(z, [len(x), 1])).transpose() + b)
 
         mask = zz > ss
         data_ma = np.ma.array(data=data, mask=mask)
@@ -194,19 +194,22 @@ for in_varname in variables:
                       interpolation='none', norm=norm,
                       extent=(x[0], x[-1], z[0], z[-1]))
 
-
         # load horizontal component, permute
-        hdata_p = permute(nc.variables['vel_tangential'], output_order=output_order)
+        hdata_p = permute(
+            nc.variables['vel_tangential'], output_order=output_order)
         # load vertical component, permute
         vdata_p = permute(nc.variables['wvel'], output_order=output_order)
-        hvel = np.ma.array(data=np.squeeze(hdata_p[profile_id, 0, Ellipsis]), mask=mask)
-        wvel = np.ma.array(data=np.squeeze(vdata_p[profile_id, 0, Ellipsis]), mask=mask)
+        hvel = np.ma.array(
+            data=np.squeeze(hdata_p[profile_id, 0, Ellipsis]), mask=mask)
+        wvel = np.ma.array(
+            data=np.squeeze(vdata_p[profile_id, 0, Ellipsis]), mask=mask)
 
         #hvel = np.squeeze(hdata_p[profile_id, 0, Ellipsis])
         #wvel = np.squeeze(vdata_p[profile_id, 0, Ellipsis])
 
         stride = 10
-        ax.quiver(x[::stride], z[::stride], hvel[::stride, ::stride], wvel[::stride, ::stride])
+        ax.quiver(x[::stride], z[::stride], hvel[
+                  ::stride, ::stride], wvel[::stride, ::stride])
         #density_x, density_z = np.array([len(x), len(z)]) / 100.
         # ax.streamplot(x, z, hvel, wvel,
         #               color='k', linewidth=0.25)
@@ -220,7 +223,7 @@ for in_varname in variables:
 
         if y_bounds:
             ax.set_ylim(y_bounds[0], y_bounds[-1])
-        
+
         xlabel = "{0} ({1})".format(profile_axis_name, profile_axis_out_units)
         ax.set_xlabel(xlabel)
         ax.set_ylabel('distance from bed (m)')
@@ -228,14 +231,15 @@ for in_varname in variables:
         cbar = plt.colorbar(c, orientation='horizontal', pad=0.25)
         cbar.solids.set_edgecolor("face")
         cbar.set_label(o_units_str)
-        
+
         for out_format in out_formats:
 
-            profile_name = '_'.join(['profile', unidecode(profile_name), varname])
+            profile_name = '_'.join(
+                ['profile', unidecode(profile_name), varname])
             out_name = '.'.join([profile_name, out_format]).replace(' ', '_')
             print "  - writing image %s ..." % out_name
             fig.tight_layout()
             fig.savefig(out_name, bbox_inches='tight', dpi=out_res)
 
         plt.close()
-    #nc.close()
+    # nc.close()

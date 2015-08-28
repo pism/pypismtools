@@ -23,7 +23,8 @@ if not_installed:
         if package is 'osgeo':
             print(' - GDAL python bindings')
         elif package is 'udunits2':
-            print(' - py_udunits2 from https://github.com/ckhroulev/py_udunits2')
+            print(
+                ' - py_udunits2 from https://github.com/ckhroulev/py_udunits2')
         else:
             print(('  - %s' % package))
     print('Exiting')
@@ -37,29 +38,30 @@ setup(name=PKG_NAME,
       author_email='aaschwanden@alaska.edu',
       url='https://github.com/pism/pypismtools',
       classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: GNU General Public License (GPL)',
-        'Operating System :: POSIX',
-        'Programming Language :: Python',
-        'Topic :: Scientific/Engineering',
-        'Topic :: Utilities'
-        ],
-      scripts=['scripts/basemap-plot.py','scripts/qgis-colorramp.py',
+          'Development Status :: 3 - Alpha',
+          'Intended Audience :: Science/Research',
+          'License :: OSI Approved :: GNU General Public License (GPL)',
+          'Operating System :: POSIX',
+          'Programming Language :: Python',
+          'Topic :: Scientific/Engineering',
+          'Topic :: Utilities'
+      ],
+      scripts=['scripts/basemap-plot.py', 'scripts/qgis-colorramp.py',
                'scripts/contour2shp.py', 'scripts/remap3d.py',
                'scripts/flowline-plot.py', 'scripts/flowline-box-plot.py',
                'scripts/extract_terminus.py', 'scripts/extract_profiles.py',
                'scripts/profile-plot.py', 'scripts/profile-ts-plot.py',
                'scripts/temp2enth.py', 'scripts/im-plot.py',
                'scripts/scalar_within_poly.py', 'scripts/create_greenland_grid.py',
-               'scripts/create_greenland_epsg3413_grid.py', 'scripts/extract_sigma_levels.py', 
+               'scripts/create_greenland_epsg3413_grid.py', 'scripts/extract_sigma_levels.py',
                'scripts/plot_timeseries.py', 'scripts/calculate_marine_gates_area.py'],
       packages=[PKG_NAME],
       package_dir={PKG_NAME: '.'},
       package_data={PKG_NAME: ['colormaps/*.cpt']},
       )
 
-print('\n*********************************************************************')
+print(
+    '\n*********************************************************************')
 print(('Make make sure you have\n %s\nin your search path!'
-      % os.path.join(sys.prefix, 'bin')))
+       % os.path.join(sys.prefix, 'bin')))
 print('*********************************************************************')
