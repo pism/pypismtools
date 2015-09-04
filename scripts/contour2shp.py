@@ -138,8 +138,8 @@ if tdim:
                 contour_var, x, y, nc_projection, level)
             # For each contour
             polygon = ogr.Geometry(ogr.wkbPolygon)
-            for k in range(0, len(contour_points)):
-                geoLocations = contour_points[k]
+            for point in range(0, len(contour_points)):
+                geoLocations = contour_points[point]
                 ring = ogr.Geometry(ogr.wkbLinearRing)
                 # For each point,
                 for pointIndex, geoLocation in enumerate(geoLocations):
