@@ -744,79 +744,151 @@ def read_shapefile(filename):
         srs_geo.ImportFromEPSG(4326)
     cnt = layer.GetFeatureCount()
     profiles = []
-    for pt in range(0, cnt):
-        feature = layer.GetFeature(pt)
-        try:
-            id = feature.id
-        except:
-            id = str(pt)
-        if id is None:
-            id = str(pt)
-        try:
-            name = feature.name
-        except:
-            name = str(pt)
-        if name is None:
-            name = str(pt)
-        try:
-            clon = feature.clon
-        except:
-            clon = str(pt)
-        if clon is None:
-            clon = 0.
-        try:
-            clat = feature.clat
-        except:
-            clat = str(pt)
-        if clat is None:
-            clat = 0.
-        try:
-            flightline = feature.flightline
-        except:
-            flightline = 2
-        if flightline is None:
-            flightline = 2
-        try:
-            glaciertype = feature.gtype
-        except:
-            glaciertype = 5
-        if glaciertype is None:
-            glaciertype = 5
-        try:
-            flowtype = feature.ftype
-        except:
-            flowtype = 2
-        if flowtype is None:
-            flowtype = 2
-        geometry = feature.GetGeometryRef()
-        # Transform to latlon if needed
-        if not srs.IsGeographic():
-            geometry.TransformTo(srs_geo)
+    if layer.GetGeomType() == 1:
         lon = []
         lat = []
+        for pt in range(0, cnt):
+            feature = layer.GetFeature(pt)
 
-        # This stopped working in gdal 1.11????
-        # for point in geometry.GetPoints():
-        #     lon.append(point[0])
-        #     lat.append(point[1])
-        # So here's a bug fix??
-        for i in range(0, geometry.GetPointCount()):
-            # GetPoint returns a tuple not a Geometry
-            pt = geometry.GetPoint(i)
-            lon.append(pt[0])
-            lat.append(pt[1])
+            try:
+                id = feature.id
+            except:
+                id = str(pt)
+            if id is None:
+                id = str(pt)
+            try:
+                name = feature.name
+            except:
+                name = str(pt)
+            if name is None:
+                name = str(pt)
+            try:
+                clon = feature.clon
+            except:
+                clon = str(pt)
+            if clon is None:
+                clon = 0.
+            try:
+                clat = feature.clat
+            except:
+                clat = str(pt)
+            if clat is None:
+                clat = 0.
+            try:
+                flightline = feature.flightline
+            except:
+                flightline = 2
+            if flightline is None:
+                flightline = 2
+            try:
+                glaciertype = feature.gtype
+            except:
+                glaciertype = 5
+            if glaciertype is None:
+                glaciertype = 5
+            try:
+                flowtype = feature.ftype
+            except:
+                flowtype = 2
+            if flowtype is None:
+                flowtype = 2
+            geometry = feature.GetGeometryRef()
+            # Transform to latlon if needed
+            if not srs.IsGeographic():
+                geometry.TransformTo(srs_geo)
+                
+            point = geometry.GetPoint()
+            lon.append(point[0])
+            lat.append(point[1])
 
-        # skip features with less than 2 points:
-        if len(lat) > 1:
-            profiles.append([lat,
-                             lon,
-                             id,
-                             name,
-                             clat,
-                             clon,
-                             flightline,
-                             glaciertype,
-                             flowtype])
+        profiles.append([lat,
+                         lon,
+                         id,
+                         name,
+                         clat,
+                         clon,
+                         flightline,
+                         glaciertype,
+                         flowtype])
+                
+    elif layer.GetGeomType() == 2 or layer.GetGeomType() == 5:
+        for pt in range(0, cnt):
+            feature = layer.GetFeature(pt)
+            try:
+                id = feature.id
+            except:
+                id = str(pt)
+            if id is None:
+                id = str(pt)
+            try:
+                name = feature.name
+            except:
+                name = str(pt)
+            if name is None:
+                name = str(pt)
+            try:
+                clon = feature.clon
+            except:
+                clon = str(pt)
+            if clon is None:
+                clon = 0.
+            try:
+                clat = feature.clat
+            except:
+                clat = str(pt)
+            if clat is None:
+                clat = 0.
+            try:
+                flightline = feature.flightline
+            except:
+                flightline = 2
+            if flightline is None:
+                flightline = 2
+            try:
+                glaciertype = feature.gtype
+            except:
+                glaciertype = 5
+            if glaciertype is None:
+                glaciertype = 5
+            try:
+                flowtype = feature.ftype
+            except:
+                flowtype = 2
+            if flowtype is None:
+                flowtype = 2
+            geometry = feature.GetGeometryRef()
+            # Transform to latlon if needed
+            if not srs.IsGeographic():
+                geometry.TransformTo(srs_geo)
+            lon = []
+            lat = []
+
+            # for point in geometry.GetPoints():
+            #     lon.append(point[0])
+            #     lat.append(point[1])
+            # So here's a bug fix??
+            for i in range(0, geometry.GetPointCount()):
+                # GetPoint returns a tuple not a Geometry
+                pt = geometry.GetPoint(i)
+                lon.append(pt[0])
+                lat.append(pt[1])
+
+            # skip features with less than 2 points:
+            if len(lat) > 1:
+                profiles.append([lat,
+                                 lon,
+                                 id,
+                                 name,
+                                 clat,
+                                 clon,
+                                 flightline,
+                                 glaciertype,
+                                 flowtype])
+
+        else:
+            # FIXME: Constantine, can we gracefully exit saying it's not supported?
+            pass
+                
     return profiles
 
 
