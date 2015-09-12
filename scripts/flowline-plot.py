@@ -36,6 +36,10 @@ parser.add_argument("--colormap", dest="colormap",
                   e.g. Blues''', default='jet')
 parser.add_argument("-f", "--output_format", dest="out_formats",
                     help="Comma-separated list with output graphics suffix, default = pdf", default='pdf')
+parser.add_argument("--label_params", dest="label_params",
+                    help='''comma-separated list of parameters that appear in the legend,
+                    e.g. "sia_enhancement_factor"''', default='ocean_forcing_type,fracture_density_softening_lower_limit')
+
 parser.add_argument("-o", "--output_file", dest="outfile",
                     help="output file name without suffix, i.e. ts_control -> ts_control_variable", default='foo')
 parser.add_argument("-p", "--print_size", dest="print_mode",
@@ -57,6 +61,7 @@ x_bounds = options.x_bounds
 y_bounds = options.y_bounds
 colormap = options.colormap
 golden_mean = ppt.get_golden_mean()
+label_params = list(options.label_params.split(','))
 obs_file = options.obs_file
 out_res = options.out_res
 outfile = options.outfile
@@ -67,6 +72,44 @@ dashes = ['-', '--', '-.', ':', '-', '--', '-.', ':']
 output_order = ('station', 'time', 'profile', 'z')
 alpha = 0.5
 my_colors = ppt.colorList()
+
+params = ('pseudo_plastic_q', 'till_effective_fraction_overburden',
+          'sia_enhancement_factor', 'do_cold_ice_methods', 'stress_balance_model',
+          'ssa_Glen_exponent', 'grid_dx_meters', 'bed_data_set', 'pseudo_plastic_uthreshold', 'ocean_forcing_type', 'eigen_calving_K', 'thickness_calving_threshold', 'ssa_enhancement_factor', 'bathymetry_type', 'fracture_density_softening_lower_limit')
+params_formatting = (
+    '{:1.2f}',
+    '{:1.4f}',
+    '{:1.2f}',
+    '{}',
+    '{}',
+    '{:1.2f}',
+    '{:.0f}',
+    '{}',
+    '{:3.0f}',
+    '{}',
+    '{:.0e}',
+    '{:.0f}',
+    '{:1.2f}',
+    '{}',
+    '{:1.2f}')
+params_formatting_dict = dict(zip(params, params_formatting))
+params_abbr = (
+    '$q$',
+    '$\\delta$',
+    '$Esia$',
+    'cold',
+    'SSA',
+    '$n$',
+    'ds',
+    'bed',
+    '$u_{c}$',
+    'O',
+    'K',
+    'Hm',
+    'Essa',
+    'B',
+    'f')
+params_abbr_dict = dict(zip(params, params_abbr))
 
 
 try:
@@ -138,7 +181,8 @@ for in_varname in variables:
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
-        nt= len(args)
+        nt = len(args)
+        labels = []
         for idx, filename in enumerate(args):
 
             print("  opening NetCDF file %s ..." % filename)
@@ -177,7 +221,19 @@ for in_varname in variables:
                 data = np.squeeze(my_var_p[profile_id, Ellipsis])                
             data = ppt.unit_converter(data, my_var_units, o_units)
 
+            pism_config = nc.variables["pism_config"]
+            run_stats = nc.variables['run_stats']
+            config = dict()
+            for attr in pism_config.ncattrs():
+                config[attr] = getattr(pism_config, attr)
+            for attr in run_stats.ncattrs():
+                config[attr] = getattr(run_stats, attr)
 
+            exp_str = ', '.join(['='.join([params_abbr_dict[key], params_formatting_dict[
+                key].format(config[key])]) for key in label_params])
+
+            labels.append(exp_str)
+            
             colorVal = scalarMap.to_rgba(idx)
             if nt > len(my_colors):
                 retLine, = ax.plot(
@@ -217,7 +273,7 @@ for in_varname in variables:
                 data = np.squeeze(my_var_p[profile_id, Ellipsis])                
             data = ppt.unit_converter(data, my_var_units, o_units)
 
-
+            labels.append('observed')
             ax.plot(x, data, color='k', linewidth=2)
 
             nc.close()            
@@ -236,6 +292,16 @@ for in_varname in variables:
         ylabel = "{0} ({1})".format(varname, o_units_str)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
+        # handles, labels = ax.get_legend_handles_labels()
+        # ordered_handles = handles[:0:-1]
+        # ordered_labels = labels[:0:-1]
+        # ordered_handles.insert(0, handles[0])
+        # ordered_labels.insert(0, labels[0])
+        lg = ax.legend(labels,
+                               loc="upper right",
+                               shadow=True, numpoints=numpoints,
+                               bbox_to_anchor=(0, 0, 1, 1),
+                               bbox_transform=plt.gcf().transFigure)
 
         for out_format in out_formats:
 
