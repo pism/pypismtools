@@ -39,6 +39,10 @@ parser.add_argument("-f", "--output_format", dest="out_formats",
 parser.add_argument("--label_params", dest="label_params",
                     help='''comma-separated list of parameters that appear in the legend,
                     e.g. "sia_enhancement_factor"''', default='ocean_forcing_type,fracture_density_softening_lower_limit')
+parser.add_argument("--legend", dest="legend",
+                    choices=['default', 'none'],
+                    help="Controls the legend, options are: \
+                    'default' (default), 'none", default='default')
 
 parser.add_argument("-o", "--output_file", dest="outfile",
                     help="output file name without suffix, i.e. ts_control -> ts_control_variable", default='foo')
@@ -62,6 +66,7 @@ y_bounds = options.y_bounds
 colormap = options.colormap
 golden_mean = ppt.get_golden_mean()
 label_params = list(options.label_params.split(','))
+legend = options.legend
 obs_file = options.obs_file
 out_res = options.out_res
 outfile = options.outfile
@@ -162,6 +167,9 @@ for in_varname in variables:
     elif in_varname in ('land_ice_thickness', 'thickness', 'thk'):
         o_units = 'm'
         o_units_str = 'm'
+    elif in_varname in ('bedrock', 'bedrock_altitude', 'topg'):
+        o_units = 'm'
+        o_units_str = 'm a.s.l.'
     else:
         print("variable {} not supported".format(in_varname))
 
@@ -221,16 +229,19 @@ for in_varname in variables:
                 data = np.squeeze(my_var_p[profile_id, Ellipsis])                
             data = ppt.unit_converter(data, my_var_units, o_units)
 
-            pism_config = nc.variables["pism_config"]
-            run_stats = nc.variables['run_stats']
-            config = dict()
-            for attr in pism_config.ncattrs():
-                config[attr] = getattr(pism_config, attr)
-            for attr in run_stats.ncattrs():
-                config[attr] = getattr(run_stats, attr)
+            if label_params[0] == 'none':
+                exp_str = None
+            else:
+                pism_config = nc.variables["pism_config"]
+                run_stats = nc.variables['run_stats']
+                config = dict()
+                for attr in pism_config.ncattrs():
+                    config[attr] = getattr(pism_config, attr)
+                for attr in run_stats.ncattrs():
+                    config[attr] = getattr(run_stats, attr)
 
-            exp_str = ', '.join(['='.join([params_abbr_dict[key], params_formatting_dict[
-                key].format(config[key])]) for key in label_params])
+                exp_str = ', '.join(['='.join([params_abbr_dict[key], params_formatting_dict[
+                    key].format(config[key])]) for key in label_params])
 
             labels.append(exp_str)
             
@@ -244,39 +255,46 @@ for in_varname in variables:
             nc.close()
 
         if obs_file:
-            nc = NC(obs_file, 'r')
+            print obs_file
+            nc_t= NC(obs_file, 'r')
+            #print nc_t.variables['velsurf_mag'][:]
+            nc_obs = NC(obs_file, 'r')
             varname = in_varname
-            for name in nc.variables:
-                v = nc.variables[name]
+            for name in nc_obs.variables:
+                v = nc_obs.variables[name]
                 if getattr(v, "standard_name", "") == in_varname:
                     print("variabe {0} found by its standard_name {1}".format(name,
                                                                               in_varname))
                     varname = name
             
-            profile_axis = nc.variables['profile'][profile_id]
-            profile_axis_units = nc.variables['profile'].units
-            profile_axis_name = nc.variables['profile'].long_name
+
+            profile_axis = nc_obs.variables['profile'][profile_id]
+            profile_axis_units = nc_obs.variables['profile'].units
+            profile_axis_name = nc_obs.variables['profile'].long_name
 
             profile_axis_out_units = 'km'
             profile_axis = np.squeeze(
                 ppt.unit_converter(profile_axis[:], profile_axis_units, profile_axis_out_units))
-            x = profile_axis
+            x_obs = profile_axis
 
-            my_var = nc.variables[varname]
-            my_var_units = my_var.units
-            my_var_p = ppt.permute(my_var, output_order=output_order)
-            xdim, ydim, zdim, tdim = ppt.get_dims(nc)
-
+            my_var_obs = nc_obs.variables[varname]
+            my_var_obs_units = my_var_obs.units
+            my_var_obs_fill_value = my_var_obs._FillValue
+            my_var_obs_p = ppt.permute(my_var_obs, output_order=output_order)
+            xdim, ydim, zdim, tdim = ppt.get_dims(nc_obs)
+            
             if tdim:
-                data = np.squeeze(my_var_p[profile_id, 0, Ellipsis])
+                data_obs = np.squeeze(my_var_obs_p[profile_id, 0, Ellipsis])
             else:
-                data = np.squeeze(my_var_p[profile_id, Ellipsis])                
-            data = ppt.unit_converter(data, my_var_units, o_units)
-
+                data_obs = np.squeeze(my_var_obs_p[profile_id, Ellipsis])                
+            data_obs = ppt.unit_converter(data_obs, my_var_obs_units, o_units)
+            mask = np.zeros_like(data_obs)
+            mask[data_obs==my_var_obs_fill_value] = 1
+            data_obs = np.ma.array(data=data_obs, mask=mask)
             labels.append('observed')
-            ax.plot(x, data, color='k', linewidth=2)
+            ax.plot(x_obs, data_obs, color='k', linewidth=2)
 
-            nc.close()            
+            nc_obs.close()            
             
         if x_bounds:
             ax.set_xlim(x_bounds[0], x_bounds[-1])
@@ -297,11 +315,12 @@ for in_varname in variables:
         # ordered_labels = labels[:0:-1]
         # ordered_handles.insert(0, handles[0])
         # ordered_labels.insert(0, labels[0])
-        lg = ax.legend(labels,
-                               loc="upper right",
-                               shadow=True, numpoints=numpoints,
-                               bbox_to_anchor=(0, 0, 1, 1),
-                               bbox_transform=plt.gcf().transFigure)
+        if legend != 'none':
+            lg = ax.legend(labels,
+                                   loc="upper right",
+                                   shadow=True, numpoints=numpoints,
+                                   bbox_to_anchor=(0, 0, 1, 1),
+                                   bbox_transform=plt.gcf().transFigure)
 
         for out_format in out_formats:
 
