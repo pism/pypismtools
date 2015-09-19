@@ -111,7 +111,7 @@ params_abbr = (
     'O',
     'K',
     'Hm',
-    'Essa',
+    'E$_{\mathregular{ssa}}$',
     'B',
     'f')
 params_abbr_dict = dict(zip(params, params_abbr))
@@ -251,7 +251,6 @@ for in_varname in variables:
                     x, data, color=colorVal)
             else:
                 retLine, = ax.plot(x, data, color=my_colors[idx])
-
             nc.close()
 
         if obs_file:
@@ -282,18 +281,20 @@ for in_varname in variables:
             my_var_obs_fill_value = my_var_obs._FillValue
             my_var_obs_p = ppt.permute(my_var_obs, output_order=output_order)
             xdim, ydim, zdim, tdim = ppt.get_dims(nc_obs)
-            
             if tdim:
-                data_obs = np.squeeze(my_var_obs_p[profile_id, 0, Ellipsis])
+                time = nc_obs.variables[tdim][:]
+                if len(time) > 1:
+                    data_obs = np.squeeze(my_var_obs_p[profile_id, 0, Ellipsis])
+                else:
+                    data_obs = np.squeeze(my_var_obs_p[profile_id, Ellipsis])
             else:
-                data_obs = np.squeeze(my_var_obs_p[profile_id, Ellipsis])                
+                data_obs = np.squeeze(my_var_obs_p[profile_id, Ellipsis])
             data_obs = ppt.unit_converter(data_obs, my_var_obs_units, o_units)
             mask = np.zeros_like(data_obs)
             mask[data_obs==my_var_obs_fill_value] = 1
             data_obs = np.ma.array(data=data_obs, mask=mask)
             labels.append('observed')
             ax.plot(x_obs, data_obs, color='k', linewidth=2)
-
             nc_obs.close()            
             
         if x_bounds:
@@ -317,7 +318,7 @@ for in_varname in variables:
         # ordered_labels.insert(0, labels[0])
         if legend != 'none':
             lg = ax.legend(labels,
-                                   loc="upper right",
+                                   loc="upper left",
                                    shadow=True, numpoints=numpoints,
                                    bbox_to_anchor=(0, 0, 1, 1),
                                    bbox_transform=plt.gcf().transFigure)
