@@ -9,7 +9,6 @@ from argparse import ArgumentParser
 import matplotlib.transforms as transforms
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
-
 from datetime import datetime
 
 from netcdftime import utime
@@ -161,7 +160,7 @@ nc0.close()
 
 for in_varname in variables:
 
-    if in_varname in ('velsurf_mag', 'velsurf_base'):
+    if in_varname in ('velsurf_mag', 'velsurf_base', 'velsurf_normal'):
         o_units = 'm year-1'
         o_units_str = 'm/yr'
     elif in_varname in ('land_ice_thickness', 'thickness', 'thk'):
@@ -254,9 +253,6 @@ for in_varname in variables:
             nc.close()
 
         if obs_file:
-            print obs_file
-            nc_t= NC(obs_file, 'r')
-            #print nc_t.variables['velsurf_mag'][:]
             nc_obs = NC(obs_file, 'r')
             varname = in_varname
             for name in nc_obs.variables:
