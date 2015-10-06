@@ -61,6 +61,9 @@ parser.add_argument("--joughin_speed_10k", dest="joughin_speed_10k", action="sto
 parser.add_argument("--joughin_speed_1k", dest="joughin_speed_1k", action="store_true",
                     help='''
                   Joughin-style log''', default=False)
+parser.add_argument("--joughin_speed_300", dest="joughin_speed_300", action="store_true",
+                    help='''
+                  Joughin-style log''', default=False)
 parser.add_argument("--habermann_tauc", dest="habermann_tauc", action="store_true",
                     help='''
                   log tauc scaling from Habermann et al (2013)''', default=False)
@@ -100,6 +103,7 @@ args = options.FILE
 joughin_speed = options.joughin_speed
 joughin_speed_10k = options.joughin_speed_10k
 joughin_speed_1k = options.joughin_speed_1k
+joughin_speed_300 = options.joughin_speed_300
 habermann_tauc = options.habermann_tauc
 bath_topo = options.bath_topo
 topo2000m = options.topo2000m
@@ -139,6 +143,19 @@ for k in range(len(args)):
         norm = mpl.colors.LogNorm(vmin=1, vmax=3000)
         ticks = [1, 3, 10, 30, 100, 300, 1000, 3000]
         ticks = [1, 10, 100, 1000, 10000]
+        format = '%i'
+        cb_extend = 'both'
+        colorbar_label = 'm yr$^{\mathregular{-1}}$'
+    elif joughin_speed_300:
+        # This is a little duck-punching to get a QGIS colormap
+        # similar to Joughin (2010)
+        vmin = 1
+        vmax = 300
+        data_values = np.logspace(vmin, vmax, N)[0:889]
+        data_values[-1] = 300
+        N = len(data_values)
+        norm = mpl.colors.LogNorm(vmin=1, vmax=300)
+        ticks = [1, 3, 10, 30, 100, 300]
         format = '%i'
         cb_extend = 'both'
         colorbar_label = 'm yr$^{\mathregular{-1}}$'
