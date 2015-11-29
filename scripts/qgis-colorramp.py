@@ -70,7 +70,7 @@ parser.add_argument("--habermann_tauc", dest="habermann_tauc", action="store_tru
 parser.add_argument("--bath_topo", dest="bath_topo", action="store_true",
                     help='''
                   Scaling for bathymetry/topography for Greenland''', default=False)
-parser.add_argument("--colorbar_extend", dest="cb_extend",
+parser.add_argument("--colorbar_extend", dest="cb_extend", choices=['neither', 'both', 'min', 'max'],
                     help='''Extend of colorbar. Default='both'.''', default='both')
 parser.add_argument("--colorbar_label", dest="colorbar_label",
                     help='''Label for colorbar.''', default=None)
@@ -243,7 +243,7 @@ for k in range(len(args)):
     # cmap = cmap_map(lambda x: x/2+0.5, cmap)
 
     matplotlib.rc("font", **{"sans-serif": ["Helvetica"]})  # "size": fontsize}
-    matplotlib.rc("font", **{"size": 10})
+    matplotlib.rc("font", **{"size": 20})
     # create the colorbar
     fig = plt.figure()
     if orientation == 'horizontal':
@@ -269,7 +269,7 @@ for k in range(len(args)):
     for format in ['png']:
         out_file = '.'.join([prefix, format])
         print("  writing colorbar %s ..." % out_file)
-        fig.savefig(out_file, bbox_inches='tight', dpi=2400)
+        fig.savefig(out_file, bbox_inches='tight', dpi=2400, transparent=True)
 
     # convert to RGBA array
     rgba = cb1.to_rgba(data_values, alpha=None)
