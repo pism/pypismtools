@@ -57,14 +57,18 @@ class ShapeDataError(Exception):
 
 
 parser = ArgumentParser(
-    description='''A script the terminus in a (possibly) PISM netCDF file, and save it as a shapefile (polygon).''')
+    description='''A script calving front or groundling line from a PISM netCDF file, and save it as a shapefile (polygon).''')
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-o", "--output_filename", dest="out_file",
                     help="Name of the output shape file", default='terminus.shp')
+parser.add_argument("-t", "--type" , dest="extract_type",
+                    choices=['calving_front', 'grounding_line'],
+                    help="What to extract.", default='calving_front')
 
 
 options = parser.parse_args()
 filename = options.FILE[0]
+extract_type = options.extract_type
 shp_filename = options.out_file
 dst_fieldname = 'mask'
 ts_fieldname = 'timestamp'
@@ -107,9 +111,17 @@ terminus_layer.CreateField(fd)
 terminus_dst_field = 0
 
 bufferDist = 1
-ocean_value = 4
-floating_value = 3
-
+if extract_type in ('calving_front'):
+    a_value = 4
+    b_value = 3
+elif extract_type in ('grounding_line'):
+    a_value = 3
+    b_value = 2
+else:
+    print('Type {} not recognized'.format(extact_type))
+    import sys
+    sys.exit(0)
+    
 for k in range(src_ds.RasterCount):
     if tdim is None:
         timestamp = '0-0-0'
@@ -120,35 +132,35 @@ for k in range(src_ds.RasterCount):
     poly_layer, dst_field = create_memory_layer(dst_fieldname)
     result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [],
                              callback=gdal.TermProgress)
-    poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, ocean_value))
-    ocean_layer, dst_field = create_memory_layer(dst_fieldname)
-    featureDefn = ocean_layer.GetLayerDefn()
+    poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
+    a_layer, dst_field = create_memory_layer(dst_fieldname)
+    featureDefn = a_layer.GetLayerDefn()
     for m, feature in enumerate(poly_layer):
         ingeom = feature.GetGeometryRef()
         geomBuffer = ingeom.Buffer(bufferDist)
 
         outFeature = ogr.Feature(featureDefn)
         outFeature.SetGeometry(geomBuffer)
-        ocean_layer.CreateFeature(outFeature)
+        a_layer.CreateFeature(outFeature)
 
     poly_layer.SetAttributeFilter(
-        "{} = {}".format(dst_fieldname, floating_value))
-    floating_layer, dst_field = create_memory_layer(dst_fieldname)
-    featureDefn = floating_layer.GetLayerDefn()
+        "{} = {}".format(dst_fieldname, b_value))
+    b_layer, dst_field = create_memory_layer(dst_fieldname)
+    featureDefn = b_layer.GetLayerDefn()
     for m, feature in enumerate(poly_layer):
         ingeom = feature.GetGeometryRef()
         geomBuffer = ingeom.Buffer(bufferDist)
 
         outFeature = ogr.Feature(featureDefn)
         outFeature.SetGeometry(geomBuffer)
-        floating_layer.CreateFeature(outFeature)
+        b_layer.CreateFeature(outFeature)
 
     # Now clip layers
     tmp_layer, dst_field = create_memory_layer(dst_fieldname)
-    ocean_layer.Clip(floating_layer, tmp_layer)
+    a_layer.Clip(b_layer, tmp_layer)
     poly_layer = None
-    ocean_layer = None
-    floating_layer = None
+    a_layer = None
+    b_layer = None
 
     featureDefn = terminus_layer.GetLayerDefn()
     for feature in tmp_layer:
