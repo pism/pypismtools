@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     buffer_e = 148650
     buffer_n = 130000
-    e0 -= buffer_e
+    e0 -= buffer_e + 468000
     n0 -= buffer_n
     e1 += buffer_e
     n1 += buffer_n
