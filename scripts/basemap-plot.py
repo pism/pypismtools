@@ -40,7 +40,7 @@ class Variable(object):
         for key in list(kwargs.keys()):
             if key in expected_args:
                 kwargsdict[key] = kwargs[key]
-                
+
         if 'ticks' in kwargsdict:
             self.ticks = kwargsdict['ticks']
 
@@ -55,7 +55,7 @@ class Variable(object):
 
         if 'vmax' in kwargsdict:
             self.vmax = kwargsdict['vmax']
-            
+
         if 'extend' in kwargsdict:
             self.extend = kwargsdict['extend']
 
@@ -66,7 +66,7 @@ class Variable(object):
             self.colorbar_label = kwargsdict['colorbar_label']
 
     def stepify_colorbar(self, cmap, numcol, centergray=True):
-        
+
         numcol = numcol + 2
         points = ((np.arange(numcol)*(cmap.N-1)/1./(numcol-1)).round().astype(int)).tolist()
         colors=[cmap(i) for i in points]
@@ -255,7 +255,7 @@ if colormap is not None:
         # import and convert colormap
         cdict = ppt.gmtColormap(colormap)
     cmap = colors.LinearSegmentedColormap('my_colormap', cdict)
-            
+
 # check output format
 suffix = out_file.split('.')[-1]
 if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
@@ -447,7 +447,7 @@ elif varname in vars_dh:
 
     if cmap is None:
         cmap = plt.cm.RdBu
-        
+
     vmin = None
     vmax = None
     norm = None
@@ -463,7 +463,7 @@ elif varname in vars_cmb:
 
     if cmap is None:
         cmap = plt.cm.RdBu
-        
+
     vmin = -4000
     vmax = 4000
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
@@ -482,7 +482,7 @@ elif varname in vars_temp:
 
     if cmap is None:
         cmap = plt.cm.RdBu_r
-        
+
     vmin = None
     vmax = None
     norm = None
@@ -529,9 +529,9 @@ else:
 
 if numcol > 0 :
     variable.cmap = variable.stepify_colorbar(variable.cmap, numcol, centergray = options.centergray)
-    
-    
-    
+
+
+
 bounds_min = -1
 bounds_max = 1
 if bounds is not None:
@@ -591,7 +591,7 @@ else:
         coord_file = NC(options.coords,"r")
     else:
         coord_file = nc
-        
+
     xdim, ydim, zdim, tdim = ppt.get_dims(nc)
 
     ## coordinate variable in x-direction
@@ -616,7 +616,7 @@ else:
 
     width = 1.2 * (np.max(x_var)-np.min(x_var))
     height = 1.0 * (np.max(y_var)-np.min(y_var))
-    
+
     nc.close()
 
 
@@ -634,15 +634,15 @@ if obs_file is not None:
         coord_file = NC(options.coords,"r")
     else:
         coord_file = nc
-        
+
     # get the dimensions
     xdim, ydim, zdim, tdim = ppt.get_dims(nc)
     # set up dimension ordering
     dim_order = (tdim, zdim, ydim, xdim)
 
-    if varname == 'csurf':
-        if 'csurf' in list(nc.variables.keys()):
-            var = 'csurf'
+    if varname == 'velsurf_mag':
+        if 'velsurf_mag' in list(nc.variables.keys()):
+            var = 'velsurf_mag'
         else:
             var = 'magnitude'
     else:
