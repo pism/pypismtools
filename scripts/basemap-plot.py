@@ -11,6 +11,8 @@ import numpy as np
 import pylab as plt
 from matplotlib import colors
 from argparse import ArgumentParser
+import PIL
+import os
 
 from pyproj import Proj
 
@@ -172,7 +174,7 @@ parser.add_argument("-s", "--shaded", dest="shaded", action="store_true",
                   It uses imshow, which does not support masked arrays,
                   and we also get the projection slighly wrong.''', default=False)
 parser.add_argument("-v", "--variable", dest="varname",
-                  help='''Variable to plot, default = 'csurf'.''', default='csurf')
+                  help='''Variable to plot, default = 'velsurf_mag'.''', default='velsurf_mag')
 
 parser.add_argument("-C", "--numcol", dest="numcol", type=int,
                   help='''Number of colors to use 0 = full palette''', default=-1)
@@ -180,6 +182,8 @@ parser.add_argument("--centergray", dest="centergray",
                   help='''Set center of color map to gray''', action="store_true")
 parser.add_argument("-a", "--alaska_albers", dest="alaska_albers",
                   help='''Use Alaska Albers Projection''', action = "store_true")
+parser.add_argument("--polar_stereographic", dest="polar_stereographic",
+                  help='''Use Polar Stereographic Projection''', action = "store_true")
 parser.add_argument("--coords",
                   help='''file with coordinate variables''', default = None)
 parser.add_argument("--log_norm",
@@ -208,6 +212,7 @@ else:
 
 alpha = float(options.alpha)
 background = options.background
+print "background = %s"%background
 bounds = options.bounds
 boundary_tol = options.boundary_tol
 colormap = options.colormap
@@ -265,11 +270,11 @@ if suffix not in ('png', 'pdf', 'ps', 'eps', 'svg'):
     sys.exit
 
 # set constants and other stuff
-meridian_spacing = .5
-parallels_spacing = .5
+meridian_spacing = 30
+parallels_spacing = 10
 geotiff_rasterized = True
 
-vars_speed = ('csurf', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag')
+vars_speed = ('velsurf_mag', 'cbase', 'cbar', 'magnitude', 'balvelmag', 'surfvelmag')
 vars_dem = ('usurf', 'usrf')
 vars_thk = ('thk',)
 vars_topo = ('topg')
@@ -286,8 +291,8 @@ if varname in vars_speed:
 
     if cmap is None:
         try:
-            basedir =  ppt.__file__.split(ppt.__package__)
-            cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
+            basedir =  os.path.dirname(ppt.__file__)
+            cdict = ppt.gmtColormap(basedir+
 #                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
                                     '/colormaps/GMT_haxby.cpt')
             cmap = colors.LinearSegmentedColormap('my_colormap',
@@ -394,12 +399,14 @@ elif varname in vars_dem:
 elif varname in vars_thk:
 
     if cmap is None:
-            basedir =  ppt.__file__.split(ppt.__package__)
-            cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
-#                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
-                                    '/colormaps/GMT_haxby.cpt')
-            cmap = colors.LinearSegmentedColormap('my_colormap',
-        cdict)
+        basedir =  os.path.dirname(ppt.__file__)
+        print basedir[0]
+        print ppt.__package__
+        cdict = ppt.gmtColormap("/Users/flo/Apps/pypismtools/colormaps/GMT_haxby.cpt")
+#                                basedir\
+                                #                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
+ #                               '/colormaps/GMT_haxby.cpt')
+        cmap = colors.LinearSegmentedColormap('my_colormap', cdict)
 
 #         cmap = plt.cm.Blues ## HAXBY haxby = ~/Apps/pypismtools/colormaps/GMT_haxby.cpt
 
@@ -423,8 +430,8 @@ elif varname in vars_thk:
 elif varname in vars_topo:
 
     if cmap is None:
-        basedir =  ppt.__file__.split(ppt.__package__)
-        cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
+        basedir =  os.path.dirname(ppt.__file__)
+        cdict = ppt.gmtColormap(basedir+
                                 #                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
                                 '/colormaps/GMT_haxby.cpt')
         cmap = colors.LinearSegmentedColormap('my_colormap',
@@ -512,8 +519,8 @@ else:
 
     if cmap is None:
 #        cmap = plt.cm.gist_ncar
-        basedir =  ppt.__file__.split(ppt.__package__)
-        cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
+        basedir =  os.path.dirname(ppt.__file__)
+        cdict = ppt.gmtColormap(basedir+
                                 #                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
                                 '/colormaps/GMT_haxby.cpt')
         cmap = colors.LinearSegmentedColormap('my_colormap',
@@ -560,8 +567,8 @@ if obs_file is not None:
                                      vmax=variable.vmax)
     variable.ticks = None
     if colormap is None:
-        basedir =  ppt.__file__.split(ppt.__package__)
-        cdict = ppt.gmtColormap(basedir[0] + ppt.__package__ +
+        basedir =  os.path.dirname(ppt.__file__)
+        cdict = ppt.gmtColormap(basedir+
                             #                                    '/colormaps/Full_saturation_spectrum_CCW_desatlight.cpt')
                             '/colormaps/GMT_haxby.cpt')
         variable.cmap = colors.LinearSegmentedColormap('my_colormap',
@@ -577,6 +584,8 @@ if geotiff_filename is not None:
     lon_0 = geotiff.lon_0
     lat = geotiff.lat
     lon = geotiff.lon
+if False :
+  print false
 else:
     filename = args[0]
     print("  opening NetCDF file %s ..." % filename)
@@ -601,7 +610,7 @@ else:
 
     center_x = (x_var[0]+x_var[-1]) / 2
     center_y = (y_var[0]+y_var[-1]) / 2
-    if  options.alaska_albers:
+    if  options.alaska_albers or options.polar_stereographic:
         flo_lon = np.squeeze(coord_file.variables["lon"][:])
         flo_lat = np.squeeze(coord_file.variables["lat"][:])
         llcrnrlon = flo_lon[0,0] # flo_lon.min()
@@ -692,7 +701,7 @@ if obs_file is not None:
         if tol:
             mask[data <= tol] = 1
         obs_values = np.ma.array(data, mask = mask)
-    
+
     nc.close()
 
 
@@ -702,6 +711,8 @@ if options.alaska_albers:
     # ! FLO - Alaska albers projection
     print ("ll = (%f, %f)\nur = (%f, %f)\n"%( llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat))
     m = Basemap(projection = "aea", lat_0 = 50 , lon_0 = -154 , lat_1=55 , lat_2=65, llcrnrlon = llcrnrlon, llcrnrlat = llcrnrlat, urcrnrlon = urcrnrlon , urcrnrlat = urcrnrlat ,resolution = 'h')
+elif options.polar_stereographic:
+    m = Basemap(projection = "stere", lat_0 = 90 , lon_0=-45 ,resolution = 'h',llcrnrlon = llcrnrlon, llcrnrlat = llcrnrlat, urcrnrlon = urcrnrlon , urcrnrlat = urcrnrlat )
 else:
     m = Basemap(width=width,
             height=height,
@@ -743,9 +754,9 @@ for k in range(0, nt):
     lats.append(np.squeeze(ppt.permute(coord_file.variables['lat'], dim_order)))
     lons.append(np.squeeze(ppt.permute(coord_file.variables['lon'], dim_order)))
 
-    if varname == 'csurf':
-        if 'csurf' in list(nc.variables.keys()):
-            var = 'csurf'
+    if varname == 'velsurf_mag':
+        if 'velsurf_mag' in list(nc.variables.keys()):
+            var = 'velsurf_mag'
         else:
             var = 'magnitude'
     else:
@@ -908,20 +919,24 @@ if options.levels:
 if options.colorbar_ticks:
     variable.ticks = [float (x) for x in options.colorbar_ticks.split(",")]
 
+print 'just before background'
 for k in range(0, nt):
     ax = grid[k]
     m.ax = ax
     xx, yy = m(lons[k], lats[k])
-
+    print 'in the loop'
     # Draw a background if given
-    if (background == 'bluemable'):
-        m.bluemarble()
+    print "background == '%s'"%background
+    if (background == 'bluemarble'):
+      print 'drawing a blue marble'
+      m.bluemarble()
+      print 'drew a blue marble'
     elif (background == 'etopo'):
         m.etopo()
     elif (background == 'shadedrelief'):
         m.shadedrelief()
-    else:
-        pass
+    elif (background):
+        m.warpimage(background, scale=1)
 
     # Plot GeoTIFF file if given
     if geotiff_filename is not None:
@@ -1001,7 +1016,7 @@ for k in range(0, nt):
             ot = m.contour(xx, yy, thk, colors='1.', linewidths=1., levels=(10,)) #  linestyles=("solid", "dashed", "dotted", "dashdot"))
 
     if singlerow:
-        m.drawmeridians(np.arange(-175., 175., meridian_spacing),
+        m.drawmeridians(np.arange(-180., 180., meridian_spacing),
                         labels = [0, 0, 0, 1], linewidth=0.5, fontsize=fontsize)
         if (k==0):
             m.drawparallels(np.arange(-90., 90., parallels_spacing),
@@ -1013,10 +1028,10 @@ for k in range(0, nt):
         m.drawparallels(np.arange(-90., 90., parallels_spacing),
                         labels = [1, 0, 0, 0], linewidth=0.5)
         if (k==nt-1):
-            m.drawmeridians(np.arange(-175., 175., meridian_spacing),
+            m.drawmeridians(np.arange(-180., 180., meridian_spacing),
                             labels = [0, 0, 0, 1], linewidth=0.5)
         else:
-            m.drawmeridians(np.arange(-175., 175., meridian_spacing),
+            m.drawmeridians(np.arange(-180., 180., meridian_spacing),
                             labels = [0, 0, 0, 0], linewidth=0.5)
     else:
         if (k==0) or (k==2):
@@ -1026,7 +1041,7 @@ for k in range(0, nt):
             m.drawparallels(np.arange(-90., 90., parallels_spacing),
                             labels = [0, 0, 0, 0], linewidth=0.5)
         if (k>=2):
-            m.drawmeridians(np.arange(-175., 175., meridian_spacing),
+            m.drawmeridians(np.arange(-180., 180., meridian_spacing),
                             labels = [0, 0, 0, 1], linewidth=0.5)
         else:
             m.drawmeridians(np.arange(-90., 90., meridian_spacing),
@@ -1094,8 +1109,8 @@ else:
                                          ticks=variable.ticks,
                                          format=variable.format)
 
-cl = plt.getp(cbar.ax, 'ymajorticklabels') 
-plt.setp(cl, fontsize=fontsize) 
+cl = plt.getp(cbar.ax, 'ymajorticklabels')
+plt.setp(cl, fontsize=fontsize)
 
 # to prevent the pdf file having white lines
 cbar.solids.set_edgecolor("face")
