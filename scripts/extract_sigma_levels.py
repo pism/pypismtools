@@ -336,7 +336,7 @@ if __name__ == "__main__":
     copy_dimensions(nc_in, nc_out, zdim)
     ddim = 'depth'
     nc_out.createDimension(ddim, nd)
-    isodim = 'n_iso'
+    isodim = 'ni'
     nc_out.createDimension(isodim, n_age_iso)
 
     out_dims = (tdim, zdim, ydim, xdim)
