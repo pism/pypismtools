@@ -57,10 +57,12 @@ def tangential(point0, point1):
     '''
 
     a = point1 - point0
-    t = a / np.linalg.norm(a)
-
-    return t
-
+    norm = np.linalg.norm(a)
+    # protect from division by zero
+    if norm > 0.0:
+        return a / norm
+    else:
+        return a
 
 class Profile(object):
 
