@@ -101,7 +101,39 @@ class TimeProfiler:
 
         self.timedict.clear()
 
+def permute(variable, output_order=('time', 'z', 'zb', 'y', 'x')):
+    '''
+    Permute dimensions of a NetCDF variable to match the output
+    storage order.
 
+    Parameters
+    ----------
+    variable : a netcdf variable
+               e.g. thk = nc.variables['thk']
+    output_order: dimension tuple (optional)
+                  default ordering is ('time', 'z', 'zb', 'y', 'x')
+
+    Returns
+    -------
+    var_perm : array_like
+    '''
+
+    input_dimensions = variable.dimensions
+
+    # filter out irrelevant dimensions
+    dimensions = filter(lambda x: x in input_dimensions,
+                        output_order)
+
+    # create the mapping
+    mapping = map(lambda x: input_dimensions.index(x),
+                  dimensions)
+
+    if mapping:
+        return np.transpose(variable[:], mapping)
+    else:
+        return variable[:]  # so that it does not break processing "mapping"
+
+    
 def output_dimensions(input_dimensions):
     """Build a list of dimension names used to define a variable in the
     output file."""
@@ -184,30 +216,6 @@ def copy_time_dimension(in_file, out_file, name):
         pass
 
 
-def create_variable_like(in_file, var_name, out_file, dimensions=None,
-                         fill_value=-2e9):
-    """Create a variable in an out_file that is the same var_name in
-    in_file, except possibly depending on different dimensions,
-    provided in dimensions.
-
-    """
-    var_in = in_file.variables[var_name]
-    try:
-        fill_value = var_in._FillValue
-    except AttributeError:
-        # fill_value was set elsewhere
-        pass
-
-    if dimensions is None:
-        dimensions = var_in.dimensions
-
-    dtype = var_in.dtype
-    var_out = out_file.createVariable(var_name, dtype, dimensions=dimensions,
-                                      fill_value=fill_value)
-    copy_attributes(var_in, var_out)
-    return var_out
-
-
 def copy_attributes(var_in, var_out):
     """Copy attributes from var_in to var_out. Give special treatment to
     _FillValue and coordinates.
@@ -275,7 +283,7 @@ if __name__ == "__main__":
                         default=25)
     parser.add_argument("-a", "--age_iso", dest="age_iso",
                         help="list of increasing iso age levels",
-                        default=[9000, 11700, 29000, 57000, 115000])
+                        default=[11700, 29000, 57000, 115000])
     parser.add_argument("-v", "--variable", dest="variables",
                         help="comma-separated list with variables",
                         default='age')
@@ -328,7 +336,7 @@ if __name__ == "__main__":
     copy_dimensions(nc_in, nc_out, zdim)
     ddim = 'depth'
     nc_out.createDimension(ddim, nd)
-    isodim = 'n_iso'
+    isodim = 'ni'
     nc_out.createDimension(isodim, n_age_iso)
 
     out_dims = (tdim, zdim, ydim, xdim)
@@ -361,7 +369,7 @@ if __name__ == "__main__":
             myvar = name
             pass
 
-    thickness = ppt.permute(nc_in.variables[myvar], output_order=out_dims)
+    thickness = permute(nc_in.variables[myvar], output_order=out_dims)
     thk_min = 500  # m (minimum ice thickness)
 
     iso_name = 'depth_iso'
@@ -378,7 +386,7 @@ if __name__ == "__main__":
         var_in = nc_in.variables[var_name]
         in_dims = var_in.dimensions
         datatype = var_in.dtype
-        var_in_data = ppt.permute(var_in, output_order=out_dims)
+        var_in_data = permute(var_in, output_order=out_dims)
 
         profiler.mark('interpolation')
         if tdim is not None:
@@ -463,6 +471,10 @@ if __name__ == "__main__":
         p = profiler.elapsed('interpolation')
         print("    - interpolated in %3.4f s" % p)
 
+    for var in ('run_stats', 'pism_config', 'mapping'):
+        if var in nc_in.variables:
+            create_variable_like(nc_in, var, nc_out)
+        
     # writing global attributes
     import time
     import sys

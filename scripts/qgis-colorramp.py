@@ -234,6 +234,9 @@ for k in range(len(args)):
         ticks = [-0.5, -0.1, -0.05, 0, 0.05, 0.1, 0.5]
         ticks = [-250, 0, 250]
         ticks = [0, 500, 1000, 1500, 2000, 2500, 3000]
+        ticks = [-500, -250, -50, 0, 50, 250, 500]
+        ticks = [-500, -250, 0, 250, 500]
+        ticks = [-100, -50, 0, 50, 100]
         format = None
         cb_extend = cb_extend
 
@@ -247,10 +250,11 @@ for k in range(len(args)):
     # create the colorbar
     fig = plt.figure()
     if orientation == 'horizontal':
-        if joughin_speed:
-            ax1 = fig.add_axes([0.05, 0.4, 0.4, 0.04])
-        else:
-            ax1 = fig.add_axes([0.05, 0.65, 0.65, 0.04])
+        ax1 = fig.add_axes([0.05, 0.4, 0.4, 0.04])
+        # if joughin_speed:
+        #     ax1 = fig.add_axes([0.05, 0.4, 0.4, 0.04])
+        # else:
+        #     ax1 = fig.add_axes([0.05, 0.65, 0.65, 0.04])
     else:
         ax1 = fig.add_axes([0.05, 0.05, 0.03, 0.65])
     cb1 = mpl.colorbar.ColorbarBase(ax1,

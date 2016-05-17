@@ -119,6 +119,8 @@ layer = shapeData.CreateLayer(layerName, spatialReference, ogr.wkbPolygon)
 layerDefinition = layer.GetLayerDefn()
 field_defn = ogr.FieldDefn("level", ogr.OFTReal)
 layer.CreateField(field_defn)
+field_defn = ogr.FieldDefn("year", ogr.OFTReal)
+layer.CreateField(field_defn)
 field_defn = ogr.FieldDefn("timestamp", ogr.OFTDateTime)
 layer.CreateField(field_defn)
 
@@ -126,9 +128,18 @@ if tdim:
     time = nc.variables['time']
     time_units = time.units
     time_calendar = time.calendar
+    if time[0] < 0:
+        is_paleo = True
+    else:
+        is_paleo = False
     cdftime = utime(time_units, time_calendar)
     for k, t in enumerate(time):
-        timestamp = cdftime.num2date(t)
+        if is_paleo:
+            timestamp = '1-1-1'
+            my_year = k
+        else:
+            timestamp = cdftime.num2date(t)
+            my_year = 0
         print('Processing {}'.format(timestamp))
         for level in contour_levels:
             contour_var = np.array(
@@ -152,8 +163,11 @@ if tdim:
             feature.SetFID(k)
             i = feature.GetFieldIndex("level")
             feature.SetField(i, level)
+            i = feature.GetFieldIndex("year")
+            feature.SetField(i, my_year)
             i = feature.GetFieldIndex("timestamp")
-            feature.SetField(i, str(timestamp))
+            if not is_paleo:
+                feature.SetField(i, str(timestamp))
             polygon = None
             # Save feature
             layer.CreateFeature(feature)

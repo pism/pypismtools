@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2015 Constantine Khroulev and Andy Aschwanden
+# Copyright (C) 2015, 2016 Constantine Khroulev and Andy Aschwanden
 #
 
 # nosetests --with-coverage --cover-branches --cover-html
@@ -57,10 +57,12 @@ def tangential(point0, point1):
     '''
 
     a = point1 - point0
-    t = a / np.linalg.norm(a)
-
-    return t
-
+    norm = np.linalg.norm(a)
+    # protect from division by zero
+    if norm > 0.0:
+        return a / norm
+    else:
+        return a
 
 class Profile(object):
 
@@ -1295,6 +1297,8 @@ def extract_variable(nc_in, nc_out, profiles, var_name):
         except RuntimeError as e:
             print "extract_profiles failed while writing {}".format(var_name)
             raise
+        except IndexError:
+            print "Failed to copy {}. Ignoring it...".format(var_name)
 
     copy_attributes(var_in, var_out)
     print("  - done with %s" % var_name)
