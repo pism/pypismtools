@@ -6,7 +6,7 @@ PKG_NAME = 'pypismtools'
 print(('\nInstalling %s' % PKG_NAME))
 print('----------------------------')
 
-packages = ('numpy', 'osgeo', 'netCDF4', 'udunits2', 'pyproj',
+packages = ('numpy', 'osgeo', 'netCDF4', 'pyproj',
             'mpl_toolkits.basemap', 'mpl_toolkits.axes_grid1')
 print('\nChecking dependencies:')
 not_installed = []
@@ -22,9 +22,6 @@ if not_installed:
     for package in not_installed:
         if package is 'osgeo':
             print(' - GDAL python bindings')
-        elif package is 'udunits2':
-            print(
-                ' - py_udunits2 from https://github.com/ckhroulev/py_udunits2')
         else:
             print(('  - %s' % package))
     print('Exiting')
@@ -32,7 +29,7 @@ if not_installed:
     sys.exit()
 
 setup(name=PKG_NAME,
-      version='0.14',
+      version='0.15',
       description='Python tools to evaluate PISM results',
       author='Andy Aschwanden',
       author_email='aaschwanden@alaska.edu',
