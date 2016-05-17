@@ -6,7 +6,7 @@ PKG_NAME = 'pypismtools'
 print(('\nInstalling %s' % PKG_NAME))
 print('----------------------------')
 
-packages = ('numpy', 'osgeo', 'netCDF4', 'pyproj',
+packages = ('numpy', 'osgeo', 'netCDF4', 'pyproj', 'cf_units',
             'mpl_toolkits.basemap', 'mpl_toolkits.axes_grid1')
 print('\nChecking dependencies:')
 not_installed = []
@@ -18,7 +18,7 @@ for package in packages:
         print(('  - % s package NOT installed' % package))
         not_installed.append(package)
 if not_installed:
-    print('Please install the following packages:')
+    print('Installation of the following packages is optional but recommended:')
     for package in not_installed:
         if package is 'osgeo':
             print(' - GDAL python bindings')
