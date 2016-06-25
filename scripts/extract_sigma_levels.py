@@ -468,6 +468,9 @@ if __name__ == "__main__":
                                 d_out = fill_value
                             iso_var[k, m, n] = d_out
 
+        iso_var.grid_mapping = 'mapping'
+        iso_var_norm.grid_mapping = 'mapping'
+        
         p = profiler.elapsed('interpolation')
         print("    - interpolated in %3.4f s" % p)
 
