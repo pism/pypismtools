@@ -955,17 +955,19 @@ def unit_converter(data, inunit, outunit):
 
     inunit = str(inunit)
     outunit = str(outunit)
-
+    data = np.array(data)
     if not (inunit == outunit):
         try:
             try:
-                from udunits import Converter
-                c = Converter(inunit, outunit)
+                from cf_units import Unit
+                in_unit  = Unit(inunit)
+                out_unit  = Unit(outunit)
+                outdata = in_unit.convert(data, out_unit)
             except:
                 from udunits2 import Converter, System, Unit
                 sys = System()
                 c = Converter((Unit(sys, inunit), Unit(sys, outunit)))
-            outdata = c(data)
+                outdata = c(data)
         except:
             print(
                 "No udunits module found, you're on your own.\n  -> I am assuming input unit is m, and will convert to km.\n  -> Installation of Constantine's awesome python wrapper for udunits is highly recommended.\n  -> Download it from https://github.com/ckhroulev/py_udunits2.")
