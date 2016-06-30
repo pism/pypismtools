@@ -283,7 +283,7 @@ if __name__ == "__main__":
                         default=25)
     parser.add_argument("-a", "--age_iso", dest="age_iso",
                         help="list of increasing iso age levels",
-                        default=[11700, 29000, 57000, 115000])
+                        default='9000,11700,29000,57000,115000')
     parser.add_argument("-v", "--variable", dest="variables",
                         help="comma-separated list with variables",
                         default='age')
@@ -292,7 +292,7 @@ if __name__ == "__main__":
     fill_value = -2e9
     variables = options.variables.split(',')
     n_levels = options.n_levels
-    age_iso = np.array(options.age_iso)
+    age_iso = np.fromstring(options.age_iso, dtype=float, sep=',')
     n_age_iso = len(age_iso)
 
     print("-----------------------------------------------------------------")

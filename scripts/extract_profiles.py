@@ -756,43 +756,21 @@ def read_shapefile(filename):
                 id = feature.id
             except:
                 id = str(pt)
-            if id is None:
-                id = str(pt)
             try:
                 name = feature.name
             except:
                 name = str(pt)
-            if name is None:
-                name = str(pt)
-            try:
-                clon = feature.clon
-            except:
-                clon = str(pt)
-            if clon is None:
-                clon = 0.
-            try:
-                clat = feature.clat
-            except:
-                clat = str(pt)
-            if clat is None:
-                clat = 0.
             try:
                 flightline = feature.flightline
             except:
-                flightline = 2
-            if flightline is None:
                 flightline = 2
             try:
                 glaciertype = feature.gtype
             except:
                 glaciertype = 5
-            if glaciertype is None:
-                glaciertype = 5
             try:
                 flowtype = feature.ftype
             except:
-                flowtype = 2
-            if flowtype is None:
                 flowtype = 2
             geometry = feature.GetGeometryRef()
             # Transform to latlon if needed
@@ -803,15 +781,24 @@ def read_shapefile(filename):
             lon.append(point[0])
             lat.append(point[1])
 
-        profiles.append([lat,
-                         lon,
-                         id,
-                         name,
-                         clat,
-                         clon,
-                         flightline,
-                         glaciertype,
-                         flowtype])
+            try:
+                clon = feature.clon
+            except:
+                clon = point[0]
+            try:
+                clat = feature.clat
+            except:
+                clat = point[1]
+
+            profiles.append([point[1],
+                             point[0],
+                             id,
+                             name,
+                             clat,
+                             clon,
+                             flightline,
+                             glaciertype,
+                             flowtype])
                 
     elif layer.GetGeomType() == 2 or layer.GetGeomType() == 5:
         for pt in range(0, cnt):
@@ -826,37 +813,25 @@ def read_shapefile(filename):
                 name = feature.name
             except:
                 name = str(pt)
-            if name is None:
-                name = str(pt)
             try:
                 clon = feature.clon
             except:
-                clon = str(pt)
-            if clon is None:
                 clon = 0.
             try:
                 clat = feature.clat
             except:
-                clat = str(pt)
-            if clat is None:
                 clat = 0.
             try:
                 flightline = feature.flightline
             except:
                 flightline = 2
-            if flightline is None:
-                flightline = 2
             try:
                 glaciertype = feature.gtype
             except:
                 glaciertype = 5
-            if glaciertype is None:
-                glaciertype = 5
             try:
                 flowtype = feature.ftype
             except:
-                flowtype = 2
-            if flowtype is None:
                 flowtype = 2
             geometry = feature.GetGeometryRef()
             # Transform to latlon if needed
