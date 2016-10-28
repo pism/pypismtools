@@ -62,7 +62,7 @@ parser.add_argument("FILE", nargs=1)
 parser.add_argument("-o", "--output_filename", dest="out_file",
                     help="Name of the output shape file", default='terminus.shp')
 parser.add_argument("-t", "--type" , dest="extract_type",
-                    choices=['calving_front', 'grounding_line'],
+                    choices=['calving_front', 'grounding_line', 'ice_ocean'],
                     help="What to extract.", default='calving_front')
 
 
@@ -116,6 +116,9 @@ if extract_type in ('calving_front'):
     b_value = 3
 elif extract_type in ('grounding_line'):
     a_value = 3
+    b_value = 2
+elif extract_type in ('ice_ocean'):
+    a_value = 4
     b_value = 2
 else:
     print('Type {} not recognized'.format(extact_type))
