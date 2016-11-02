@@ -118,8 +118,8 @@ elif extract_type in ('grounding_line'):
     a_value = 3
     b_value = 2
 elif extract_type in ('ice_ocean'):
-    a_value = 4
-    b_value = 2
+    a_value = [0, 4]
+    b_value = [2, 3]
 else:
     print('Type {} not recognized'.format(extact_type))
     import sys
@@ -135,7 +135,10 @@ for k in range(src_ds.RasterCount):
     poly_layer, dst_field = create_memory_layer(dst_fieldname)
     result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [],
                              callback=gdal.TermProgress)
-    poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
+    if extract_type in ('ice_ocean'):
+        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=a_value[0], val2=a_value[1]))
+    else:
+        poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
     a_layer, dst_field = create_memory_layer(dst_fieldname)
     featureDefn = a_layer.GetLayerDefn()
     for m, feature in enumerate(poly_layer):
@@ -146,8 +149,10 @@ for k in range(src_ds.RasterCount):
         outFeature.SetGeometry(geomBuffer)
         a_layer.CreateFeature(outFeature)
 
-    poly_layer.SetAttributeFilter(
-        "{} = {}".format(dst_fieldname, b_value))
+    if extract_type in ('ice_ocean'):
+        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1]))
+    else:
+        poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
     b_layer, dst_field = create_memory_layer(dst_fieldname)
     featureDefn = b_layer.GetLayerDefn()
     for m, feature in enumerate(poly_layer):
