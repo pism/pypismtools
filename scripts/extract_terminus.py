@@ -106,7 +106,7 @@ if src_ds.GetProjectionRef() != '':
     srs.ImportFromWkt(src_ds.GetProjection())
 
 terminus_layer = shp_ds.CreateLayer('terminus', srs, ogr.wkbPolygon)
-fd = ogr.FieldDefn(ts_fieldname, ogr.OFTDate)
+fd = ogr.FieldDefn(ts_fieldname, ogr.OFTString)
 terminus_layer.CreateField(fd)
 terminus_dst_field = 0
 
