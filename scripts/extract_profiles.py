@@ -674,7 +674,7 @@ def load_profiles(filename, projection, flip):
     filename: filename of ESRI shape file
 
     projection: proj4 projection object. (lon,lat) coordinates of
-                points along a profile are conterted to (x,y)
+                points along a profile are converted to (x,y)
                 coordinates in this projection. This should be the
                 projection used by the dataset we're extracting
                 profiles from.
