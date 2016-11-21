@@ -81,8 +81,16 @@ class Profile(object):
         self.glaciertype = glaciertype
         self.flowtype = flowtype
 
-        assert len(lon) > 1
-        assert len(lat) > 1
+        try:
+            lon[0]
+        except:
+            lon = [lon]
+
+        try:
+            lat[0]
+        except:
+            lat = [lat]
+
         assert len(lon) == len(lat)
 
         if flip:
@@ -105,6 +113,9 @@ class Profile(object):
 
         p = np.vstack((self.x, self.y)).T
 
+        if len(p) < 2:
+            return [0], [0]
+
         ns = np.zeros_like(p)
         ns[0] = normal(p[0], p[1])
         for j in range(1, len(p) - 1):
@@ -120,6 +131,9 @@ class Profile(object):
         '''
 
         p = np.vstack((self.x, self.y)).T
+
+        if len(p) < 2:
+            return [0], [0]
 
         ts = np.zeros_like(p)
         ts[0] = tangential(p[0], p[1])
