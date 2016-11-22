@@ -717,15 +717,18 @@ def load_profiles(filename, projection, flip):
     return profiles
 
 
-def output_dimensions(input_dimensions):
+def output_dimensions(input_dimensions, profile=True):
     """Build a list of dimension names used to define a variable in the
     output file."""
     _, _, zdim, tdim = get_dims_from_variable(input_dimensions)
 
     if tdim:
-        result = [stationdim, tdim, profiledim]
+        result = [stationdim, tdim]
     else:
-        result = [stationdim, profiledim]
+        result = [stationdim]
+
+    if profile:
+        result.append(profiledim)
 
     if zdim:
         result.append(zdim)
@@ -748,9 +751,11 @@ def read_shapefile(filename):
     '''
     import ogr
     import osr
+
     driver = ogr.GetDriverByName('ESRI Shapefile')
     data_source = driver.Open(filename, 0)
     layer = data_source.GetLayer(0)
+    layer_type = ogr.GeometryTypeToName(layer.GetGeomType())
     srs = layer.GetSpatialRef()
     if not srs.IsGeographic():
         print('''Spatial Reference System in % s is not latlon. Converting.'''
@@ -760,7 +765,7 @@ def read_shapefile(filename):
         srs_geo.ImportFromEPSG(4326)
     cnt = layer.GetFeatureCount()
     profiles = []
-    if layer.GetGeomType() == 1:
+    if layer_type == "Point":
         lon = []
         lat = []
         for pt in range(0, cnt):
@@ -814,7 +819,7 @@ def read_shapefile(filename):
                              glaciertype,
                              flowtype])
                 
-    elif layer.GetGeomType() == 2 or layer.GetGeomType() == 5:
+    elif layer_type in ("Line String", "Multi Line String"):
         for pt in range(0, cnt):
             feature = layer.GetFeature(pt)
             try:
@@ -875,11 +880,9 @@ def read_shapefile(filename):
                                  flightline,
                                  glaciertype,
                                  flowtype])
+    else:
+        raise NotImplementedError("Geometry type '{0}' is not supported".format(layer_type))
 
-        else:
-            # FIXME: Constantine, can we gracefully exit saying it's not supported?
-            pass
-                
     return profiles
 
 
@@ -917,6 +920,30 @@ def get_dims_from_variable(var_dimensions):
 
     return [find(dim, var_dimensions) for dim in [xdims, ydims, zdims, tdims]]
 
+def define_station_variables(nc):
+    "Define variables used to store information about a station."
+    # create dimensions
+    nc.createDimension(stationdim)
+
+    variables = [
+        ("station_name", str, (stationdim,),
+         {"cf_role": "timeseries_id",
+          "long_name": "station name"}),
+        ("lon", "f", (stationdim,),
+         {"units": "degrees_east",
+          "valid_range": [-180.0, 180.0],
+          "standard_name": "longitude"}),
+        ("lat", "f", (stationdim,),
+         {"units": "degrees_north",
+          "valid_range": [-90.0, 90.0],
+          "standard_name": "latitude"}),
+    ]
+
+    print "Defining station variables...",
+    for name, datatype, dimensions, attributes in variables:
+        variable = nc.createVariable(name, datatype, dimensions)
+        variable.setncatts(attributes)
+    print "done."
 
 def define_profile_variables(nc):
     "Define variables used to store information about profiles."
@@ -1068,7 +1095,7 @@ def file_handling_test():
 
 
 def extract_profile(variable, profile):
-    """Extract values of variable along a profile.  """
+    """Extract values of a variable along a profile.  """
     xdim, ydim, zdim, tdim = get_dims_from_variable(variable.dimensions)
 
     group = variable.group()
@@ -1152,7 +1179,7 @@ def copy_dimensions(in_file, out_file, exclude_list):
     print "Copying dimensions...",
     for name, dim in in_file.dimensions.iteritems():
         if (name not in exclude_list and
-                name not in out_file.dimensions):
+            name not in out_file.dimensions):
             if dim.isunlimited():
                 out_file.createDimension(name, None)
             else:
@@ -1203,6 +1230,13 @@ def copy_time_dimension(in_file, out_file, name):
         # we get here if var_in does not have a bounds attribute
         pass
 
+def write_station(out_file, index, profile):
+    """Write information about a station (name, latitude, longitude) to an
+    output file.
+    """
+    out_file.variables['lon'][index] = profile.lon
+    out_file.variables['lat'][index] = profile.lat
+    out_file.variables['station_name'][index] = profile.name
 
 def write_profile(out_file, index, profile):
     """Write information about a profile (name, latitude, longitude,
@@ -1246,7 +1280,7 @@ def timing(f):
 
 
 @timing
-def extract_variable(nc_in, nc_out, profiles, var_name):
+def extract_variable(nc_in, nc_out, profiles, var_name, stations):
     "Extract profiles from one variable."
     if var_name in vars_not_copied:
         return
@@ -1259,7 +1293,7 @@ def extract_variable(nc_in, nc_out, profiles, var_name):
     if in_dims and len(in_dims) > 1:
         # it is a non-scalar variable and it depends on more
         # than one dimension, so we probably need to extract profiles
-        out_dims = output_dimensions(in_dims)
+        out_dims = output_dimensions(in_dims, stations == False)
         var_out = create_variable_like(
             nc_in,
             var_name,
@@ -1270,11 +1304,12 @@ def extract_variable(nc_in, nc_out, profiles, var_name):
             print("    - processing profile {0}".format(profile.name))
             p_values = extract_profile(var_in, profile)
 
+            if stations:
+                p_values = np.squeeze(p_values)
+
             try:
-                access_str = 'k,' + \
-                    ','.join([':'.join(['0', str(coord)])
-                              for coord in p_values.shape])
-                exec('var_out[%s] = p_values' % access_str)
+                index = [k] + [slice(0, k) for k in p_values.shape]
+                var_out[index] = p_values
             except:
                 print "extract_profiles failed while writing {}".format(var_name)
                 raise
@@ -1345,6 +1380,10 @@ if __name__ == "__main__":
     print("  reading profile from %s" % options.SHAPEFILE[0])
     profiles = load_profiles(options.SHAPEFILE[0], projection, options.flip)
 
+    # switch to writing "station" information if all profiles have
+    # length 1
+    stations = np.all(np.array([len(p.x) for p in profiles]) == 1)
+
     mapplane_dim_names = (xdim, ydim)
 
     print("Creating dimensions")
@@ -1352,12 +1391,18 @@ if __name__ == "__main__":
     copy_global_attributes(nc_in, nc_out)
 
     # define variables storing profile information
-    define_profile_variables(nc_out)
-    # fill these variables
-    print "Writing profiles...",
-    for k, profile in enumerate(profiles):
-        write_profile(nc_out, k, profile)
-    print "done."
+    if stations:
+        define_station_variables(nc_out)
+        print "Writing stations...",
+        for k, profile in enumerate(profiles):
+            write_station(nc_out, k, profile)
+        print "done."
+    else:
+        define_profile_variables(nc_out)
+        print "Writing profiles...",
+        for k, profile in enumerate(profiles):
+            write_profile(nc_out, k, profile)
+        print "done."
 
     # re-create dimensions from an input file in an output file, but
     # skip x and y dimensions and dimensions that are already present
@@ -1397,7 +1442,7 @@ if __name__ == "__main__":
         vars_not_found = [x for x in variables if x not in nc_in.variables]
 
     def extract(name):
-        extract_variable(nc_in, nc_out, profiles, name)
+        extract_variable(nc_in, nc_out, profiles, name, stations)
 
     if options.n_cpus > 1:
         print "Trying to use {} workers...".format(options.n_cpus)
@@ -1408,9 +1453,9 @@ if __name__ == "__main__":
         for var_name in vars_list:
             extract(var_name)
 
-    print("The following variables were not copied because they could not be found in {}:".format(
-        options.INPUTFILE[0]))
-    print vars_not_found
+    if len(vars_not_found) > 0:
+        print("The following variables could not be found in {}:".format(options.INPUTFILE[0]))
+        print vars_not_found
 
     # writing global attributes
     import sys
