@@ -128,14 +128,13 @@ for var in variables:
             var_units = None
         # temporary fix for spin-ups with non-Gregorian calendars
         ## calendar = 'gregorian'
-        cdftime = utime(units, calendar)
-        try:
-            date = cdftime.num2date(t[:])
-            usedates = True
-        except:
+        if calendar in ('365_day', '366_day'):
             date = t[:]
             usedates = False
             date = np.arange(-len(t[:]), 0) / 1e3
+        else:
+            date = cdftime.num2date(t[:])
+            usedates = True            
         dates.append(date)
 
         if var in ("ivol"):
