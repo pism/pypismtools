@@ -779,18 +779,6 @@ def read_shapefile(filename):
                 name = feature.name
             except:
                 name = str(pt)
-            try:
-                flightline = feature.flightline
-            except:
-                flightline = 2
-            try:
-                glaciertype = feature.gtype
-            except:
-                glaciertype = 5
-            try:
-                flowtype = feature.ftype
-            except:
-                flowtype = 2
             geometry = feature.GetGeometryRef()
             # Transform to latlon if needed
             if not srs.IsGeographic():
