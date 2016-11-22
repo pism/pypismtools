@@ -532,7 +532,7 @@ def profile_extraction_test():
             variable_name = "test_2D_" + "_".join(d)
             variable = nc.variables[variable_name]
 
-            result = extract_profile(variable, profile)
+            result, _ = extract_profile(variable, profile)
 
             assert np.max(np.fabs(np.squeeze(result) - desired_result)) < 1e-9
         # 3D variables
@@ -541,7 +541,7 @@ def profile_extraction_test():
             variable_name = "test_3D_" + "_".join(d)
             variable = nc.variables[variable_name]
 
-            result = extract_profile(variable, profile)
+            result, _ = extract_profile(variable, profile)
 
             assert np.max(
                 np.fabs(
@@ -1151,27 +1151,26 @@ def extract_profile(variable, profile):
     n_points = len(profile.x)
 
     if tdim and zdim:
-        # 3D time-dependent
+        dim_names = ["time", "profile", "z"]
         result = np.zeros((dim_length[tdim], n_points, dim_length[zdim]))
         for j in xrange(dim_length[tdim]):
             for k in xrange(dim_length[zdim]):
                 result[j, :, k] = A.apply_to_subset(read_subset(t=j, z=k))
     elif tdim:
-        # 2D time-dependent
+        dim_names = ["time", "profile"]
         result = np.zeros((dim_length[tdim], n_points))
         for j in xrange(dim_length[tdim]):
             result[j, :] = A.apply_to_subset(read_subset(t=j))
     elif zdim:
-        # 3D time-independent
+        dim_names = ["profile", "z"]
         result = np.zeros((n_points, dim_length[zdim]))
         for k in xrange(dim_length[zdim]):
             result[:, k] = A.apply_to_subset(read_subset(z=k))
     else:
-        # 2D time-independent
+        dim_names = ["profile"]
         result = A.apply_to_subset(read_subset())
 
-    return result
-
+    return result, dim_names
 
 def copy_dimensions(in_file, out_file, exclude_list):
     """Copy dimensions from in_file to out_file, excluding ones in
@@ -1302,14 +1301,20 @@ def extract_variable(nc_in, nc_out, profiles, var_name, stations):
 
         for k, profile in enumerate(profiles):
             print("    - processing profile {0}".format(profile.name))
-            p_values = extract_profile(var_in, profile)
+            values, dim_names = extract_profile(var_in, profile)
+
+            # assemble dimension lengths
+            lengths = dict(zip(dim_names, values.shape))
 
             if stations:
-                p_values = np.squeeze(p_values)
+                dim_names.remove(profiledim)
+
+                # reshape extracted values to remove redundant profiledim
+                values = values.reshape([lengths[d] for d in dim_names])
 
             try:
-                index = [k] + [slice(0, k) for k in p_values.shape]
-                var_out[index] = p_values
+                index = [k] + [slice(0, k) for k in values.shape]
+                var_out[index] = values
             except:
                 print "extract_profiles failed while writing {}".format(var_name)
                 raise
