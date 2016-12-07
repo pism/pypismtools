@@ -39,6 +39,8 @@ parser.add_argument("-o", "--output_file", dest="outfile",
 parser.add_argument("-p", "--print_size", dest="print_mode",
                     help="sets figure size and font size, available options are: \
                   'onecol','publish','medium','presentation','twocol'", default="medium")
+parser.add_argument("--paleo", dest="paleo", action="store_true",
+                    help="Doesn't use plt.plot instead plt.plot_date'", default=False)
 parser.add_argument("--step", dest="step", type=int,
                     help="step for plotting values, if time-series is very long", default=1)
 parser.add_argument("--show", dest="show", action="store_true",
@@ -72,6 +74,7 @@ normalize = options.normalize
 out_res = options.out_res
 outfile = options.outfile
 out_formats = options.out_formats.split(',')
+paleo = options.paleo
 print_mode = options.print_mode
 rotate_xticks = options.rotate_xticks
 step = options.step
@@ -126,13 +129,12 @@ for var in variables:
             var_units = nc.variables[var].units
         except:
             var_units = None
-        # temporary fix for spin-ups with non-Gregorian calendars
-        ## calendar = 'gregorian'
-        if calendar in ('365_day', '366_day'):
+        if paleo:
             date = t[:]
             usedates = False
-            date = np.arange(-len(t[:]), 0) / 1e3
+            date = np.arange(-125000 + step, -125000 + (len(t[:]) + 1) * step, step) / 1e3
         else:
+            cdftime = utime(units, calendar)
             date = cdftime.num2date(t[:])
             usedates = True            
         dates.append(date)
@@ -228,19 +230,19 @@ for l in range(len(variables)):
             n = k % no_colors
             if var in ("ivol"):
                 line, = ax.plot_date(
-                    var_dates[l][k][::step], var_values[l][k][::step] / scale, color=colors[n])
+                    var_dates[l][k][:], var_values[l][k][:] / scale, color=colors[n])
             else:
                 line, = ax.plot_date(
-                    var_dates[l][k][::step], var_values[l][k][::step], '-', color=colors[n])
+                    var_dates[l][k][:], var_values[l][k][:], '-', color=colors[n])
             lines.append(line)
 
             if shadow:
                 shadow_transform = ax.transData + offset
                 if var in ("ivol"):
-                    ax.plot_date(var_dates[l][k][::step], var_values[l][k][::step] / scale, color=shadow_color, transform=shadow_transform,
+                    ax.plot_date(var_dates[l][k][:], var_values[l][k][:] / scale, color=shadow_color, transform=shadow_transform,
                                  zorder=0.5 * line.get_zorder())
                 else:
-                    ax.plot_date(var_dates[l][k][::step], var_values[l][k][::step], color=shadow_color, transform=shadow_transform,
+                    ax.plot_date(var_dates[l][k][:], var_values[l][k][:], color=shadow_color, transform=shadow_transform,
                                  zorder=0.5 * line.get_zorder())
 
         nd = len(var_dates[l])
@@ -281,19 +283,19 @@ for l in range(len(variables)):
             n = k % no_colors
             if var in ("ivol"):
                 line, = ax.plot(
-                    var_dates[l][k][::step], var_values[l][k][::step] / scale, color=colors[n])
+                    var_dates[l][k][:], var_values[l][k][:] / scale, color=colors[n])
             else:
                 line, = ax.plot(
-                    var_dates[l][k][::step], var_values[l][k][::step], '-', color=colors[n])
+                    var_dates[l][k][:], var_values[l][k][:], '-', color=colors[n])
             lines.append(line)
 
             if shadow:
                 shadow_transform = ax.transData + offset
                 if var in ("ivol"):
-                    ax.plot(var_dates[l][k][::step], var_values[l][k][::step] / scale, color=shadow_color, transform=shadow_transform,
+                    ax.plot(var_dates[l][k][:], var_values[l][k][:] / scale, color=shadow_color, transform=shadow_transform,
                             zorder=0.5 * line.get_zorder())
                 else:
-                    ax.plot(var_dates[l][k][::step], var_values[l][k][::step], color=shadow_color, transform=shadow_transform,
+                    ax.plot(var_dates[l][k][:], var_values[l][k][:], color=shadow_color, transform=shadow_transform,
                             zorder=0.5 * line.get_zorder())
 
         nd = len(var_dates[l])
@@ -317,7 +319,10 @@ for l in range(len(variables)):
             ax.set_autoscalex_on(False)
             axSLE.set_autoscalex_on(False)
 
-        ax.set_xlabel('ka BP')
+        ax.set_xlabel('kyr BP')
+
+        if time_bounds:
+            ax.set_xlim(time_bounds[0], time_bounds[1])
 
         if bounds:
             ax.set_ylim(bounds[0], bounds[1])
