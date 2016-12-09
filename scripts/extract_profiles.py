@@ -696,7 +696,7 @@ def load_profiles(filename, projection, flip):
 
     Returns
     -------
-    list of proviles with
+    list of profiles with
     """
     profiles = []
     for lat, lon, id, name, clat, clon, flightline, glaciertype, flowtype in read_shapefile(
@@ -945,74 +945,107 @@ def define_station_variables(nc):
         variable.setncatts(attributes)
     print "done."
 
-def define_profile_variables(nc):
+def define_profile_variables(nc, special_vars=False):
     "Define variables used to store information about profiles."
     # create dimensions
     nc.createDimension(profiledim)
     nc.createDimension(stationdim)
 
-    variables = [("profile_id", "i", (stationdim),
-                  {"long_name": "profile id"}),
+    if special_vars:
+        variables = [("profile_id", "i", (stationdim),
+                      {"long_name": "profile id"}),
 
-                 ("profile_name", str, (stationdim),
-                  {"cf_role": "timeseries_id",
-                   "long_name": "profile name"}),
+                     ("profile_name", str, (stationdim),
+                      {"cf_role": "timeseries_id",
+                       "long_name": "profile name"}),
 
-                 ("profile", "f", (stationdim, profiledim),
-                  {"long_name": 'distance along profile',
-                   "units": "m"}),
+                     ("profile", "f", (stationdim, profiledim),
+                      {"long_name": 'distance along profile',
+                       "units": "m"}),
 
-                 ("clon", "f", (stationdim),
-                  {"long_name": "center longitude of profile",
-                   "units": "degrees_east",
-                   "valid_range": [-180.0, 180.0]}),
+                     ("clon", "f", (stationdim),
+                      {"long_name": "center longitude of profile",
+                       "units": "degrees_east",
+                       "valid_range": [-180.0, 180.0]}),
 
-                 ("clat", "f", (stationdim),
-                  {"long_name": "center latitude of profile",
-                   "units": "degrees_north",
-                   "valid_range": [-90.0, 90.0]}),
+                     ("clat", "f", (stationdim),
+                      {"long_name": "center latitude of profile",
+                       "units": "degrees_north",
+                       "valid_range": [-90.0, 90.0]}),
 
-                 ("lon", "f", (stationdim, profiledim),
-                  {"units": "degrees_east",
-                   "valid_range": [-180.0, 180.0],
-                   "standard_name": "longitude"}),
+                     ("lon", "f", (stationdim, profiledim),
+                      {"units": "degrees_east",
+                       "valid_range": [-180.0, 180.0],
+                       "standard_name": "longitude"}),
 
-                 ("lat", "f", (stationdim, profiledim),
-                  {"units": "degrees_north",
-                   "valid_range": [-90.0, 90.0],
-                   "standard_name": "latitude"}),
+                     ("lat", "f", (stationdim, profiledim),
+                      {"units": "degrees_north",
+                       "valid_range": [-90.0, 90.0],
+                       "standard_name": "latitude"}),
 
-                 ("flightline", "b", (stationdim),
-                  {"long_name": "flightline (true/false/undetermined) integer mask",
-                   "flag_values": [0, 1, 2],
-                   "flag_meanings": "true false undetermined",
-                   "valid_range": [0, 2]}),
+                     ("flightline", "b", (stationdim),
+                      {"long_name": "flightline (true/false/undetermined) integer mask",
+                       "flag_values": [0, 1, 2],
+                       "flag_meanings": "true false undetermined",
+                       "valid_range": [0, 2]}),
 
+                     ("flowtype", "b", (stationdim),
+                      {"long_name": "fast-flow type (isbrae/ice-stream) integer mask after Truffer and Echelmeyer (2003)",
+                       "flag_values": [0, 1, 2],
+                       "flag_meanings": "isbrae ice_stream undetermined",
+                       "valid_range": [0, 2]}),
 
-                 ("flowtype", "b", (stationdim),
-                  {"long_name": "fast-flow type (isbrae/ice-stream) integer mask after Truffer and Echelmeyer (2003)",
-                   "flag_values": [0, 1, 2],
-                   "flag_meanings": "isbrae ice_stream undetermined",
-                   "valid_range": [0, 2]}),
+                     ("glaciertype", "b", (stationdim),
+                      {"long_name": "glacier-type integer mask",
+                       "comment": "glacier-type categorization after Moon et al. (2012), Science, 10.1126/science.1219985",
+                       "flag_values": [0, 1, 2, 3, 4],
+                       "flag_meanings": "fast_flowing_marine_terminating low_velocity_marine_terminating ice_shelf_terminating land_terminating undetermined",
+                       "valid_range": [0, 4]}),
 
-                 ("glaciertype", "b", (stationdim),
-                  {"long_name": "glacier-type integer mask",
-                   "comment": "glacier-type categorization after Moon et al. (2012), Science, 10.1126/science.1219985",
-                   "flag_values": [0, 1, 2, 3, 4],
-                   "flag_meanings": "fast_flowing_marine_terminating low_velocity_marine_terminating ice_shelf_terminating land_terminating undetermined",
-                   "valid_range": [0, 4]}),
+                     ("nx", "f", (stationdim, profiledim),
+                      {"long_name": "x-component of the right-hand-pointing normal vector"}),
 
-                 ("nx", "f", (stationdim, profiledim),
-                  {"long_name": "x-component of the right-hand-pointing normal vector"}),
+                     ("ny", "f", (stationdim, profiledim),
+                      {"long_name": "y-component of the right-hand-pointing normal vector"}),
 
-                 ("ny", "f", (stationdim, profiledim),
-                  {"long_name": "y-component of the right-hand-pointing normal vector"}),
+                     ("tx", "f", (stationdim, profiledim),
+                      {"long_name": "x-component of the unit tangential vector"}),
 
-                 ("tx", "f", (stationdim, profiledim),
-                  {"long_name": "x-component of the unit tangential vector"}),
+                     ("ty", "f", (stationdim, profiledim),
+                      {"long_name": "y-component of the tangential vector"})]
+    else:
+        variables = [("profile_id", "i", (stationdim),
+                      {"long_name": "profile id"}),
 
-                 ("ty", "f", (stationdim, profiledim),
-                  {"long_name": "y-component of the tangential vector"})]
+                     ("profile_name", str, (stationdim),
+                      {"cf_role": "timeseries_id",
+                       "long_name": "profile name"}),
+
+                     ("profile", "f", (stationdim, profiledim),
+                      {"long_name": 'distance along profile',
+                       "units": "m"}),
+
+                     ("lon", "f", (stationdim, profiledim),
+                      {"units": "degrees_east",
+                       "valid_range": [-180.0, 180.0],
+                       "standard_name": "longitude"}),
+
+                     ("lat", "f", (stationdim, profiledim),
+                      {"units": "degrees_north",
+                       "valid_range": [-90.0, 90.0],
+                       "standard_name": "latitude"}),
+
+                     ("nx", "f", (stationdim, profiledim),
+                      {"long_name": "x-component of the right-hand-pointing normal vector"}),
+
+                     ("ny", "f", (stationdim, profiledim),
+                      {"long_name": "y-component of the right-hand-pointing normal vector"}),
+
+                     ("tx", "f", (stationdim, profiledim),
+                      {"long_name": "x-component of the unit tangential vector"}),
+
+                     ("ty", "f", (stationdim, profiledim),
+                      {"long_name": "y-component of the tangential vector"})]
 
     print "Defining profile variables...",
     for name, datatype, dimensions, attributes in variables:
@@ -1062,7 +1095,7 @@ def file_handling_test():
         input_file = netCDF4.Dataset(in_filename, 'r')
         output_file = netCDF4.Dataset(out_filename, 'w')
 
-        define_profile_variables(output_file)
+        define_profile_variables(output_file, special_vars=True)
 
         copy_global_attributes(input_file, output_file)
 
@@ -1351,6 +1384,10 @@ if __name__ == "__main__":
         "-f", "--flip", dest="flip", action="store_true",
         help='''Flip profile direction, Default=False''',
         default=False)
+    parser.add_argument(
+        "-s", "--special_vars", dest="special_vars", action="store_true",
+        help='''Add special vars (glaciertype,flowtype, etc), Default=False''',
+        default=False)
     parser.add_argument("-v", "--variable", dest="variables",
                         help="comma-separated list with variables",
                         default='x,y,thk,velsurf_mag,flux_mag,uflux,vflux,pism_config,pism_overrides,run_stats,uvelsurf,vvelsurf,topg,usurf,tillphi,tauc')
@@ -1361,6 +1398,7 @@ if __name__ == "__main__":
 
     options = parser.parse_args()
     fill_value = -2e9
+    special_vars = options.special_vars
     variables = options.variables.split(',')
 
     print("-----------------------------------------------------------------")
@@ -1403,7 +1441,7 @@ if __name__ == "__main__":
             write_station(nc_out, k, profile)
         print "done."
     else:
-        define_profile_variables(nc_out)
+        define_profile_variables(nc_out, special_vars=special_vars)
         print "Writing profiles...",
         for k, profile in enumerate(profiles):
             write_profile(nc_out, k, profile)

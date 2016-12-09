@@ -57,13 +57,13 @@ class ShapeDataError(Exception):
 
 
 parser = ArgumentParser(
-    description='''A script calving front or groundling line from a PISM netCDF file, and save it as a shapefile (polygon).''')
+    description='''A script to extract interfaces (calving front, ice-ocean, or groundling line) from a PISM netCDF file, and save it as a shapefile (polygon).''')
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-o", "--output_filename", dest="out_file",
                     help="Name of the output shape file", default='terminus.shp')
 parser.add_argument("-t", "--type" , dest="extract_type",
                     choices=['calving_front', 'grounding_line', 'ice_ocean'],
-                    help="What to extract.", default='calving_front')
+                    help="Interface to extract.", default='calving_front')
 
 
 options = parser.parse_args()
