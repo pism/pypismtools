@@ -40,7 +40,7 @@ parser.add_argument("-p", "--print_size", dest="print_mode",
                     help="sets figure size and font size, available options are: \
                   'onecol','publish','medium','presentation','twocol'", default="medium")
 parser.add_argument("--paleo", dest="paleo", action="store_true",
-                    help="Doesn't use plt.plot instead plt.plot_date'", default=False)
+                    help="Use plt.plot instead plt.plot_date'", default=False)
 parser.add_argument("--step", dest="step", type=int,
                     help="step for plotting values, if time-series is very long", default=1)
 parser.add_argument("--show", dest="show", action="store_true",
@@ -89,6 +89,7 @@ dx, dy = 4. / out_res, -4. / out_res
 # Conversion between giga tons (Gt) and millimeter sea-level equivalent (mmSLE)
 gt2mmSLE = 1. / 365
 
+paleo_start_year = -125000
 
 # Plotting styles
 axisbg = '0.9'
@@ -132,7 +133,7 @@ for var in variables:
         if paleo:
             date = t[:]
             usedates = False
-            date = np.arange(-125000 + step, -125000 + (len(t[:]) + 1) * step, step) / 1e3
+            date = np.arange(paleo_start_year + step, paleo_start_year + (len(t[:]) + 1) * step, step) / 1e3
         else:
             cdftime = utime(units, calendar)
             date = cdftime.num2date(t[:])
