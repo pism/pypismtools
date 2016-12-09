@@ -133,7 +133,9 @@ for var in variables:
         if paleo:
             date = t[:]
             usedates = False
-            date = np.arange(paleo_start_year + step, paleo_start_year + (len(t[:]) + 1) * step, step) / 1e3
+            date = np.arange(paleo_start_year + step,
+                             paleo_start_year + (len(t[:]) + 1) * step,
+                             step) / 1e3
         else:
             cdftime = utime(units, calendar)
             date = cdftime.num2date(t[:])
@@ -144,15 +146,15 @@ for var in variables:
             scale_exponent = 6
             scale = 10 ** scale_exponent
             out_units = "km3"
-            var_unit_str = ("10$^{%i}$ km$^{3}$" % scale_exponent)
-            ylabel = ("volume [%s]" % var_unit_str)
+            var_unit_str = ("10$^{\mathregular{%i}}$ km$^{\mathregular{3}}$" % scale_exponent)
+            ylabel = ("volume (%s)" % var_unit_str)
         elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
                      "grounded_basal_ice_flux_cumulative", "sub_shelf_ice_flux_cumulative", "effective_discharge_flux_cumulative",
                      "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
                      "climatic_mass_balance_flux_cumulative", "discharge_flux_cumulative"):
             out_units = "Gt"
             var_unit_str = "Gt"
-            ylabel = ("mass change [%s]" % var_unit_str)
+            ylabel = ("mass change (%s)" % var_unit_str)
             sle_label = "mass change [mm SLE]"
         elif var in ("dimassdt", "ocean_kill_flux", "surface_ice_flux",
                      "grounded_basal_ice_flux", "sub_shelf_ice_flux",
@@ -160,44 +162,44 @@ for var in variables:
                      "climatic_mass_balance_flux", "nonneg_flux", "discharge_flux"):
             out_units = "Gt year-1"
             var_unit_str = "Gt/yr"
-            ylabel = ("mass flux [%s]" % var_unit_str)
-            sle_label = "[mm SLE/yr]"
+            ylabel = ("mass flux (%s)" % var_unit_str)
+            sle_label = "(mm SLE/yr)"
         elif var in ("usurf"):
             out_units = "m"
             var_unit_str = "m a.s.l"
-            ylabel = ("elevation [%s]" % var_unit_str)
+            ylabel = ("elevation (%s)" % var_unit_str)
         elif var in ("iarea"):
             out_units = "km2"
             var_unit_str = "km$^2$"
-            ylabel = ("ice area [%s]" % var_unit_str)
+            ylabel = ("ice area (%s)" % var_unit_str)
         elif var in ("thk"):
             out_units = "m"
             var_unit_str = "m"
-            ylabel = ("ice thickness [%s]" % var_unit_str)
+            ylabel = ("ice thickness (%s)" % var_unit_str)
         elif var in ("h_x_i", "h_x_j", "h_y_i", "h_y_j", "grad_h"):
             out_units = " "
             var_unit_str = "-"
-            ylabel = ("slope [%s]" % var_unit_str)
+            ylabel = ("slope (%s)" % var_unit_str)
         elif var in ("eigen1", "eigen2"):
             out_units = "year-1"
             var_unit_str = "a$^{-1}$"
-            ylabel = ("strain rate [%s]" % var_unit_str)
+            ylabel = ("strain rate (%s)" % var_unit_str)
         elif var in ("taud", "taud_mag", "taud_x", "taud_y",
                      "bwp", "tauc"):
             out_units = "Pa"
             var_unit_str = "Pa"
-            ylabel = ("pressure [%s]" % var_unit_str)
+            ylabel = ("pressure (%s)" % var_unit_str)
         elif var in ("csurf", "cbase", "cbar", "ubar", "vbar"):
             out_units = "m year-1"
             var_unit_str = "m a$^{-1}$"
-            ylabel = ("speed [%s]" % var_unit_str)
+            ylabel = ("speed (%s)" % var_unit_str)
         elif var in ("RU"):
             out_units = "km3"
             var_unit_str = "km$^3$"
-            ylabel = ("runoff [%s]" % var_unit_str)
+            ylabel = ("runoff (%s)" % var_unit_str)
         else:
             print("unit %s not recognized" % var_units)
-            ylabel = ("%s [%s]" % (var, var_units))
+            ylabel = ("%s (%s)" % (var, var_units))
         var_ylabels.append(ylabel)
 
         if (nc.variables[var].ndim == 3):
