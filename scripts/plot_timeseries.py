@@ -103,7 +103,7 @@ aspect_ratio = golden_mean * .8
 # set the print mode
 lw, pad_inches = set_mode(print_mode, aspect_ratio=aspect_ratio)
 
-plt.rcParams['legend.fancybox'] = True
+plt.rcParams['legend.fancybox'] = False
 no_colors = len(colors)
 
 lines = []
@@ -259,7 +259,7 @@ for l in range(len(variables)):
         date_end = np.max(np.array(date_end))
 
         if labels != None:
-            ax.legend(lines, labels, bbox_to_anchor=(1., 1.),
+            legend = ax.legend(lines, labels, bbox_to_anchor=(1., 1.),
                       shadow=True, numpoints=numpoints)
 
         if twinx:
@@ -274,6 +274,9 @@ for l in range(len(variables)):
 
         yearloc = mdates.YearLocator(10)
         ax.xaxis.set_major_locator(yearloc)
+
+        frame = legend.get_frame()
+        frame.set_lw(.1)
 
         if time_bounds:
             start_date = datetime(time_bounds[0], 1, 1)

@@ -970,7 +970,8 @@ def unit_converter(data, inunit, outunit):
                 outdata = c(data)
         except:
             print(
-                "No udunits module found, you're on your own.\n  -> I am assuming input unit is m, and will convert to km.\n  -> Installation of Constantine's awesome python wrapper for udunits is highly recommended.\n  -> Download it from https://github.com/ckhroulev/py_udunits2.")
+                "Neither cf_units or udunits2 module found, you're on your own.\n  
+                -> I am assuming input unit is m, and will convert to km.\n.")
             c = 1. / 1e3
             outdata = c * data
     else:
