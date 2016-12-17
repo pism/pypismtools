@@ -56,7 +56,10 @@ parser.add_argument("--tick_format", dest="tick_format",
 parser.add_argument("--font_size", dest="font_size",
                     help="Font size", default=12)
 parser.add_argument("--type", dest="colorbar_type",
-                    choices=['linear', 'log_speed', 'gris_bath_topo'],
+                    choices=['linear',
+                             'log_speed',
+                             'gris_bath_topo',
+                             'log_speed_m_day'],
                     help="Type of colorbar", default='linear')
 parser.add_argument("--ticks", dest="fticks", nargs='*', type=float,
                     help="tick marks", default=None)
@@ -136,6 +139,14 @@ elif colorbar_type in ('log_speed'):
     cb_extend = 'both'
     format = '%i'
     ticks = [1, 3, 10, 30, 100, 300, 1000, 3000]
+elif colorbar_type in ('log_speed_m_day'):
+    data_values = np.logspace(vmin, vmax, N)[0:889]
+    data_values[-1] = vmax
+    N = len(data_values)
+    norm = mpl.colors.LogNorm(vmin=vmin, vmax=vmax)
+    cb_extend = 'both'
+    format = '%2.2f'
+    ticks = [0.01, 0.1, 0.5, 1, 5, 10]
 else:
     pass
 

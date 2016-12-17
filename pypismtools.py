@@ -970,8 +970,7 @@ def unit_converter(data, inunit, outunit):
                 outdata = c(data)
         except:
             print(
-                "Neither cf_units or udunits2 module found, you're on your own.\n  
-                -> I am assuming input unit is m, and will convert to km.\n.")
+                "Neither cf_units or udunits2 module found, you're on your own.")
             c = 1. / 1e3
             outdata = c * data
     else:

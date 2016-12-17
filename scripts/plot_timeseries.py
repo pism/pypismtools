@@ -139,7 +139,8 @@ for var in variables:
         else:
             cdftime = utime(units, calendar)
             date = cdftime.num2date(t[:])
-            usedates = True            
+            usedates = True
+        print date
         dates.append(date)
 
         if var in ("ivol"):
@@ -148,6 +149,11 @@ for var in variables:
             out_units = "km3"
             var_unit_str = ("10$^{\mathregular{%i}}$ km$^{\mathregular{3}}$" % scale_exponent)
             ylabel = ("volume (%s)" % var_unit_str)
+        elif var in ("surface_mass_balance_average", "basal_mass_balance_average"):
+            out_units = "Gt year-1"
+            var_unit_str = "Gt/yr"
+            ylabel = ("mass flux (%s)" % var_unit_str)
+            sle_label = "(mm SLE/yr)"            
         elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
                      "grounded_basal_ice_flux_cumulative", "sub_shelf_ice_flux_cumulative", "effective_discharge_flux_cumulative",
                      "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
@@ -216,7 +222,8 @@ for var in variables:
                 var_vals = np.squeeze(nc.variables[var][:])
         if normalize:
             var_vals -= var_vals[0]
-
+        print np.squeeze(nc.variables[var][:])
+        print var_vals
         values.append(var_vals)
         nc.close()
     var_dates.append(dates)

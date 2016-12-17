@@ -2,7 +2,6 @@
 
 import numpy as np
 from argparse import ArgumentParser
-
 from netCDF4 import Dataset as NC
 from netcdftime import utime
 import gdal
@@ -10,11 +9,34 @@ import ogr
 import osr
 import os
 from pyproj import Proj
+import logging
+import logging.handlers
 
 try:
     import pypismtools.pypismtools as ppt
 except:
     import pypismtools as ppt
+
+# create logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# create file handler which logs even debug messages
+fh = logging.handlers.RotatingFileHandler('extract.log')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(lineno)d - %(message)s')
+
+# add formatter to ch and fh
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
+logger.addHandler(fh)
 
 
 def create_memory_layer(dst_fieldname):
@@ -60,7 +82,7 @@ parser = ArgumentParser(
     description='''A script to extract interfaces (calving front, ice-ocean, or groundling line) from a PISM netCDF file, and save it as a shapefile (polygon).''')
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-o", "--output_filename", dest="out_file",
-                    help="Name of the output shape file", default='terminus.shp')
+                    help="Name of the output shape file", default='interface.shp')
 parser.add_argument("-t", "--type" , dest="extract_type",
                     choices=['calving_front', 'grounding_line', 'ice_ocean'],
                     help="Interface to extract.", default='calving_front')
@@ -105,10 +127,10 @@ if src_ds.GetProjectionRef() != '':
     srs = osr.SpatialReference()
     srs.ImportFromWkt(src_ds.GetProjection())
 
-terminus_layer = shp_ds.CreateLayer('terminus', srs, ogr.wkbPolygon)
+interface_layer = shp_ds.CreateLayer('interface', srs, ogr.wkbPolygon)
 fd = ogr.FieldDefn(ts_fieldname, ogr.OFTString)
-terminus_layer.CreateField(fd)
-terminus_dst_field = 0
+interface_layer.CreateField(fd)
+interface_dst_field = 0
 
 bufferDist = 1
 if extract_type in ('calving_front'):
@@ -130,15 +152,17 @@ for k in range(src_ds.RasterCount):
         timestamp = '0-0-0'
     else:
         timestamp = timestamps[k]
-    print('Processing {}'.format(timestamp))
+    logger.info('Processing {}'.format(timestamp))
     srcband = src_ds.GetRasterBand(k + 1)
     poly_layer, dst_field = create_memory_layer(dst_fieldname)
+    logger.info('Running gdal.Polygonize()')
     result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [],
                              callback=gdal.TermProgress)
     if extract_type in ('ice_ocean'):
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=a_value[0], val2=a_value[1]))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
+    logger.info('Extracting interface A')
     a_layer, dst_field = create_memory_layer(dst_fieldname)
     featureDefn = a_layer.GetLayerDefn()
     for m, feature in enumerate(poly_layer):
@@ -153,6 +177,7 @@ for k in range(src_ds.RasterCount):
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1]))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
+    logger.info('Extracting interface B')
     b_layer, dst_field = create_memory_layer(dst_fieldname)
     featureDefn = b_layer.GetLayerDefn()
     for m, feature in enumerate(poly_layer):
@@ -164,13 +189,15 @@ for k in range(src_ds.RasterCount):
         b_layer.CreateFeature(outFeature)
 
     # Now clip layers
+    logger.info('Clipping A and B')
     tmp_layer, dst_field = create_memory_layer(dst_fieldname)
     a_layer.Clip(b_layer, tmp_layer)
     poly_layer = None
     a_layer = None
     b_layer = None
 
-    featureDefn = terminus_layer.GetLayerDefn()
+    logger.info('Saving results')
+    featureDefn = interface_layer.GetLayerDefn()
     for feature in tmp_layer:
         # create a new feature
         outFeature = ogr.Feature(featureDefn)
@@ -178,11 +205,11 @@ for k in range(src_ds.RasterCount):
         i = outFeature.GetFieldIndex(ts_fieldname)
         outFeature.SetField(i, str(timestamp))
         # add the feature to the output layer
-        terminus_layer.CreateFeature(outFeature)
-
+        interface_layer.CreateFeature(outFeature)
 
 # Clean-up
 poly_layer = None
-terminus_layer = None
+interface_layer = None
 mem_ds = None
 src_ds = None
+    
