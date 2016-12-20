@@ -955,6 +955,10 @@ def unit_converter(data, inunit, outunit):
 
     inunit = str(inunit)
     outunit = str(outunit)
+    if isinstance(data, np.ma.MaskedArray):
+        mask = data.mask
+    else:
+        mask = None
     data = np.array(data)
     if not (inunit == outunit):
         try:
@@ -976,7 +980,10 @@ def unit_converter(data, inunit, outunit):
     else:
         outdata = data
 
-    return outdata
+    if mask is not None:
+        return np.ma.array(outdata, mask=mask)
+    else:
+        return outdata
 
 
 def permute(variable, output_order=('time', 'z', 'zb', 'y', 'x')):
