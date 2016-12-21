@@ -7,6 +7,9 @@ import pylab as plt
 from argparse import ArgumentParser
 import matplotlib.transforms as transforms
 import matplotlib.dates as mdates
+import matplotlib.colors as colors
+import matplotlib.cm as cmx
+
 from datetime import datetime
 
 from netcdftime import utime
@@ -30,6 +33,8 @@ parser.add_argument("-l", "--labels", dest="labels",
                     help="comma-separated list with labels, put in quotes like 'label 1,label 2'", default=None)
 parser.add_argument("--index_ij", dest="index_ij", nargs=2, type=int,
                     help="i and j index for spatial fields, eg. 10 10", default=[0, 0])
+parser.add_argument("--lon_lat", dest="lon_lat", nargs=2, type=float,
+                    help="lon and lat for spatial fields, eg. 10 10", default=None)
 parser.add_argument("-f", "--output_format", dest="out_formats",
                     help="Comma-separated list with output graphics suffix, default = pdf", default='pdf')
 parser.add_argument("-n", "--normalize", dest="normalize", action="store_true",
@@ -57,6 +62,8 @@ parser.add_argument("-r", "--output_resolution", dest="out_res",
 parser.add_argument("-t", "--twinx", dest="twinx", action="store_true",
                     help='''adds a second ordinate with units mmSLE,
                   Default=False''', default=False)
+parser.add_argument("--title", dest="title",
+                    help='''Plot title. default=False''', default=None)
 parser.add_argument("-v", "--variable", dest="variables",
                     help="comma-separated list with variables", default='ivol')
 
@@ -68,6 +75,11 @@ else:
     labels = None
 bounds = options.bounds
 index_i, index_j = options.index_ij[0], options.index_ij[1]
+if options.lon_lat is not None:
+    lon_lat = True
+    lon, lat = options.lon_lat[0], options.lon_lat[1]
+else:
+    lon_lat = None
 time_bounds = options.time_bounds
 golden_mean = get_golden_mean()
 normalize = options.normalize
@@ -80,6 +92,7 @@ rotate_xticks = options.rotate_xticks
 step = options.step
 shadow = options.shadow
 show = options.show
+title = options.title
 twinx = options.twinx
 variables = options.variables.split(',')
 dashes = ['-', '--', '-.', ':', '-', '--', '-.', ':']
@@ -96,7 +109,7 @@ axisbg = '0.9'
 shadow_color = '0.25'
 numpoints = 1
 
-colors = colorList()
+my_colors = colorList()
 
 aspect_ratio = golden_mean * .8
 
@@ -104,17 +117,58 @@ aspect_ratio = golden_mean * .8
 lw, pad_inches = set_mode(print_mode, aspect_ratio=aspect_ratio)
 
 plt.rcParams['legend.fancybox'] = False
-no_colors = len(colors)
+no_colors = len(my_colors)
+
+def compute_indices(filename, lon, lat):
+
+    from pyproj import Proj
+    try:
+        nc = NC(filename, 'r')
+    except:
+        print(("file %s not found ... ending ..." % filename))
+        exit(2)
+        
+    try:
+        p = Proj(nc.proj4)
+    except:
+        print('Projection not found, assuming EPSG:3413')
+        p = Proj("+init=epsg:3413")
+    x0, y0 = p(lon,lat)
+
+    # find the corresponding i and j in the dataset
+    try:
+        x = nc.variables["x"][:]
+        y = nc.variables["y"][:]
+    except:
+        x = nc.variables["x1"][:]
+        y = nc.variables["y1"][:]
+
+    i = np.arange(len(x))
+    j = np.arange(len(y))
+    i0, j0 = (np.max(i * (x < x0)), np.max(j * (y < y0)))
+    print(("i = %d, j = %d" %  (i0, j0)))
+    nc.close()
+    
+    return (i0, j0)
+
 
 lines = []
 var_dates = []
 var_values = []
 var_ylabels = []
+nt = len(args)
+
+jet = cm = plt.get_cmap('jet')
+cNorm = colors.Normalize(vmin=0, vmax=nt)
+scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
+
 for var in variables:
     dates = []
     values = []
-    for k in range(len(args)):
+    for k in range(nt):
         print("opening file %s" % args[k])
+        if lon_lat is not None:
+            index_i, index_j = compute_indices(args[k], lon, lat)
         nc = NC(args[k], 'r')
         try:
             t = nc.variables["time"][:]
@@ -140,7 +194,6 @@ for var in variables:
             cdftime = utime(units, calendar)
             date = cdftime.num2date(t[:])
             usedates = True
-        print date
         dates.append(date)
 
         if var in ("ivol"):
@@ -150,8 +203,8 @@ for var in variables:
             var_unit_str = ("10$^{\mathregular{%i}}$ km$^{\mathregular{3}}$" % scale_exponent)
             ylabel = ("volume (%s)" % var_unit_str)
         elif var in ("surface_mass_balance_average", "basal_mass_balance_average"):
-            out_units = "Gt year-1"
-            var_unit_str = "Gt/yr"
+            out_units = "kg m-2 year-1"
+            var_unit_str = "kg/m2/yr"
             ylabel = ("mass flux (%s)" % var_unit_str)
             sle_label = "(mm SLE/yr)"            
         elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
@@ -222,8 +275,6 @@ for var in variables:
                 var_vals = np.squeeze(nc.variables[var][:])
         if normalize:
             var_vals -= var_vals[0]
-        print np.squeeze(nc.variables[var][:])
-        print var_vals
         values.append(var_vals)
         nc.close()
     var_dates.append(dates)
@@ -238,12 +289,22 @@ for l in range(len(variables)):
 
         for k in range(len(var_dates[l])):
             n = k % no_colors
-            if var in ("ivol"):
-                line, = ax.plot_date(
-                    var_dates[l][k][:], var_values[l][k][:] / scale, color=colors[n])
+            colorVal = scalarMap.to_rgba(k)
+            if nt > len(my_colors):
+                if var in ("ivol"):
+                    line, = ax.plot_date(
+                        var_dates[l][k][:], var_values[l][k][:] / scale, color=colorVal)
+                else:
+                    line, = ax.plot_date(
+                        var_dates[l][k][:], var_values[l][k][:], '-', color=colorVal)
             else:
-                line, = ax.plot_date(
-                    var_dates[l][k][:], var_values[l][k][:], '-', color=colors[n])
+                if var in ("ivol"):
+                    line, = ax.plot_date(
+                        var_dates[l][k][:], var_values[l][k][:] / scale, color=my_colors[n])
+                else:
+                    line, = ax.plot_date(
+                        var_dates[l][k][:], var_values[l][k][:], '-', color=my_colors[n])
+
             lines.append(line)
 
             if shadow:
@@ -294,12 +355,21 @@ for l in range(len(variables)):
     else:
         for k in range(len(var_dates[l])):
             n = k % no_colors
-            if var in ("ivol"):
-                line, = ax.plot(
-                    var_dates[l][k][:], var_values[l][k][:] / scale, color=colors[n])
+            colorVal = scalarMap.to_rgba(k)
+            if nt > len(my_colors):
+                if var in ("ivol"):
+                    line, = ax.plot(
+                        var_dates[l][k][:], var_values[l][k][:] / scale, color=colorVal)
+                else:
+                    line, = ax.plot(
+                        var_dates[l][k][:], var_values[l][k][:], '-', color=colorVal)
             else:
-                line, = ax.plot(
-                    var_dates[l][k][:], var_values[l][k][:], '-', color=colors[n])
+                if var in ("ivol"):
+                    line, = ax.plot(
+                        var_dates[l][k][:], var_values[l][k][:] / scale, color=my_colors[n])
+                else:
+                    line, = ax.plot(
+                        var_dates[l][k][:], var_values[l][k][:], '-', color=my_colors[n])
             lines.append(line)
 
             if shadow:
@@ -359,7 +429,9 @@ for l in range(len(variables)):
         ticklabels = ax.get_xticklabels()
         for tick in ticklabels:
             tick.set_rotation(0)
-
+    if title is not None:
+        plt.title(title)
+        
     for out_format in out_formats:
         out_file = outfile + '_' + variables[l] + '.' + out_format
         print "  - writing image %s ..." % out_file
