@@ -85,7 +85,7 @@ parser.add_argument("-o", "--output_filename", dest="out_file",
                     help="Name of the output shape file", default='interface.shp')
 parser.add_argument("-t", "--type" , dest="extract_type",
                     choices=['calving_front', 'grounding_line', 'ice_ocean'],
-                    help="Interface to extract.", default='calving_front')
+                    help="Interface to extract.", default='ice_ocean')
 
 
 options = parser.parse_args()

@@ -112,6 +112,7 @@ numpoints = 1
 my_colors = colorList()
 
 aspect_ratio = golden_mean * .8
+aspect_ratio = 0.75
 
 # set the print mode
 lw, pad_inches = set_mode(print_mode, aspect_ratio=aspect_ratio)
@@ -274,7 +275,7 @@ for var in variables:
             else:
                 var_vals = np.squeeze(nc.variables[var][:])
         if normalize:
-            var_vals -= var_vals[0]
+            var_vals -= var_vals[-1]
         values.append(var_vals)
         nc.close()
     var_dates.append(dates)
