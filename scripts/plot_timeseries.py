@@ -29,6 +29,8 @@ parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
                     help="lower and upper bound for ordinate, eg. -1 1", default=None)
 parser.add_argument("--time_bounds", dest="time_bounds", nargs=2, type=int,
                     help="lower and upper bound for abscissa, eg. 1990 2000", default=None)
+parser.add_argument("-a", "--aspect_ration", dest="aspect_ratio", type=float,
+                    help="Plot aspect ratio", default=0.75)
 parser.add_argument("-l", "--labels", dest="labels",
                     help="comma-separated list with labels, put in quotes like 'label 1,label 2'", default=None)
 parser.add_argument("--index_ij", dest="index_ij", nargs=2, type=int,
@@ -68,6 +70,7 @@ parser.add_argument("-v", "--variable", dest="variables",
                     help="comma-separated list with variables", default='ivol')
 
 options = parser.parse_args()
+aspect_ratio = options.aspect_ratio
 args = options.FILE
 if options.labels != None:
     labels = options.labels.split(',')
@@ -111,8 +114,7 @@ numpoints = 1
 
 my_colors = colorList()
 
-aspect_ratio = golden_mean * .8
-aspect_ratio = 0.75
+
 
 # set the print mode
 lw, pad_inches = set_mode(print_mode, aspect_ratio=aspect_ratio)
@@ -228,6 +230,22 @@ for var in variables:
             out_units = "m"
             var_unit_str = "m a.s.l"
             ylabel = ("elevation (%s)" % var_unit_str)
+        elif var in ("delta_T"):
+            out_units = "K"
+            var_unit_str = "K"
+            ylabel = ("temperature anomaly (%s)" % var_unit_str)
+        elif var in ("delta_SL"):
+            out_units = "m"
+            var_unit_str = "m"
+            ylabel = ("sea-level offset (%s)" % var_unit_str)
+        elif var in ("frac_mass_flux"):
+            out_units = "1"
+            var_unit_str = "-"
+            ylabel = ("melt rate fraction (%s)" % var_unit_str)
+        elif var in ("frac_MBP"):
+            out_units = "1"
+            var_unit_str = "-"
+            ylabel = ("back-pressure fraction (%s)" % var_unit_str)
         elif var in ("iarea"):
             out_units = "km2"
             var_unit_str = "km$^2$"
