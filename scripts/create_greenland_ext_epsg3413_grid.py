@@ -114,7 +114,7 @@ if __name__ == "__main__":
     nc.createDimension(ydim, size=northing.shape[0])
     
     var = xdim
-    var_out = nc.createVariable(var, 'f', dimensions=(xdim))
+    var_out = nc.createVariable(var, 'd', dimensions=(xdim))
     var_out.axis = xdim
     var_out.long_name = "X-coordinate in Cartesian system"
     var_out.standard_name = "projection_x_coordinate"
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     var_out[:] = easting
 
     var = ydim
-    var_out = nc.createVariable(var, 'f', dimensions=(ydim))
+    var_out = nc.createVariable(var, 'd', dimensions=(ydim))
     var_out.axis = ydim
     var_out.long_name = "Y-coordinate in Cartesian system"
     var_out.standard_name = "projection_y_coordinate"
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     var_out[:] = northing
 
     var = 'lon'
-    var_out = nc.createVariable(var, 'f', dimensions=(ydim, xdim))
+    var_out = nc.createVariable(var, 'd', dimensions=(ydim, xdim))
     var_out.units = "degrees_east"
     var_out.valid_range = -180., 180.
     var_out.standard_name = "longitude"
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     var_out[:] = lon
 
     var = 'lat'
-    var_out = nc.createVariable(var, 'f', dimensions=(ydim, xdim))
+    var_out = nc.createVariable(var, 'd', dimensions=(ydim, xdim))
     var_out.units = "degrees_north"
     var_out.valid_range = -90., 90.
     var_out.standard_name = "latitude"
