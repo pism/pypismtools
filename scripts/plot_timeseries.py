@@ -46,8 +46,9 @@ parser.add_argument("-o", "--output_file", dest="outfile",
 parser.add_argument("-p", "--print_size", dest="print_mode",
                     help="sets figure size and font size, available options are: \
                   'onecol','publish','medium','presentation','twocol'", default="medium")
-parser.add_argument("--paleo", dest="paleo", action="store_true",
-                    help="Use plt.plot instead plt.plot_date'", default=False)
+parser.add_argument("--time_axis", dest="time_axis",
+                    choices=['standard', 'paleo', 'glacial'],
+                    help="What kind of date/time system to use", default='standard')
 parser.add_argument("--step", dest="step", type=int,
                     help="step for plotting values, if time-series is very long", default=1)
 parser.add_argument("--show", dest="show", action="store_true",
@@ -89,7 +90,7 @@ normalize = options.normalize
 out_res = options.out_res
 outfile = options.outfile
 out_formats = options.out_formats.split(',')
-paleo = options.paleo
+time_axis = options.time_axis
 print_mode = options.print_mode
 rotate_xticks = options.rotate_xticks
 step = options.step
@@ -105,15 +106,18 @@ dx, dy = 4. / out_res, -4. / out_res
 # Conversion between giga tons (Gt) and millimeter sea-level equivalent (mmSLE)
 gt2mmSLE = 1. / 365
 
+glacial_start_year = 0
 paleo_start_year = -125000
 
 # Plotting styles
-axisbg = '0.9'
+axisbg = '1'
 shadow_color = '0.25'
 numpoints = 1
 
 my_colors = colorList()
-
+my_colors = ['#6a3d9a',
+             '#cab2d6',
+             '#ff7f00']
 
 
 # set the print mode
@@ -187,11 +191,19 @@ for var in variables:
             var_units = nc.variables[var].units
         except:
             var_units = None
-        if paleo:
+        if time_axis == 'paleo':
             date = t[:]
             usedates = False
+            time_axis_label = 'kyr BP'
             date = np.arange(paleo_start_year + step,
                              paleo_start_year + (len(t[:]) + 1) * step,
+                             step) / 1e3
+        elif time_axis == 'glacial':
+            date = t[:]
+            usedates = False
+            time_axis_label = 'kyr'
+            date = np.arange(glacial_start_year + step,
+                             glacial_start_year + (len(t[:]) + 1) * step,
                              step) / 1e3
         else:
             cdftime = utime(units, calendar)
@@ -242,7 +254,7 @@ for var in variables:
             out_units = "1"
             var_unit_str = "-"
             ylabel = ("melt rate fraction (%s)" % var_unit_str)
-        elif var in ("frac_MBP"):
+        elif var in ("delta_MBP"):
             out_units = "1"
             var_unit_str = "-"
             ylabel = ("back-pressure fraction (%s)" % var_unit_str)
@@ -421,7 +433,7 @@ for l in range(len(variables)):
             ax.set_autoscalex_on(False)
             axSLE.set_autoscalex_on(False)
 
-        ax.set_xlabel('kyr BP')
+        ax.set_xlabel(time_axis_label)
 
         if time_bounds:
             ax.set_xlim(time_bounds[0], time_bounds[1])

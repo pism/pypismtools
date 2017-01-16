@@ -14,7 +14,7 @@ parser.add_argument("-g", "--grid_spacing", dest="grid_spacing", type=float,
 parser.add_argument("-f", "--format", dest="fileformat", type=str.upper,
                     choices=[
                         'NETCDF4', 'NETCDF4_CLASSIC', 'NETCDF3_CLASSIC', 'NETCDF3_64BIT'],
-                    help="file format out output file", default='netcdf3_64bit')
+                    help="file format out output file", default='netcdf4')
 
 options = parser.parse_args()
 args = options.FILE

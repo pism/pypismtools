@@ -8,6 +8,8 @@ print('----------------------------')
 
 packages = ('numpy', 'osgeo', 'netCDF4', 'pyproj', 'cf_units',
             'mpl_toolkits.basemap', 'mpl_toolkits.axes_grid1')
+packages = ('numpy', 'osgeo', 'netCDF4', 'pyproj', 'cf_units',
+            'mpl_toolkits.axes_grid1')
 print('\nChecking dependencies:')
 not_installed = []
 for package in packages:
