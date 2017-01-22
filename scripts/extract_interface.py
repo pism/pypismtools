@@ -143,8 +143,8 @@ elif extract_type in ('ice_ocean'):
     a_value = [0, 4]
     b_value = [2, 3]
 elif extract_type in ('grounding_line'):
-    a_value = [0, 3, 4]
-    b_value = 2
+    a_value = 2
+    b_value = [0, 3, 4]
 else:
     print('Type {} not recognized'.format(extact_type))
     import sys
@@ -165,10 +165,6 @@ for k in range(src_ds.RasterCount):
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname,
                                                                               val1=a_value[0],
                                                                               val2=a_value[1]))
-    elif extract_type in ('grounding_line'):
-        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2} OR {dn} = {val3}".format(dn=dst_fieldname, val1=a_value[0],
-                                                                                               val2=a_value[1],
-                                                                                               val3=a_value[2]))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
     logger.info('Extracting interface A')
@@ -184,6 +180,8 @@ for k in range(src_ds.RasterCount):
 
     if extract_type in ('ice_ocean'):
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1]))
+    elif extract_type in ('grounding_line'):
+        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}  OR {dn} = {val3}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1], val3=b_value[2]))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, b_value))
     logger.info('Extracting interface B')
