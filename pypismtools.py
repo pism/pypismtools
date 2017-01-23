@@ -225,8 +225,8 @@ def set_mode(mode, aspect_ratio=0.95):
         Define parameters for "publish" mode and return value for pad_inches
         '''
 
-        fontsize = 8
-        lw = 1.
+        fontsize = 6
+        lw = 0.75
         markersize = 2
         fig_width = 3.15  # inch
         fig_height = aspect_ratio * fig_width  # inch
