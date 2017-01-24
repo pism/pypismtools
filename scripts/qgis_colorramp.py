@@ -121,7 +121,8 @@ if colorbar_type in ('linear'):
     data_values = np.linspace(vmin, vmax, N)
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     cb_extend = cb_extend
-    format = '%2.1f'
+    format = '%2.0f'
+    ticks = [-750, 0, 250, 500, 750]
 elif colorbar_type in ('gris_bath_topo'):
     vmin = -800
     vmax = 3000

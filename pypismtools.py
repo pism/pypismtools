@@ -226,7 +226,7 @@ def set_mode(mode, aspect_ratio=0.95):
         '''
 
         fontsize = 6
-        lw = 0.75
+        lw = 0.5
         markersize = 2
         fig_width = 3.15  # inch
         fig_height = aspect_ratio * fig_width  # inch
