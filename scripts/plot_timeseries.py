@@ -56,6 +56,8 @@ parser.add_argument("--show", dest="show", action="store_true",
 parser.add_argument("--shadow", dest="shadow", action="store_true",
                     help='''add drop shadow to line plots, Default=False''',
                     default=False)
+parser.add_argument("--start_year", dest="start_year", type=float,
+                    help='''Start year''', default=-125000)
 parser.add_argument("--rotate_xticks", dest="rotate_xticks", action="store_true",
                     help="rotate x-ticks by 30 degrees, Default=False",
                     default=False)
@@ -106,8 +108,7 @@ dx, dy = 4. / out_res, -4. / out_res
 # Conversion between giga tons (Gt) and millimeter sea-level equivalent (mmSLE)
 gt2mmSLE = 1. / 365
 
-glacial_start_year = 0
-paleo_start_year = -125000
+start_year = options.start_year
 
 # Plotting styles
 axisbg = '1'
@@ -123,7 +124,7 @@ my_colors = ['#6a3d9a',
 # set the print mode
 lw, pad_inches = set_mode(print_mode, aspect_ratio=aspect_ratio)
 
-plt.rcParams['legend.fancybox'] = False
+plt.rcParams['legend.fancybox'] = True
 no_colors = len(my_colors)
 
 def compute_indices(filename, lon, lat):
@@ -195,15 +196,15 @@ for var in variables:
             date = t[:]
             usedates = False
             time_axis_label = 'kyr BP'
-            date = np.arange(paleo_start_year + step,
-                             paleo_start_year + (len(t[:]) + 1) * step,
+            date = np.arange(start_year + step,
+                             start_year + (len(t[:]) + 1) * step,
                              step) / 1e3
         elif time_axis == 'glacial':
             date = t[:]
             usedates = False
             time_axis_label = 'kyr'
-            date = np.arange(glacial_start_year + step,
-                             glacial_start_year + (len(t[:]) + 1) * step,
+            date = np.arange(start_year + step,
+                             start_year + (len(t[:]) + 1) * step,
                              step) / 1e3
         else:
             cdftime = utime(units, calendar)
@@ -225,7 +226,7 @@ for var in variables:
         elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
                      "grounded_basal_ice_flux_cumulative", "sub_shelf_ice_flux_cumulative", "effective_discharge_flux_cumulative",
                      "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
-                     "climatic_mass_balance_flux_cumulative", "discharge_flux_cumulative"):
+                     "climatic_mass_balance_flux_cumulative", "discharge_flux_cumulative", "ice_mass"):
             out_units = "Gt"
             var_unit_str = "Gt"
             ylabel = ("mass change (%s)" % var_unit_str)
@@ -305,7 +306,7 @@ for var in variables:
             else:
                 var_vals = np.squeeze(nc.variables[var][:])
         if normalize:
-            var_vals -= var_vals[-1]
+            var_vals -= var_vals[0]
         values.append(var_vals)
         nc.close()
     var_dates.append(dates)
@@ -359,7 +360,7 @@ for l in range(len(variables)):
 
         if labels != None:
             legend = ax.legend(lines, labels, bbox_to_anchor=(1., 1.),
-                      shadow=True, numpoints=numpoints)
+                      shadow=False, numpoints=numpoints)
 
         if twinx:
             axSLE = ax.twinx()
@@ -424,7 +425,7 @@ for l in range(len(variables)):
 
         if labels != None:
             ax.legend(lines, labels, loc="upper right",
-                      shadow=True,
+                      shadow=False,
                       bbox_to_anchor=(0, 0, 1, 1),
                       bbox_transform=plt.gcf().transFigure)
 
