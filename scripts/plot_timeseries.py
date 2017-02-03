@@ -27,7 +27,7 @@ parser.description = "A script for PISM output files to time series plots using 
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
                     help="lower and upper bound for ordinate, eg. -1 1", default=None)
-parser.add_argument("--time_bounds", dest="time_bounds", nargs=2, type=int,
+parser.add_argument("--time_bounds", dest="time_bounds", nargs=2, type=float,
                     help="lower and upper bound for abscissa, eg. 1990 2000", default=None)
 parser.add_argument("-a", "--aspect_ration", dest="aspect_ratio", type=float,
                     help="Plot aspect ratio", default=0.75)
