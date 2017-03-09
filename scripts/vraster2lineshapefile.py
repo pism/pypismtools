@@ -55,9 +55,12 @@ parser.add_argument("-s", "--scale_factor", type=float,
                     dest="scale_factor", help="Scales length of line. Default=1.", default=1.)
 parser.add_argument("-p", "--prune_factor", type=int,
                     dest="prune_factor", help="Pruning. Only use every x-th value. Default=1", default=1)
+parser.add_argument("-t", "--threshold", type=float,
+                    dest="threshold", help="Magnitude values smaller or equal the threshold will be masked. Default=None", default=None)
 args = parser.parse_args()
-scale_factor = args.scale_factor
 prune_factor = args.prune_factor
+scale_factor = args.scale_factor
+threshold = args.threshold
 
 # create the schema (fields) and get the EPSG information for the dataset
 schema = {
@@ -79,10 +82,10 @@ Y = np.squeeze(np.tile(Y, (RasterCount, 1, 1)))[::prune_factor,::prune_factor]
 ux = Ux.img[::prune_factor,::prune_factor]
 uy = Uy.img[::prune_factor,::prune_factor]
 fill_value = Ux.nodatavalue
-mask = ((ux != fill_value) & (uy != fill_value))
+mask = ((ux != fill_value) & (uy != fill_value)) | (np.abs(ux) < threshold)
 
-X = X[mask]
-Y = Y[mask]
+x = X[mask]
+y = Y[mask]
 
 prop_dict = {}
 ux = ux[mask]
@@ -111,24 +114,27 @@ else:
     epsg = args.epsg
 
 import sys
+
+
 # open the shapefile
 with fiona.open(args.outfile, 'w', crs=from_epsg(
     epsg), driver='ESRI Shapefile', schema=schema) as output:
 
     # create features for each x,y pair, and give them the right properties
+    m = 0
     for i, tmp in enumerate(ux):
-        sys.stdout.write('\r')
-        # the exact output you're looking for:
-        #sys.stdout.write("[%-20s] %d%%" % ('='*i, 5*i))
-        x_c, y_c = X[i], Y[i]
-        x_a, y_a = X[i] - scale_factor * ux[i] / 2, Y[i] - scale_factor * uy[i] / 2
-        x_e, y_e = X[i] + scale_factor * ux[i] / 2, Y[i] + scale_factor * uy[i] / 2
-        line = LineString([[x_a, y_a], [x_c, y_c], [x_e, y_e]])
-        line_dict = dict([(k, float(v[i])) for (k, v) in prop_dict.iteritems()])
-        output.write(
-    {'properties': line_dict, 'geometry': mapping(line)})
+        if (ux[i] != fill_value) & (uy[i] != fill_value) & (speed[i] > threshold):
+            m += 1
+            sys.stdout.write('\r')
+            x_c, y_c = x[i], y[i]
+            x_a, y_a = x[i] - scale_factor * ux[i] / 2, y[i] - scale_factor * uy[i] / 2
+            x_e, y_e = x[i] + scale_factor * ux[i] / 2, y[i] + scale_factor * uy[i] / 2
+            line = LineString([[x_a, y_a], [x_c, y_c], [x_e, y_e]])
+            line_dict = dict([(k, float(v[i])) for (k, v) in prop_dict.iteritems()])
+            output.write(
+                {'properties': line_dict, 'geometry': mapping(line)})
 
-    print "{} points found and written to {}".format(str(i), args.outfile)
+    print "{} points found and written to {}".format(str(m), args.outfile)
 
 # close the shapefile now that we're all done
 output.close()
