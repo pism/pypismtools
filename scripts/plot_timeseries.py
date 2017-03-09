@@ -27,7 +27,7 @@ parser.description = "A script for PISM output files to time series plots using 
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
                     help="lower and upper bound for ordinate, eg. -1 1", default=None)
-parser.add_argument("--time_bounds", dest="time_bounds", nargs=2, type=int,
+parser.add_argument("--time_bounds", dest="time_bounds", nargs=2, type=float,
                     help="lower and upper bound for abscissa, eg. 1990 2000", default=None)
 parser.add_argument("-a", "--aspect_ration", dest="aspect_ratio", type=float,
                     help="Plot aspect ratio", default=0.75)
@@ -46,8 +46,9 @@ parser.add_argument("-o", "--output_file", dest="outfile",
 parser.add_argument("-p", "--print_size", dest="print_mode",
                     help="sets figure size and font size, available options are: \
                   'onecol','publish','medium','presentation','twocol'", default="medium")
-parser.add_argument("--paleo", dest="paleo", action="store_true",
-                    help="Use plt.plot instead plt.plot_date'", default=False)
+parser.add_argument("--time_axis", dest="time_axis",
+                    choices=['standard', 'paleo', 'glacial'],
+                    help="What kind of date/time system to use", default='standard')
 parser.add_argument("--step", dest="step", type=int,
                     help="step for plotting values, if time-series is very long", default=1)
 parser.add_argument("--show", dest="show", action="store_true",
@@ -55,6 +56,8 @@ parser.add_argument("--show", dest="show", action="store_true",
 parser.add_argument("--shadow", dest="shadow", action="store_true",
                     help='''add drop shadow to line plots, Default=False''',
                     default=False)
+parser.add_argument("--start_year", dest="start_year", type=float,
+                    help='''Start year''', default=-125000)
 parser.add_argument("--rotate_xticks", dest="rotate_xticks", action="store_true",
                     help="rotate x-ticks by 30 degrees, Default=False",
                     default=False)
@@ -89,7 +92,7 @@ normalize = options.normalize
 out_res = options.out_res
 outfile = options.outfile
 out_formats = options.out_formats.split(',')
-paleo = options.paleo
+time_axis = options.time_axis
 print_mode = options.print_mode
 rotate_xticks = options.rotate_xticks
 step = options.step
@@ -105,21 +108,23 @@ dx, dy = 4. / out_res, -4. / out_res
 # Conversion between giga tons (Gt) and millimeter sea-level equivalent (mmSLE)
 gt2mmSLE = 1. / 365
 
-paleo_start_year = -125000
+start_year = options.start_year
 
 # Plotting styles
-axisbg = '0.9'
+axisbg = '1'
 shadow_color = '0.25'
 numpoints = 1
 
 my_colors = colorList()
-
+my_colors = ['#6a3d9a',
+             '#cab2d6',
+             '#ff7f00']
 
 
 # set the print mode
 lw, pad_inches = set_mode(print_mode, aspect_ratio=aspect_ratio)
 
-plt.rcParams['legend.fancybox'] = False
+plt.rcParams['legend.fancybox'] = True
 no_colors = len(my_colors)
 
 def compute_indices(filename, lon, lat):
@@ -187,11 +192,19 @@ for var in variables:
             var_units = nc.variables[var].units
         except:
             var_units = None
-        if paleo:
+        if time_axis == 'paleo':
             date = t[:]
             usedates = False
-            date = np.arange(paleo_start_year + step,
-                             paleo_start_year + (len(t[:]) + 1) * step,
+            time_axis_label = 'kyr BP'
+            date = np.arange(start_year + step,
+                             start_year + (len(t[:]) + 1) * step,
+                             step) / 1e3
+        elif time_axis == 'glacial':
+            date = t[:]
+            usedates = False
+            time_axis_label = 'kyr'
+            date = np.arange(start_year + step,
+                             start_year + (len(t[:]) + 1) * step,
                              step) / 1e3
         else:
             cdftime = utime(units, calendar)
@@ -213,7 +226,7 @@ for var in variables:
         elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
                      "grounded_basal_ice_flux_cumulative", "sub_shelf_ice_flux_cumulative", "effective_discharge_flux_cumulative",
                      "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
-                     "climatic_mass_balance_flux_cumulative", "discharge_flux_cumulative"):
+                     "climatic_mass_balance_flux_cumulative", "discharge_flux_cumulative", "ice_mass"):
             out_units = "Gt"
             var_unit_str = "Gt"
             ylabel = ("mass change (%s)" % var_unit_str)
@@ -242,7 +255,7 @@ for var in variables:
             out_units = "1"
             var_unit_str = "-"
             ylabel = ("melt rate fraction (%s)" % var_unit_str)
-        elif var in ("frac_MBP"):
+        elif var in ("delta_MBP"):
             out_units = "1"
             var_unit_str = "-"
             ylabel = ("back-pressure fraction (%s)" % var_unit_str)
@@ -293,7 +306,7 @@ for var in variables:
             else:
                 var_vals = np.squeeze(nc.variables[var][:])
         if normalize:
-            var_vals -= var_vals[-1]
+            var_vals -= var_vals[0]
         values.append(var_vals)
         nc.close()
     var_dates.append(dates)
@@ -347,7 +360,7 @@ for l in range(len(variables)):
 
         if labels != None:
             legend = ax.legend(lines, labels, bbox_to_anchor=(1., 1.),
-                      shadow=True, numpoints=numpoints)
+                      shadow=False, numpoints=numpoints)
 
         if twinx:
             axSLE = ax.twinx()
@@ -412,7 +425,7 @@ for l in range(len(variables)):
 
         if labels != None:
             ax.legend(lines, labels, loc="upper right",
-                      shadow=True,
+                      shadow=False,
                       bbox_to_anchor=(0, 0, 1, 1),
                       bbox_transform=plt.gcf().transFigure)
 
@@ -421,7 +434,7 @@ for l in range(len(variables)):
             ax.set_autoscalex_on(False)
             axSLE.set_autoscalex_on(False)
 
-        ax.set_xlabel('kyr BP')
+        ax.set_xlabel(time_axis_label)
 
         if time_bounds:
             ax.set_xlim(time_bounds[0], time_bounds[1])

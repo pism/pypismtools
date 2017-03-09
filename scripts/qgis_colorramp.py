@@ -10,6 +10,7 @@ try:
 except:
     from pypismtools.pypismtools import gmtColormap
 
+matplotlib.use('PS')
 
 def cmap_map(function, cmap):
     """
@@ -116,12 +117,13 @@ except:
     cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
     prefix = '.'.join(cmap_file.split('.')[0:-1])
     suffix = cmap_file.split('.')[-1]
-
+print cdict
 if colorbar_type in ('linear'):
     data_values = np.linspace(vmin, vmax, N)
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     cb_extend = cb_extend
-    format = '%2.1f'
+    format = '%2.0f'
+    ticks = [-750, 0, 250, 500, 750]
 elif colorbar_type in ('gris_bath_topo'):
     vmin = -800
     vmax = 3000
@@ -157,7 +159,7 @@ cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, N)
 
 # you could apply a function to the colormap, e.g. to desaturate the colormap:
 # cmap = cmap_map(lambda x: x/2+0.5, cmap)
-
+print matplotlib.get_backend()
 matplotlib.rc("font", **{"sans-serif": ["Helvetica"]})  # "size": fontsize}
 matplotlib.rc("font", **{"size": font_size})
 # create the colorbar
@@ -180,6 +182,8 @@ cb1 = mpl.colorbar.ColorbarBase(ax1,
 if colorbar_label:
     cb1.set_label(colorbar_label)
 
+plt.show()
+    
 # save high-res colorbar as png
 for format in ['png']:
     prefix = prefix + '_' + orientation

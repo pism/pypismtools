@@ -1293,11 +1293,12 @@ def write_profile(out_file, index, profile):
     out_file.variables['lat'][index, 0:pl] = np.squeeze(profile.lat)
     out_file.variables['profile_id'][index] = profile.id
     out_file.variables['profile_name'][index] = profile.name
-    out_file.variables['clat'][index] = profile.center_lat
-    out_file.variables['clon'][index] = profile.center_lon
-    out_file.variables['flightline'][index] = profile.flightline
-    out_file.variables['glaciertype'][index] = profile.glaciertype
-    out_file.variables['flowtype'][index] = profile.flowtype
+    if special_vars:
+        out_file.variables['clat'][index] = profile.center_lat
+        out_file.variables['clon'][index] = profile.center_lon
+        out_file.variables['flightline'][index] = profile.flightline
+        out_file.variables['glaciertype'][index] = profile.glaciertype
+        out_file.variables['flowtype'][index] = profile.flowtype
 
 
 def timing(f):

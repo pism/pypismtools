@@ -225,8 +225,8 @@ def set_mode(mode, aspect_ratio=0.95):
         Define parameters for "publish" mode and return value for pad_inches
         '''
 
-        fontsize = 8
-        lw = 1.
+        fontsize = 6
+        lw = 0.5
         markersize = 2
         fig_width = 3.15  # inch
         fig_height = aspect_ratio * fig_width  # inch
@@ -459,15 +459,15 @@ def set_mode(mode, aspect_ratio=0.95):
         Define parameters for "twocol" mode and return value for pad_inches
         '''
 
-        fontsize = 8
-        lw = 1.2
+        fontsize = 7
+        lw = .75
         markersize = 3
         fig_width = 6.3   # inch
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
         params = {'backend': 'ps',
-                  'axes.linewidth': 0.65,
+                  'axes.linewidth': 0.5,
                   'lines.linewidth': lw,
                   'axes.labelsize': fontsize,
                   'font.size': fontsize,
