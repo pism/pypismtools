@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2015 Bob McNabb, Andy Aschwanden
+# Copyright (C) 2015-17 Bob McNabb, Andy Aschwanden
 
 import gdal
 from argparse import ArgumentParser
@@ -7,6 +7,8 @@ import fiona
 import numpy as np
 from fiona.crs import from_epsg
 from shapely.geometry import LineString, mapping
+import sys
+
 
 class GeoImg:
 
@@ -37,18 +39,16 @@ class GeoImg:
 
 
 parser = ArgumentParser(
-    description="Convert rasters containing X, Y components of velocity field to point vector data.")
-
-parser.add_argument("-X", "--Xdata", dest="Xdata",
+    description="Convert rasters containing (U,V) components of velocity field to vector line data.")
+parser.add_argument("FILE", nargs=1)
+parser.add_argument("-U", "--Udata", dest="Udata",
                     help="Raster containing x components of velocity")
-parser.add_argument("-Y", "--Ydata", dest="Ydata",
+parser.add_argument("-V", "--Vdata", dest="Vdata",
                     help="Raster containing y components of velocity")
-parser.add_argument("--Xerror", dest="Xerror",
+parser.add_argument("--Uerror", dest="Uerror",
                     help="Raster containing x components of error", default=None)
-parser.add_argument("--Yerror", dest="Yerror",
+parser.add_argument("--Verror", dest="Verror",
                     help="Raster containing y components of error", default=None)
-parser.add_argument("-o", "--outfile",
-                    dest="outfile", help="shapefile to be output")
 parser.add_argument("--epsg",
                     dest="epsg", help="EPSG code of project. Overrides input projection", default=None)
 parser.add_argument("-s", "--scale_factor", type=float,
@@ -56,7 +56,8 @@ parser.add_argument("-s", "--scale_factor", type=float,
 parser.add_argument("-p", "--prune_factor", type=int,
                     dest="prune_factor", help="Pruning. Only use every x-th value. Default=1", default=1)
 parser.add_argument("-t", "--threshold", type=float,
-                    dest="threshold", help="Magnitude values smaller or equal the threshold will be masked. Default=None", default=None)
+                    dest="threshold", help="Magnitude values smaller or equal than threshold will be masked. Default=None",
+                    default=None)
 args = parser.parse_args()
 prune_factor = args.prune_factor
 scale_factor = args.scale_factor
@@ -66,8 +67,8 @@ threshold = args.threshold
 schema = {
     'properties': [('ux', 'float'), ('uy', 'float'), ('speed', 'float')], 'geometry': 'LineString'}
 
-Ux = GeoImg(args.Xdata)
-Uy = GeoImg(args.Ydata)
+Ux = GeoImg(args.Udata)
+Uy = GeoImg(args.Vdata)
 
 assert Ux.RasterCount == Uy.RasterCount
 RasterCount = Ux.RasterCount
@@ -95,14 +96,16 @@ prop_dict['uy'] = uy
 speed = np.sqrt(ux**2 + uy**2)
 prop_dict['speed'] = speed
 
-if args.Xerror is not None:
-    Ex = GeoImg(args.Xerror)
+# Read and  add error of U component
+if args.Uerror is not None:
+    Ex = GeoImg(args.Uerror)
     schema['properties'].append(('ex', 'float'))
     ex = Ex.img
     ex = ex[mask]
     prop_dict['ex'] = ex
-if args.Yerror is not None:
-    Ey = GeoImg(args.Yerror)
+# Read and  add error of V component
+if args.Verror is not None:
+    Ey = GeoImg(args.Verror)
     schema['properties'].append(('ey', 'float'))
     ey = Ey.img
     ey = ey[mask]
@@ -113,11 +116,9 @@ if args.epsg is None:
 else:
     epsg = args.epsg
 
-import sys
-
 
 # open the shapefile
-with fiona.open(args.outfile, 'w', crs=from_epsg(
+with fiona.open(args.FILE[0], 'w', crs=from_epsg(
     epsg), driver='ESRI Shapefile', schema=schema) as output:
 
     # create features for each x,y pair, and give them the right properties
@@ -126,15 +127,19 @@ with fiona.open(args.outfile, 'w', crs=from_epsg(
         if (ux[i] != fill_value) & (uy[i] != fill_value) & (speed[i] > threshold):
             m += 1
             sys.stdout.write('\r')
+            # Center cooridinates
             x_c, y_c = x[i], y[i]
+            # Start point
             x_a, y_a = x[i] - scale_factor * ux[i] / 2, y[i] - scale_factor * uy[i] / 2
+            # End point
             x_e, y_e = x[i] + scale_factor * ux[i] / 2, y[i] + scale_factor * uy[i] / 2
+            # Create LineString
             line = LineString([[x_a, y_a], [x_c, y_c], [x_e, y_e]])
             line_dict = dict([(k, float(v[i])) for (k, v) in prop_dict.iteritems()])
             output.write(
                 {'properties': line_dict, 'geometry': mapping(line)})
 
-    print "{} points found and written to {}".format(str(m), args.outfile)
+    print "{} points found and written to {}".format(str(m), args.FILE[0])
 
 # close the shapefile now that we're all done
 output.close()
