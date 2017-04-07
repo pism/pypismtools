@@ -223,7 +223,7 @@ for var in variables:
             var_unit_str = "kg/m2/yr"
             ylabel = ("mass flux (%s)" % var_unit_str)
             sle_label = "(mm SLE/yr)"            
-        elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
+        elif var in ("mass_glacierized", "mass_nonglacierized", "limnsw", "imass", "mass", "ocean_kill_flux_cumulative",
                      "grounded_basal_ice_flux_cumulative", "sub_shelf_ice_flux_cumulative", "effective_discharge_flux_cumulative",
                      "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
                      "climatic_mass_balance_flux_cumulative", "discharge_flux_cumulative", "ice_mass"):
@@ -231,7 +231,7 @@ for var in variables:
             var_unit_str = "Gt"
             ylabel = ("mass change (%s)" % var_unit_str)
             sle_label = "mass change [mm SLE]"
-        elif var in ("dimassdt", "ocean_kill_flux", "surface_ice_flux",
+        elif var in ("mass_rate_of_change_glacierized", "mass_rate_of_change_nonglacierized", "dimassdt", "ocean_kill_flux", "surface_ice_flux",
                      "grounded_basal_ice_flux", "sub_shelf_ice_flux",
                      "effective_discharge_flux",
                      "climatic_mass_balance_flux", "nonneg_flux", "discharge_flux"):
