@@ -130,6 +130,8 @@ if src_ds.GetProjectionRef() != '':
 interface_layer = shp_ds.CreateLayer('interface', srs, ogr.wkbPolygon)
 fd = ogr.FieldDefn(ts_fieldname, ogr.OFTString)
 interface_layer.CreateField(fd)
+fd = ogr.FieldDefn('area', ogr.OFTInteger)
+interface_layer.CreateField(fd)
 interface_dst_field = 0
 
 bufferDist = 1
@@ -211,6 +213,10 @@ for k in range(src_ds.RasterCount):
         outFeature.SetGeometry(feature.GetGeometryRef())
         i = outFeature.GetFieldIndex(ts_fieldname)
         outFeature.SetField(i, str(timestamp))
+        geom = feature.GetGeometryRef()
+        area = geom.GetArea() 
+        i = outFeature.GetFieldIndex('area')
+        outFeature.SetField(i, int(area))
         # add the feature to the output layer
         interface_layer.CreateFeature(outFeature)
 
