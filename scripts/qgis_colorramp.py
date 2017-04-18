@@ -10,8 +10,6 @@ try:
 except:
     from pypismtools.pypismtools import gmtColormap
 
-matplotlib.use('PS')
-
 def cmap_map(function, cmap):
     """
     Applies function (which should operate on vectors of shape 3:
@@ -59,6 +57,9 @@ parser.add_argument("--font_size", dest="font_size",
 parser.add_argument("--type", dest="colorbar_type",
                     choices=['linear',
                              'log_speed',
+                             'log_speed_2',
+                             'log_speed_3',
+                             'log_speed_4',
                              'gris_bath_topo',
                              'log_speed_m_day'],
                     help="Type of colorbar", default='linear')
@@ -68,15 +69,12 @@ parser.add_argument("--colorbar_extend", dest="cb_extend", choices=['neither', '
                     help='''Extend of colorbar. Default='both'.''', default='both')
 parser.add_argument("--colorbar_label", dest="colorbar_label",
                     help='''Label for colorbar.''', default=None)
-parser.add_argument("-a", "--a_log", dest="a", type=float,
-                    help='''
-                  a * logspace(vmin, vmax, N)''', default=1)
 parser.add_argument("--vmin", dest="vmin", type=float,
                     help='''
-                    a * logspace(vmin, vmax, N)''', default=1)
+                    Vmin''', default=1)
 parser.add_argument("--vmax", dest="vmax", type=float,
                     help='''
-                    a * logspace(vmin, vmax, N)''', default=3000)
+                    Vmax)''', default=3000)
 parser.add_argument("--extend", dest="extend", nargs=2, type=float,
                     help='''
                   appends color ramp by repeating first and last color for value''',
@@ -117,7 +115,6 @@ except:
     cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
     prefix = '.'.join(cmap_file.split('.')[0:-1])
     suffix = cmap_file.split('.')[-1]
-print cdict
 if colorbar_type in ('linear'):
     data_values = np.linspace(vmin, vmax, N)
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
@@ -133,14 +130,30 @@ elif colorbar_type in ('gris_bath_topo'):
     cb_extend = 'both'
     format = '%i'
     ticks = [vmin, 0, 1000, 2000, vmax]
-elif colorbar_type in ('log_speed'):
-    data_values = np.logspace(vmin, vmax, N)[0:889]
+elif colorbar_type in ('log_speed', 'log_speed_3'):
+    data_values = np.logspace(-1, 3, N)[0:889]
     data_values[-1] = vmax
     N = len(data_values)
-    norm = mpl.colors.LogNorm(vmin=vmin, vmax=vmax)
+    norm = mpl.colors.LogNorm(vmin=1, vmax=vmax)
     cb_extend = 'both'
     format = '%i'
     ticks = [1, 3, 10, 30, 100, 300, 1000, 3000]
+elif colorbar_type in ('log_speed_2'):
+    data_values = np.logspace(-1, 2, N)[0:889]
+    data_values[-1] = vmax
+    N = len(data_values)
+    norm = mpl.colors.LogNorm(vmin=1, vmax=vmax)
+    cb_extend = 'both'
+    format = '%i'
+    ticks = [1, 3, 10, 30, 100, 300]
+elif colorbar_type in ('log_speed_4'):
+    data_values = np.logspace(-1, 4, N)[0:889]
+    data_values[-1] = vmax
+    N = len(data_values)
+    norm = mpl.colors.LogNorm(vmin=1, vmax=vmax)
+    cb_extend = 'both'
+    format = '%i'
+    ticks = [1, 3, 10, 30, 100, 300, 1000, 3000, 10000]
 elif colorbar_type in ('log_speed_m_day'):
     data_values = np.logspace(vmin, vmax, N)[0:889]
     data_values[-1] = vmax
@@ -182,7 +195,6 @@ cb1 = mpl.colorbar.ColorbarBase(ax1,
 if colorbar_label:
     cb1.set_label(colorbar_label)
 
-plt.show()
     
 # save high-res colorbar as png
 for format in ['png']:
