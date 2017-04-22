@@ -18,7 +18,7 @@ from argparse import ArgumentParser
 import numpy as np
 import scipy.sparse
 import time
-
+from pyproj import Proj
 from netCDF4 import Dataset as NC
 
 try:
@@ -1389,6 +1389,8 @@ if __name__ == "__main__":
         "-s", "--special_vars", dest="special_vars", action="store_true",
         help='''Add special vars (glaciertype,flowtype, etc), Default=False''',
         default=False)
+    parser.add_argument("--srs", dest="srs",
+                        help="Projection of netCDF files as a proj4 string", default=None)
     parser.add_argument("-v", "--variable", dest="variables",
                         help="comma-separated list with variables",
                         default='x,y,thk,velsurf_mag,flux_mag,uflux,vflux,pism_config,pism_overrides,run_stats,uvelsurf,vvelsurf,topg,usurf,tillphi,tauc')
@@ -1400,6 +1402,7 @@ if __name__ == "__main__":
     options = parser.parse_args()
     fill_value = -2e9
     special_vars = options.special_vars
+    srs = options.srs
     variables = options.variables.split(',')
 
     print("-----------------------------------------------------------------")
@@ -1418,7 +1421,16 @@ if __name__ == "__main__":
     # get the dimensions
     xdim, ydim, zdim, tdim = ppt.get_dims(nc_in)
     # read projection information
-    projection = ppt.get_projection_from_file(nc_in)
+    if srs is not None:
+        try:
+            projection = Proj('+init=epsg:{}'.format(srs))
+        except:
+            try:
+                projection = Proj(srs)
+            except:
+                print('Could not process {}'.format(srs))
+    else:
+        projection = ppt.get_projection_from_file(nc_in)
 
     # Read in profile data
     print("  reading profile from %s" % options.SHAPEFILE[0])
