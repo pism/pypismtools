@@ -1393,7 +1393,7 @@ if __name__ == "__main__":
                         help="Projection of netCDF files as a proj4 string", default=None)
     parser.add_argument("-v", "--variable", dest="variables",
                         help="comma-separated list with variables",
-                        default='x,y,thk,velsurf_mag,flux_mag,uflux,vflux,pism_config,pism_overrides,run_stats,uvelsurf,vvelsurf,topg,usurf,tillphi,tauc')
+                        default='x,y,thk,velsurf_mag,flux_mag,uflux,vflux,pism_config,run_stats,uvelsurf,vvelsurf,topg,usurf,tillphi,tauc')
     parser.add_argument(
         "-a", "--all_variables", dest="all_vars", action="store_true",
         help='''Process all variables, overwrite -v/--variable''',

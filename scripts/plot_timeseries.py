@@ -47,7 +47,7 @@ parser.add_argument("-p", "--print_size", dest="print_mode",
                     help="sets figure size and font size, available options are: \
                   'onecol','publish','medium','presentation','twocol'", default="medium")
 parser.add_argument("--time_axis", dest="time_axis",
-                    choices=['standard', 'paleo', 'glacial'],
+                    choices=['standard', 'paleo', 'glacial', 'prognostic'],
                     help="What kind of date/time system to use", default='standard')
 parser.add_argument("--step", dest="step", type=int,
                     help="step for plotting values, if time-series is very long", default=1)
@@ -206,6 +206,13 @@ for var in variables:
             date = np.arange(start_year + step,
                              start_year + (len(t[:]) + 1) * step,
                              step) / 1e3
+        elif time_axis == 'prognostic':
+            date = t[:]
+            usedates = False
+            time_axis_label = 'yr'
+            date = np.arange(start_year + step,
+                             start_year + (len(t[:]) + 1) * step,
+                             step) 
         else:
             cdftime = utime(units, calendar)
             date = cdftime.num2date(t[:])
@@ -271,6 +278,10 @@ for var in variables:
             out_units = " "
             var_unit_str = "-"
             ylabel = ("slope (%s)" % var_unit_str)
+        elif var in ("flux_divergence"):
+            out_units = "m year-1"
+            var_unit_str = "m/yr"
+            ylabel = ("flux (%s)" % var_unit_str)
         elif var in ("eigen1", "eigen2"):
             out_units = "year-1"
             var_unit_str = "a$^{-1}$"

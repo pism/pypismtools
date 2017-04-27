@@ -81,15 +81,18 @@ class ShapeDataError(Exception):
 parser = ArgumentParser(
     description='''A script to extract interfaces (calving front, ice-ocean, or groundling line) from a PISM netCDF file, and save it as a shapefile (polygon).''')
 parser.add_argument("FILE", nargs=1)
+parser.add_argument("-a", "--area_threshold" , dest="area_threshold",
+                    help="Only save features with an area > area_threshold", default=200)
 parser.add_argument("-o", "--output_filename", dest="out_file",
                     help="Name of the output shape file", default='interface.shp')
 parser.add_argument("-t", "--type" , dest="extract_type",
-                    choices=['calving_front', 'grounded_floating', 'ice_ocean', 'grounding_line'],
+                    choices=['calving_front', 'grounded_floating', 'ice_noice', 'ice_ocean', 'grounding_line'],
                     help="Interface to extract.", default='ice_ocean')
 
 
 options = parser.parse_args()
 filename = options.FILE[0]
+area_threshold = options.area_threshold
 extract_type = options.extract_type
 shp_filename = options.out_file
 dst_fieldname = 'mask'
@@ -120,17 +123,19 @@ shp_driver = ogr.GetDriverByName('ESRI Shapefile')
 shp_filename = validateShapePath(shp_filename)
 if os.path.exists(shp_filename):
     os.remove(shp_filename)
-shp_ds = shp_driver.CreateDataSource(shp_filename)
+dst_ds = shp_driver.CreateDataSource(shp_filename)
 
 srs = None
 if src_ds.GetProjectionRef() != '':
     srs = osr.SpatialReference()
     srs.ImportFromWkt(src_ds.GetProjection())
 
-interface_layer = shp_ds.CreateLayer('interface', srs, ogr.wkbPolygon)
+interface_layer = dst_ds.CreateLayer('interface', srs, ogr.wkbPolygon)
 fd = ogr.FieldDefn(ts_fieldname, ogr.OFTString)
 interface_layer.CreateField(fd)
 fd = ogr.FieldDefn('area', ogr.OFTInteger)
+interface_layer.CreateField(fd)
+fd = ogr.FieldDefn('timestep', ogr.OFTInteger)
 interface_layer.CreateField(fd)
 interface_dst_field = 0
 
@@ -142,6 +147,9 @@ elif extract_type in ('grounded_floating'):
     a_value = 3
     b_value = 2
 elif extract_type in ('ice_ocean'):
+    a_value = 4
+    b_value = 2
+elif extract_type in ('ice_noice'):
     a_value = [0, 4]
     b_value = [2, 3]
 elif extract_type in ('grounding_line'):
@@ -163,7 +171,7 @@ for k in range(src_ds.RasterCount):
     logger.info('Running gdal.Polygonize()')
     result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [],
                              callback=gdal.TermProgress)
-    if extract_type in ('ice_ocean'):
+    if extract_type in ['ice_noice']:
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname,
                                                                               val1=a_value[0],
                                                                               val2=a_value[1]))
@@ -180,9 +188,9 @@ for k in range(src_ds.RasterCount):
         outFeature.SetGeometry(geomBuffer)
         a_layer.CreateFeature(outFeature)
 
-    if extract_type in ('ice_ocean'):
+    if extract_type in ['ice_nocice']:
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1]))
-    elif extract_type in ('grounding_line'):
+    elif extract_type in ['grounding_line']:
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}  OR {dn} = {val3}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1], val3=b_value[2]))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, b_value))
@@ -211,6 +219,8 @@ for k in range(src_ds.RasterCount):
         # create a new feature
         outFeature = ogr.Feature(featureDefn)
         outFeature.SetGeometry(feature.GetGeometryRef())
+        i = outFeature.GetFieldIndex('timestep')
+        outFeature.SetField(i, int(k))
         i = outFeature.GetFieldIndex(ts_fieldname)
         outFeature.SetField(i, str(timestamp))
         geom = feature.GetGeometryRef()
@@ -218,11 +228,12 @@ for k in range(src_ds.RasterCount):
         i = outFeature.GetFieldIndex('area')
         outFeature.SetField(i, int(area))
         # add the feature to the output layer
-        interface_layer.CreateFeature(outFeature)
+        if area >= area_threshold:
+            interface_layer.CreateFeature(outFeature)
+
 
 # Clean-up
 poly_layer = None
 interface_layer = None
 mem_ds = None
 src_ds = None
-    
