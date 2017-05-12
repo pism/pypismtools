@@ -83,8 +83,12 @@ parser = ArgumentParser(
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-a", "--area_threshold" , dest="area_threshold",
                     help="Only save features with an area > area_threshold", default=200)
+parser.add_argument("-e", "--epsg" , dest="epsg", type=int,
+                    help="Sets EPSG code", default=None)
 parser.add_argument("-o", "--output_filename", dest="out_file",
                     help="Name of the output shape file", default='interface.shp')
+parser.add_argument("-m", "--mask_variable", dest="dst_fieldname",
+                    help="Name of mask variable", default='mask')
 parser.add_argument("-t", "--type" , dest="extract_type",
                     choices=['calving_front', 'grounded_floating', 'ice_noice', 'ice_ocean', 'grounding_line'],
                     help="Interface to extract.", default='ice_ocean')
@@ -93,10 +97,11 @@ parser.add_argument("-t", "--type" , dest="extract_type",
 options = parser.parse_args()
 filename = options.FILE[0]
 area_threshold = options.area_threshold
+epsg = options.epsg
 extract_type = options.extract_type
 shp_filename = options.out_file
-dst_fieldname = 'mask'
 ts_fieldname = 'timestamp'
+dst_fieldname = options.dst_fieldname
 
 nc = NC(filename, 'r')
 xdim, ydim, zdim, tdim = ppt.get_dims(nc)
@@ -130,6 +135,11 @@ if src_ds.GetProjectionRef() != '':
     srs = osr.SpatialReference()
     srs.ImportFromWkt(src_ds.GetProjection())
 
+if epsg is not None:
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(epsg)
+
+
 interface_layer = dst_ds.CreateLayer('interface', srs, ogr.wkbPolygon)
 fd = ogr.FieldDefn(ts_fieldname, ogr.OFTString)
 interface_layer.CreateField(fd)
@@ -150,8 +160,8 @@ elif extract_type in ('ice_ocean'):
     a_value = 4
     b_value = 2
 elif extract_type in ('ice_noice'):
-    a_value = [0, 4]
-    b_value = 2
+    a_value = 1
+    b_value = 0
 elif extract_type in ('grounding_line'):
     a_value = 2
     b_value = [0, 3, 4]
@@ -171,12 +181,7 @@ for k in range(src_ds.RasterCount):
     logger.info('Running gdal.Polygonize()')
     result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [],
                              callback=gdal.TermProgress)
-    if extract_type in ['ice_noice']:
-        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname,
-                                                                              val1=a_value[0],
-                                                                              val2=a_value[1]))
-    else:
-        poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
+    poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
     logger.info('Extracting interface A')
     a_layer, dst_field = create_memory_layer(dst_fieldname)
     featureDefn = a_layer.GetLayerDefn()
@@ -188,8 +193,6 @@ for k in range(src_ds.RasterCount):
         outFeature.SetGeometry(geomBuffer)
         a_layer.CreateFeature(outFeature)
 
-#    if extract_type in ['ice_nocice']:
-#        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1]))
     if extract_type in ['grounding_line']:
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}  OR {dn} = {val3}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1], val3=b_value[2]))
     else:
