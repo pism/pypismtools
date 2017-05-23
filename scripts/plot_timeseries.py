@@ -29,7 +29,7 @@ parser.add_argument("--bounds", dest="bounds", nargs=2, type=float,
                     help="lower and upper bound for ordinate, eg. -1 1", default=None)
 parser.add_argument("--time_bounds", dest="time_bounds", nargs=2, type=float,
                     help="lower and upper bound for abscissa, eg. 1990 2000", default=None)
-parser.add_argument("-a", "--aspect_ration", dest="aspect_ratio", type=float,
+parser.add_argument("-a", "--aspect_ratio", dest="aspect_ratio", type=float,
                     help="Plot aspect ratio", default=0.75)
 parser.add_argument("-l", "--labels", dest="labels",
                     help="comma-separated list with labels, put in quotes like 'label 1,label 2'", default=None)
@@ -116,9 +116,15 @@ shadow_color = '0.25'
 numpoints = 1
 
 my_colors = colorList()
-my_colors = ['#6a3d9a',
-             '#cab2d6',
-             '#ff7f00']
+my_colors = ['#7f3b08',
+             '#b35806',
+             '#e08214',
+             '#fdb863',
+             '#fee0b6',
+             '#d8daeb',
+             '#b2abd2',
+             '#8073ac',
+             '#542788']
 
 
 # set the print mode
@@ -225,7 +231,7 @@ for var in variables:
             out_units = "km3"
             var_unit_str = ("10$^{\mathregular{%i}}$ km$^{\mathregular{3}}$" % scale_exponent)
             ylabel = ("volume (%s)" % var_unit_str)
-        elif var in ("surface_mass_balance_average", "basal_mass_balance_average"):
+        elif var in ("surface_mass_balance_average", "basal_mass_balance_average", "discharge_mass_flux"):
             out_units = "kg m-2 year-1"
             var_unit_str = "kg/m2/yr"
             ylabel = ("mass flux (%s)" % var_unit_str)
