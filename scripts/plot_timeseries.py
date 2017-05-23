@@ -31,6 +31,8 @@ parser.add_argument("--time_bounds", dest="time_bounds", nargs=2, type=float,
                     help="lower and upper bound for abscissa, eg. 1990 2000", default=None)
 parser.add_argument("-a", "--aspect_ratio", dest="aspect_ratio", type=float,
                     help="Plot aspect ratio", default=0.75)
+parser.add_argument("-s", "--switch_sign", dest="switch_sign", action='store_true',
+                    help="Switch sign of data", default=False)
 parser.add_argument("-l", "--labels", dest="labels",
                     help="comma-separated list with labels, put in quotes like 'label 1,label 2'", default=None)
 parser.add_argument("--index_ij", dest="index_ij", nargs=2, type=int,
@@ -86,6 +88,7 @@ if options.lon_lat is not None:
     lon, lat = options.lon_lat[0], options.lon_lat[1]
 else:
     lon_lat = None
+switch_sign = options.switch_sign
 time_bounds = options.time_bounds
 golden_mean = get_golden_mean()
 normalize = options.normalize
@@ -116,15 +119,12 @@ shadow_color = '0.25'
 numpoints = 1
 
 my_colors = colorList()
-my_colors = ['#7f3b08',
-             '#b35806',
-             '#e08214',
-             '#fdb863',
-             '#fee0b6',
-             '#d8daeb',
-             '#b2abd2',
-             '#8073ac',
-             '#542788']
+my_colors = [ '#542788',
+              '#fdb863',
+              '#018571',
+              '#d8daeb',
+              '#e66101',
+              '#542788']
 
 
 # set the print mode
@@ -329,40 +329,44 @@ for var in variables:
     var_dates.append(dates)
     var_values.append(values)
 
+    
 for l in range(len(variables)):
     fig = plt.figure()
     offset = transforms.ScaledTranslation(dx, dy, fig.dpi_scale_trans)
     ax = fig.add_subplot(111, axisbg=axisbg)
+
 
     if usedates:
 
         for k in range(len(var_dates[l])):
             n = k % no_colors
             colorVal = scalarMap.to_rgba(k)
+            vd =  var_dates[l][k][:]
+            vv =  var_values[l][k][:]
+            if switch_sign:
+                vv = -vv
+                
             if nt > len(my_colors):
                 if var in ("ivol"):
-                    line, = ax.plot_date(
-                        var_dates[l][k][:], var_values[l][k][:] / scale, color=colorVal)
+                    line, = ax.plot_date(vd, vv / scale, color=colorVal)
                 else:
                     line, = ax.plot_date(
-                        var_dates[l][k][:], var_values[l][k][:], '-', color=colorVal)
+                        vd, vv, '-', color=colorVal)
             else:
                 if var in ("ivol"):
-                    line, = ax.plot_date(
-                        var_dates[l][k][:], var_values[l][k][:] / scale, color=my_colors[n])
+                    line, = ax.plot_date(vd, vv / scale, color=my_colors[n])
                 else:
-                    line, = ax.plot_date(
-                        var_dates[l][k][:], var_values[l][k][:], '-', color=my_colors[n])
+                    line, = ax.plot_date(vd, vv, '-', color=my_colors[n])
 
             lines.append(line)
 
             if shadow:
                 shadow_transform = ax.transData + offset
                 if var in ("ivol"):
-                    ax.plot_date(var_dates[l][k][:], var_values[l][k][:] / scale, color=shadow_color, transform=shadow_transform,
+                    ax.plot_date(vd, vv / scale, color=shadow_color, transform=shadow_transform,
                                  zorder=0.5 * line.get_zorder())
                 else:
-                    ax.plot_date(var_dates[l][k][:], var_values[l][k][:], color=shadow_color, transform=shadow_transform,
+                    ax.plot_date(vd, vv, color=shadow_color, transform=shadow_transform,
                                  zorder=0.5 * line.get_zorder())
 
         nd = len(var_dates[l])
@@ -405,29 +409,34 @@ for l in range(len(variables)):
         for k in range(len(var_dates[l])):
             n = k % no_colors
             colorVal = scalarMap.to_rgba(k)
+            vd =  var_dates[l][k][:]
+            vv =  var_values[l][k][:]
+            if switch_sign:
+                vv = -vv
+
             if nt > len(my_colors):
                 if var in ("ivol"):
                     line, = ax.plot(
-                        var_dates[l][k][:], var_values[l][k][:] / scale, color=colorVal)
+                        vd, vv / scale, color=colorVal)
                 else:
                     line, = ax.plot(
-                        var_dates[l][k][:], var_values[l][k][:], '-', color=colorVal)
+                        vd, vv, '-', color=colorVal)
             else:
                 if var in ("ivol"):
                     line, = ax.plot(
-                        var_dates[l][k][:], var_values[l][k][:] / scale, color=my_colors[n])
+                        vd, vv / scale, color=my_colors[n])
                 else:
                     line, = ax.plot(
-                        var_dates[l][k][:], var_values[l][k][:], '-', color=my_colors[n])
+                        vd, vv, '-', color=my_colors[n])
             lines.append(line)
 
             if shadow:
                 shadow_transform = ax.transData + offset
                 if var in ("ivol"):
-                    ax.plot(var_dates[l][k][:], var_values[l][k][:] / scale, color=shadow_color, transform=shadow_transform,
+                    ax.plot(vd, vv / scale, color=shadow_color, transform=shadow_transform,
                             zorder=0.5 * line.get_zorder())
                 else:
-                    ax.plot(var_dates[l][k][:], var_values[l][k][:], color=shadow_color, transform=shadow_transform,
+                    ax.plot(vd, vv, color=shadow_color, transform=shadow_transform,
                             zorder=0.5 * line.get_zorder())
 
         nd = len(var_dates[l])
