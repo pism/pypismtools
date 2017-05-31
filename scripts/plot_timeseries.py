@@ -119,7 +119,13 @@ shadow_color = '0.25'
 numpoints = 1
 
 my_colors = colorList()
-my_colors = [ '#542788',
+my_colors = [ '#998ec3',
+              '#fdb863',
+              '#018571',
+              '#d8daeb',
+              '#e66101',
+              '#542788',
+              '#998ec3',
               '#fdb863',
               '#018571',
               '#d8daeb',

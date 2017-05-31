@@ -57,6 +57,7 @@ parser.add_argument("--font_size", dest="font_size",
 parser.add_argument("--type", dest="colorbar_type",
                     choices=['linear',
                              'log_speed',
+                             'log_speed_j',
                              'log_speed_2',
                              'log_speed_3',
                              'log_speed_4',
@@ -115,12 +116,38 @@ except:
     cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
     prefix = '.'.join(cmap_file.split('.')[0:-1])
     suffix = cmap_file.split('.')[-1]
+
+class nlcmap(object):
+    def __init__(self, cmap, levels):
+        self.cmap = cmap
+        self.levels = np.asarray(levels, dtype='float64')
+        self._x = self.levels
+        self.levmax = self.levels.max()
+        self.transformed_levels = np.linspace(0.0, self.levmax,
+             len(self.levels))
+
+    def __call__(self, xi, alpha=1.0, **kw):
+        yi = np.interp(xi, self._x, self.transformed_levels)
+        return self.cmap(yi / self.levmax, alpha)
+
+levels = [0, 10, 100, 250, 750, 3000]
+levels.sort()
+
+cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, N)
+
+
 if colorbar_type in ('linear'):
     data_values = np.linspace(vmin, vmax, N)
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     cb_extend = cb_extend
     format = '%2.0f'
     ticks = [-750, 0, 250, 500, 750]
+elif colorbar_type in ('log_speed'):
+    data_values = np.linspace(vmin, vmax, N)
+    norm = mpl.colors.LogNorm(vmin=10, vmax=3000)
+    cb_extend = cb_extend
+    format = '%2.0f'
+    ticks = [0, 10, 100, 300, 1000, 3000]
 elif colorbar_type in ('gris_bath_topo'):
     vmin = -800
     vmax = 3000
@@ -130,7 +157,7 @@ elif colorbar_type in ('gris_bath_topo'):
     cb_extend = 'both'
     format = '%i'
     ticks = [vmin, 0, 1000, 2000, vmax]
-elif colorbar_type in ('log_speed', 'log_speed_3'):
+elif colorbar_type in ('log_speed_j', 'log_speed_3'):
     data_values = np.logspace(-1, 3, N)[0:889]
     data_values[-1] = vmax
     N = len(data_values)
@@ -168,7 +195,7 @@ else:
 if tick_format is not None:
     format = tick_format
     
-cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, N)
+
 
 # you could apply a function to the colormap, e.g. to desaturate the colormap:
 # cmap = cmap_map(lambda x: x/2+0.5, cmap)
@@ -185,7 +212,7 @@ if fticks is not None:
     ticks = fticks
 cb1 = mpl.colorbar.ColorbarBase(ax1,
                                 cmap=cmap,
-                                norm=norm,
+                                norm = norm,
                                 ticks=ticks,
                                 format=format,
                                 extend=cb_extend,
