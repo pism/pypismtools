@@ -31,7 +31,7 @@ if not_installed:
     sys.exit()
 
 setup(name=PKG_NAME,
-      version='0.15',
+      version='0.2',
       description='Python tools to evaluate PISM results',
       author='Andy Aschwanden',
       author_email='aaschwanden@alaska.edu',
@@ -65,7 +65,6 @@ setup(name=PKG_NAME,
                'scripts/scalar_within_poly.py',
                'scripts/remap3d.py',
                'scripts/temp2enth.py',
-               'scripts/vertical_ts_plot.py',
                'scripts/vraster2lineshapefile.py'],
       packages=[PKG_NAME],
       package_dir={PKG_NAME: '.'},
