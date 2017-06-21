@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from netCDF4 import Dataset as NC
 from netcdftime import utime
 import gdal
@@ -78,7 +78,7 @@ class ShapeDataError(Exception):
     pass
 
 
-parser = ArgumentParser(
+parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
     description='''A script to extract interfaces (calving front, ice-ocean, or groundling line) from a PISM netCDF file, and save it as a shapefile (polygon).''')
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-a", "--area_threshold" , dest="area_threshold",

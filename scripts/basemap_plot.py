@@ -10,7 +10,7 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
 import pylab as plt
 from matplotlib import colors
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pyproj import Proj
 
@@ -67,7 +67,7 @@ class Variable(object):
             self.colorbar_label = kwargsdict['colorbar_label']
 
 # Set up the option parser
-parser = ArgumentParser()
+parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 parser.description = "A script to plot a variable in a netCDF file over a GeoTiff. Uses GDAL python bindings, Proj4, and Basemap. Script is fine-tuned for whole Greenland plots, but can be adapted for other needs."
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("--alpha", dest="alpha",

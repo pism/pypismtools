@@ -199,8 +199,6 @@ if __name__ == "__main__":
     parser.add_argument("FILE", nargs=1,
                         help="netCDF file with dimensions ('time', 'y', 'x'). Other permutations are currently not supported")
     parser.add_argument("--variable",
-                        help="file", default=None)
-    parser.add_argument("--variable",
                         help="variable used to create a hillshade", default='usurf')
 
     options = parser.parse_args()

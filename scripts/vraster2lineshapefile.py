@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # Copyright (C) 2015-17 Bob McNabb, Andy Aschwanden
 
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import gdal
-from argparse import ArgumentParser
 import fiona
 import numpy as np
 from fiona.crs import from_epsg
@@ -114,7 +114,7 @@ def get_dims(nc):
     return xdim, ydim, zdim, tdim
 
 
-parser = ArgumentParser(
+parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
     description="Convert rasters containing (U,V) components of velocity field to vector line data.")
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-U", "--Udata", dest="Udata",

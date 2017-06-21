@@ -14,7 +14,7 @@ sampling 2D and 3D fields on a regular grid at points along a flux
 gate or a any kind of profile.
 """
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import numpy as np
 import scipy.sparse
 import time
@@ -1371,7 +1371,7 @@ if __name__ == "__main__":
     description = '''A script to extract data along (possibly multiple) profile using
     piece-wise constant or bilinear interpolation.
     The profile must be given as a ESRI shape file.'''
-    parser = ArgumentParser()
+    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.description = description
     parser.add_argument(
         "SHAPEFILE", nargs=1, help="input shapefile defining profiles to extract")

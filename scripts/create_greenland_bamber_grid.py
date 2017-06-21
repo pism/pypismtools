@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 import numpy as np
 from pyproj import Proj
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from netCDF4 import Dataset as CDF
 
 # set up the argument parser
-parser = ArgumentParser()
+parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 parser.description = "Create CDO-compliant grid description"
 parser.add_argument("FILE", nargs='*')
 parser.add_argument("-g", "--grid_spacing", dest="grid_spacing", type=float,
