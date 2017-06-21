@@ -7,8 +7,6 @@ print(('\nInstalling %s' % PKG_NAME))
 print('----------------------------')
 
 packages = ('numpy', 'osgeo', 'netCDF4', 'pyproj', 'cf_units',
-            'mpl_toolkits.basemap', 'mpl_toolkits.axes_grid1')
-packages = ('numpy', 'osgeo', 'netCDF4', 'pyproj', 'cf_units',
             'mpl_toolkits.axes_grid1')
 print('\nChecking dependencies:')
 not_installed = []
@@ -31,7 +29,7 @@ if not_installed:
     sys.exit()
 
 setup(name=PKG_NAME,
-      version='0.2',
+      version='0.3',
       description='Python tools to evaluate PISM results',
       author='Andy Aschwanden',
       author_email='aaschwanden@alaska.edu',

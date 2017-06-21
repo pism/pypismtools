@@ -56,7 +56,8 @@ parser.add_argument("--font_size", dest="font_size",
                     help="Font size", default=12)
 parser.add_argument("--type", dest="colorbar_type",
                     choices=['linear',
-                             'log_speed',
+                             'log_speed_10_1500',
+                             'log_speed_10_3000',
                              'log_speed_j',
                              'log_speed_2',
                              'log_speed_3',
@@ -142,9 +143,15 @@ if colorbar_type in ('linear'):
     cb_extend = cb_extend
     format = '%2.0f'
     ticks = [-750, 0, 250, 500, 750]
-elif colorbar_type in ('log_speed'):
+elif colorbar_type in ('log_speed_10_3000'):
     data_values = np.linspace(vmin, vmax, N)
     norm = mpl.colors.LogNorm(vmin=10, vmax=3000)
+    cb_extend = cb_extend
+    format = '%2.0f'
+    ticks = [0, 10, 100, 300, 1000, 3000]
+elif colorbar_type in ('log_speed_10_1500'):
+    data_values = np.linspace(vmin, vmax, N)
+    norm = mpl.colors.LogNorm(vmin=10, vmax=1500)
     cb_extend = cb_extend
     format = '%2.0f'
     ticks = [0, 10, 100, 300, 1000, 3000]
@@ -199,7 +206,6 @@ if tick_format is not None:
 
 # you could apply a function to the colormap, e.g. to desaturate the colormap:
 # cmap = cmap_map(lambda x: x/2+0.5, cmap)
-print matplotlib.get_backend()
 matplotlib.rc("font", **{"sans-serif": ["Helvetica"]})  # "size": fontsize}
 matplotlib.rc("font", **{"size": font_size})
 # create the colorbar
