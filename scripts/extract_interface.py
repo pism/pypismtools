@@ -158,7 +158,7 @@ elif extract_type in ('grounded_floating'):
     b_value = 2
 elif extract_type in ('ice_ocean'):
     a_value = 4
-    b_value = 2
+    b_value = [2, 3]
 elif extract_type in ('ice_noice'):
     a_value = 1
     b_value = 0
@@ -195,6 +195,8 @@ for k in range(src_ds.RasterCount):
 
     if extract_type in ['grounding_line']:
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}  OR {dn} = {val3}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1], val3=b_value[2]))
+    elif extract_type in ['ice_ocean']:
+        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1]))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, b_value))
     logger.info('Extracting interface B')
@@ -223,7 +225,7 @@ for k in range(src_ds.RasterCount):
         outFeature = ogr.Feature(featureDefn)
         outFeature.SetGeometry(feature.GetGeometryRef())
         i = outFeature.GetFieldIndex('timestep')
-        outFeature.SetField(i, int(k))
+        outFeature.SetField(i, int(k+1))
         i = outFeature.GetFieldIndex(ts_fieldname)
         outFeature.SetField(i, str(timestamp))
         geom = feature.GetGeometryRef()

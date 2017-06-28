@@ -47,7 +47,7 @@ class Hillshade(object):
     threshold_masking_value: if threshold_masking is True, use this value to mask variable
     zf: 
     '''
-
+    
     def __init__(self, ifile, variable='usurf', threshold_masking=True, variables_to_mask=None, *args, **kwargs):
         super(Hillshade, self).__init__(*args, **kwargs)
 
@@ -198,13 +198,29 @@ if __name__ == "__main__":
     parser.description = "Adding a hillshade to a netCDF file."
     parser.add_argument("FILE", nargs=1,
                         help="netCDF file with dimensions ('time', 'y', 'x'). Other permutations are currently not supported")
-    parser.add_argument("--variable",
-                        help="variable used to create a hillshade", default='usurf')
+    parser.add_argument("-v", "--variable", dest='variable',
+                        help="Variable used for hillshade", default='usurf')
+    parser.add_argument("--altitude", dest='altitude', type=float,
+                        help="Altitude for hillshade", default=45)
+    parser.add_argument("--azimuth", dest='azimuth', type=float,
+                        help="Azimuth for hillshade", default=45)
+    parser.add_argument("--fill_value", dest='fill_value', type=float,
+                        help="Fill value for masking", default=0)
+    parser.add_argument("--threshold_masking", dest='threshold_masking', action="store_false",
+                        help="Masking above threshold", default=True)
+    parser.add_argument("--threshold_masking_variable", dest='threshold_masking_variable',
+                        help="Variable to use for threshold masking", default='thk')
+    parser.add_argument("--threshold_masking_value", dest='threshold_masking_value', type=float,
+                        help="Value to use for threshold masking", default=10)
+    parser.add_argument("--zf", dest='zf', type=float,
+                        help="Zf", default=5)
+
 
     options = parser.parse_args()
     ifile = options.FILE[0]
-    variables = options.varible
-
-    hs = Hillshade(ifile, variable)
+    delattr(options, 'FILE')
+    variable = options.variable
+    delattr(options, 'variable')
+    hs = Hillshade(ifile, variable, **vars(options))
     hs.run() 
 
