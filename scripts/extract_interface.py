@@ -90,7 +90,11 @@ parser.add_argument("-o", "--output_filename", dest="out_file",
 parser.add_argument("-m", "--mask_variable", dest="dst_fieldname",
                     help="Name of mask variable", default='mask')
 parser.add_argument("-t", "--type" , dest="extract_type",
-                    choices=['calving_front', 'grounded_floating', 'ice_noice', 'ice_ocean', 'grounding_line'],
+                    choices=['calving_front',
+                             'grounded_floating',
+                             'ice_noice', 'ice_ocean',
+                             'grounding_line',
+                             'ela'],
                     help="Interface to extract.", default='ice_ocean')
 
 
@@ -165,6 +169,9 @@ elif extract_type in ('ice_noice'):
 elif extract_type in ('grounding_line'):
     a_value = 2
     b_value = [0, 3, 4]
+elif extract_type in ('ela'):
+    a_value = 0
+    b_value = 0
 else:
     print('Type {} not recognized'.format(extact_type))
     import sys
@@ -181,7 +188,10 @@ for k in range(src_ds.RasterCount):
     logger.info('Running gdal.Polygonize()')
     result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [],
                              callback=gdal.TermProgress)
-    poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
+    if extract_type in ['ela']:
+        poly_layer.SetAttributeFilter("{} > {}".format(dst_fieldname, b_value))
+    else:
+        poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
     logger.info('Extracting interface A')
     a_layer, dst_field = create_memory_layer(dst_fieldname)
     featureDefn = a_layer.GetLayerDefn()
@@ -197,6 +207,8 @@ for k in range(src_ds.RasterCount):
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}  OR {dn} = {val3}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1], val3=b_value[2]))
     elif extract_type in ['ice_ocean']:
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1]))
+    elif extract_type in ['ela']:
+        poly_layer.SetAttributeFilter("{} < {}".format(dst_fieldname, b_value))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, b_value))
     logger.info('Extracting interface B')
