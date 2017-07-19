@@ -8,7 +8,6 @@ import gdal
 import ogr
 import osr
 import os
-from pyproj import Proj
 import logging
 import logging.handlers
 
@@ -89,6 +88,8 @@ parser.add_argument("-o", "--output_filename", dest="out_file",
                     help="Name of the output shape file", default='interface.shp')
 parser.add_argument("-m", "--mask_variable", dest="dst_fieldname",
                     help="Name of mask variable", default='mask')
+parser.add_argument("-s", "--step", dest="step", type=int,
+                    help="Only extract every step value", default=1)
 parser.add_argument("-t", "--type" , dest="extract_type",
                     choices=['calving_front',
                              'grounded_floating',
@@ -106,6 +107,7 @@ extract_type = options.extract_type
 shp_filename = options.out_file
 ts_fieldname = 'timestamp'
 dst_fieldname = options.dst_fieldname
+step = options.step
 
 nc = NC(filename, 'r')
 xdim, ydim, zdim, tdim = ppt.get_dims(nc)
@@ -177,7 +179,7 @@ else:
     import sys
     sys.exit(0)
     
-for k in range(src_ds.RasterCount):
+for k in np.arange(0, src_ds.RasterCount, step):
     if tdim is None:
         timestamp = '0-0-0'
     else:
