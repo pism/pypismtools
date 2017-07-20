@@ -178,8 +178,10 @@ else:
     print('Type {} not recognized'.format(extact_type))
     import sys
     sys.exit(0)
-    
+
+time_step = 0
 for k in np.arange(0, src_ds.RasterCount, step):
+    
     if tdim is None:
         timestamp = '0-0-0'
     else:
@@ -187,14 +189,14 @@ for k in np.arange(0, src_ds.RasterCount, step):
     logger.info('Processing {}'.format(timestamp))
     srcband = src_ds.GetRasterBand(k + 1)
     poly_layer, dst_field = create_memory_layer(dst_fieldname)
-    logger.info('Running gdal.Polygonize()')
+    logger.debug('Running gdal.Polygonize()')
     result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [],
                              callback=gdal.TermProgress)
     if extract_type in ['ela']:
         poly_layer.SetAttributeFilter("{} > {}".format(dst_fieldname, b_value))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
-    logger.info('Extracting interface A')
+    logger.debug('Extracting interface A')
     a_layer, dst_field = create_memory_layer(dst_fieldname)
     featureDefn = a_layer.GetLayerDefn()
     for m, feature in enumerate(poly_layer):
@@ -213,7 +215,7 @@ for k in np.arange(0, src_ds.RasterCount, step):
         poly_layer.SetAttributeFilter("{} < {}".format(dst_fieldname, b_value))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, b_value))
-    logger.info('Extracting interface B')
+    logger.debug('Extracting interface B')
     b_layer, dst_field = create_memory_layer(dst_fieldname)
     featureDefn = b_layer.GetLayerDefn()
     for m, feature in enumerate(poly_layer):
@@ -225,7 +227,7 @@ for k in np.arange(0, src_ds.RasterCount, step):
         b_layer.CreateFeature(outFeature)
 
     # Now clip layers
-    logger.info('Clipping A and B')
+    logger.debug('Clipping A and B')
     tmp_layer, dst_field = create_memory_layer(dst_fieldname)
     a_layer.Clip(b_layer, tmp_layer)
     poly_layer = None
@@ -239,7 +241,7 @@ for k in np.arange(0, src_ds.RasterCount, step):
         outFeature = ogr.Feature(featureDefn)
         outFeature.SetGeometry(feature.GetGeometryRef())
         i = outFeature.GetFieldIndex('timestep')
-        outFeature.SetField(i, int(k+1))
+        outFeature.SetField(i, int(time_step))
         i = outFeature.GetFieldIndex(ts_fieldname)
         outFeature.SetField(i, str(timestamp))
         geom = feature.GetGeometryRef()
@@ -249,7 +251,8 @@ for k in np.arange(0, src_ds.RasterCount, step):
         # add the feature to the output layer
         if area >= area_threshold:
             interface_layer.CreateFeature(outFeature)
-
+            
+    time_step += 1
 
 # Clean-up
 poly_layer = None
