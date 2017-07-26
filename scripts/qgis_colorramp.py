@@ -63,6 +63,7 @@ parser.add_argument("--type", dest="colorbar_type",
                              'log_speed_3',
                              'log_speed_4',
                              'gris_bath_topo',
+                             'gris_topo',
                              'log_speed_m_day'],
                     help="Type of colorbar", default='linear')
 parser.add_argument("--ticks", dest="fticks", nargs='*', type=float,
@@ -147,12 +148,14 @@ elif colorbar_type in ('log_speed_10_3000'):
     data_values = np.linspace(vmin, vmax, N)
     norm = mpl.colors.LogNorm(vmin=10, vmax=3000)
     cb_extend = cb_extend
+    colorbar_label = 'm yr$^{-1}$'
     format = '%2.0f'
     ticks = [0, 10, 100, 300, 1000, 3000]
 elif colorbar_type in ('log_speed_10_1500'):
     data_values = np.linspace(vmin, vmax, N)
     norm = mpl.colors.LogNorm(vmin=10, vmax=1500)
     cb_extend = cb_extend
+    colorbar_label = 'm yr$^{-1}$'
     format = '%2.0f'
     ticks = [0, 10, 100, 300, 1000, 3000]
 elif colorbar_type in ('gris_bath_topo'):
@@ -164,6 +167,17 @@ elif colorbar_type in ('gris_bath_topo'):
     cb_extend = 'both'
     format = '%i'
     ticks = [vmin, 0, 1000, 2000, vmax]
+elif colorbar_type in ('gris_topo'):
+    vmin = 0
+    vmax = 3000
+    data_values = np.linspace(vmin, vmax, N)
+    N = len(data_values)
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+    cb_extend = 'both'
+    colorbar_label = 'm a.s.l.'
+    format = '%i'
+    ticks = [vmin, 0, 1000, 2000, vmax]
+    cmap.set_under('#2171b5')
 elif colorbar_type in ('log_speed_j', 'log_speed_3'):
     data_values = np.logspace(-1, 3, N)[0:889]
     data_values[-1] = vmax
@@ -216,6 +230,7 @@ else:
     ax1 = fig.add_axes([0.05, 0.05, 0.03, 0.65])
 if fticks is not None:
     ticks = fticks
+
 cb1 = mpl.colorbar.ColorbarBase(ax1,
                                 cmap=cmap,
                                 norm = norm,

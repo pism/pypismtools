@@ -84,10 +84,12 @@ parser.add_argument("-a", "--area_threshold" , dest="area_threshold",
                     help="Only save features with an area > area_threshold", default=200)
 parser.add_argument("-e", "--epsg" , dest="epsg", type=int,
                     help="Sets EPSG code", default=None)
+parser.add_argument("-l", "--level" , dest="level", type=float,
+                    help="Which contour level to extract. Used in combination with 'contour'", default=1000)
 parser.add_argument("-o", "--output_filename", dest="out_file",
                     help="Name of the output shape file", default='interface.shp')
 parser.add_argument("-m", "--mask_variable", dest="dst_fieldname",
-                    help="Name of mask variable", default='mask')
+                    help="Name of variable to use", default='mask')
 parser.add_argument("-s", "--step", dest="step", type=int,
                     help="Only extract every step value", default=1)
 parser.add_argument("-t", "--type" , dest="extract_type",
@@ -95,7 +97,8 @@ parser.add_argument("-t", "--type" , dest="extract_type",
                              'grounded_floating',
                              'ice_noice', 'ice_ocean',
                              'grounding_line',
-                             'ela'],
+                             'ela',
+                             'contour'],
                     help="Interface to extract.", default='ice_ocean')
 
 
@@ -104,6 +107,7 @@ filename = options.FILE[0]
 area_threshold = options.area_threshold
 epsg = options.epsg
 extract_type = options.extract_type
+level = options.level
 shp_filename = options.out_file
 ts_fieldname = 'timestamp'
 dst_fieldname = options.dst_fieldname
@@ -174,6 +178,9 @@ elif extract_type in ('grounding_line'):
 elif extract_type in ('ela'):
     a_value = 0
     b_value = 0
+elif extract_type in ('contour'):
+    a_value = level
+    b_value = level
 else:
     print('Type {} not recognized'.format(extact_type))
     import sys
@@ -192,7 +199,7 @@ for k in np.arange(0, src_ds.RasterCount, step):
     logger.debug('Running gdal.Polygonize()')
     result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [],
                              callback=gdal.TermProgress)
-    if extract_type in ['ela']:
+    if extract_type in ['ela', 'contour']:
         poly_layer.SetAttributeFilter("{} > {}".format(dst_fieldname, b_value))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
@@ -211,7 +218,7 @@ for k in np.arange(0, src_ds.RasterCount, step):
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}  OR {dn} = {val3}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1], val3=b_value[2]))
     elif extract_type in ['ice_ocean']:
         poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1]))
-    elif extract_type in ['ela']:
+    elif extract_type in ['ela', 'contour']:
         poly_layer.SetAttributeFilter("{} < {}".format(dst_fieldname, b_value))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, b_value))
