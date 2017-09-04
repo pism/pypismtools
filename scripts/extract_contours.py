@@ -52,7 +52,7 @@ def create_memory_layer(dst_fieldname):
 
     fd = ogr.FieldDefn('id', ogr.OFTInteger)
     layer.CreateField(fd)
-    fd = ogr.FieldDefn(dst_fieldname, ogr.OFTReal)
+    fd = ogr.FieldDefn('level', ogr.OFTReal)
     layer.CreateField(fd)
 
     return layer
@@ -82,8 +82,8 @@ parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-e", "--epsg" , dest="epsg", type=int,
                     help="Sets EPSG code", default=None)
-parser.add_argument("-l", "--level" , dest="level", type=float,
-                    help="Which contour level to extract. Used in combination with 'contour'", default=1000)
+parser.add_argument("-l", "--levels" , dest="levels",
+                    help="Which contour levels to extract. Comma-separated list", default='0')
 parser.add_argument("-o", "--output_filename", dest="out_file",
                     help="Name of the output shape file", default='interface.shp')
 parser.add_argument("-v", "--variable", dest="dst_fieldname",
@@ -92,7 +92,7 @@ parser.add_argument("-v", "--variable", dest="dst_fieldname",
 options = parser.parse_args()
 filename = options.FILE[0]
 epsg = options.epsg
-level = options.level
+levels = np.array(options.levels.split(','), dtype=float)
 shp_filename = options.out_file
 ts_fieldname = 'timestamp'
 dst_fieldname = options.dst_fieldname
@@ -135,7 +135,7 @@ if epsg is not None:
 
 
 interface_layer = dst_ds.CreateLayer('interface', srs)
-fd = ogr.FieldDefn(dst_fieldname, ogr.OFTReal)
+fd = ogr.FieldDefn('level', ogr.OFTReal)
 interface_layer.CreateField(fd)
 fd = ogr.FieldDefn(ts_fieldname, ogr.OFTString)
 interface_layer.CreateField(fd)
@@ -153,7 +153,7 @@ for k in np.arange(0, src_ds.RasterCount):
     srcband = src_ds.GetRasterBand(k + 1)
     logger.debug('Running gdal.ContourGenerate()')
     tmp_layer = create_memory_layer(dst_fieldname)
-    result = gdal.ContourGenerate(srcband, 0, 0, [20, 200], 0, 0, tmp_layer, 0, 1,  callback=gdal.TermProgress)
+    result = gdal.ContourGenerate(srcband, 0, 0, levels, 0, 0, tmp_layer, 0, 1,  callback=gdal.TermProgress)
 
     logger.info('Saving results')
     featureDefn = interface_layer.GetLayerDefn()
@@ -161,9 +161,8 @@ for k in np.arange(0, src_ds.RasterCount):
         # create a new feature
         outFeature = ogr.Feature(featureDefn)
         outFeature.SetGeometry(feature.GetGeometryRef())
-        i = outFeature.GetFieldIndex(dst_fieldname)
-        ik = feature.GetFieldIndex(dst_fieldname)
-        print ik
+        i = outFeature.GetFieldIndex('level')
+        ik = feature.GetFieldIndex('level')
         outFeature.SetField(i, feature.GetField(ik))
         i = outFeature.GetFieldIndex('timestep')
         outFeature.SetField(i, int(time_step))
