@@ -155,7 +155,8 @@ elif colorbar_type in ('log_speed_10_1500'):
     data_values = np.linspace(vmin, vmax, N)
     norm = mpl.colors.LogNorm(vmin=10, vmax=1500)
     cb_extend = cb_extend
-    colorbar_label = 'm yr$^{-1}$'
+    if colorbar_label is None:
+        colorbar_label = 'm yr$^{-1}$'
     format = '%2.0f'
     ticks = [0, 10, 100, 300, 1000, 3000]
 elif colorbar_type in ('gris_bath_topo'):
@@ -174,7 +175,8 @@ elif colorbar_type in ('gris_topo'):
     N = len(data_values)
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     cb_extend = 'both'
-    colorbar_label = 'm a.s.l.'
+    if colorbar_label is None:
+        colorbar_label = 'm a.s.l.'
     format = '%i'
     ticks = [vmin, 0, 1000, 2000, vmax]
     cmap.set_under('#2171b5')
