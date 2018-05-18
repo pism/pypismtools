@@ -112,14 +112,16 @@ orientation = options.orientation
 # read in CPT colormap
 cmap_file = args[0]
 try:
-    cdict = plt.cm.datad[cmap_file]
+    cmap = getattr(plt.cm, cmap_file)
     prefix = cmap_file
 except:
     # import and convert colormap
     cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
     prefix = '.'.join(cmap_file.split('.')[0:-1])
     suffix = cmap_file.split('.')[-1]
+    cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, N)
 
+    
 class nlcmap(object):
     def __init__(self, cmap, levels):
         self.cmap = cmap
@@ -136,7 +138,6 @@ class nlcmap(object):
 levels = [0, 10, 100, 250, 750, 3000]
 levels.sort()
 
-cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, N)
 
 
 if colorbar_type in ('linear'):
