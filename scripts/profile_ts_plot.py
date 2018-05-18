@@ -59,8 +59,8 @@ parser.add_argument("-r", "--output_resolution", dest="out_res",
 parser.add_argument("-t", "--twinx", dest="twinx", action="store_true",
                     help='''adds a second ordinate with units mmSLE,
                   Default=False''', default=False)
-parser.add_argument("-v", "--variable", dest="variables",
-                    help="comma-separated list with variables", default='csurf')
+parser.add_argument("-v", "--variable", dest="plot_var", nargs=1,
+                    help="Variable to plot", default='velsurf_mag')
 
 options = parser.parse_args()
 args = options.FILE
@@ -81,9 +81,9 @@ rotate_xticks = options.rotate_xticks
 shadow = options.shadow
 show = options.show
 twinx = options.twinx
-variables = options.variables.split(',')
+plot_var = options.plot_var
 dashes = ['-', '--', '-.', ':', '-', '--', '-.', ':']
-output_order = ('profile', 'time')
+output_order = ('station', 'profile', 'time')
 # stupid CDO changes dimension names...
 output_order_cdo = ('ncells', 'time')
 
@@ -111,7 +111,7 @@ var_values = []
 var_ylabels = []
 var_longnames = []
 
-print("opening file %s" % args[0])
+print(("opening file %s" % args[0]))
 nc = NC(args[0], 'r')
 t = nc.variables["time"][:]
 calendar = nc.variables["time"].calendar
@@ -119,67 +119,7 @@ units = nc.variables["time"].units
 
 cdftime = utime(units, calendar)
 date = cdftime.num2date(t[:])
-profile = nc.variables["profile"]
-profile_units = profile.units
-profile_outunits = 'km'
-profile_axis = np.squeeze(
-    unit_converter(profile[:], profile_units, profile_outunits))
 
-for var in variables:
-    var_units = nc.variables[var].units
-    var_longname = nc.variables[var].long_name
-    var_longnames.append(var_longname)
-    if var in ("ivol"):
-        scale_exponent = 6
-        scale = 10 ** scale_exponent
-        out_units = "km3"
-        var_unit_str = ("10$^{%i}$ km$^{3}$" % scale_exponent)
-    elif var in ("imass", "mass", "ocean_kill_flux_cumulative",
-                 "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
-                 "climatic_mass_balance_cumulative",
-                 "effective_climatic_mass_balance_cumulative",
-                 "effective_ice_discharge_cumulative"):
-        out_units = "Gt"
-        var_unit_str = "Gt"
-        ylabel = ("mass change [%s]" % var_unit_str)
-    elif var in ("ocean_kill_flux"):
-        out_units = "Gt year-1"
-        var_unit_str = "Gt a$^{-1}$"
-        ylabel = ("mass change [%s]" % var_unit_str)
-    elif var in ("usurf", "topg"):
-        out_units = "m"
-        var_unit_str = "m a.s.l"
-        ylabel = ("elevation [%s]" % var_unit_str)
-    elif var in ("eigen1", "eigen2"):
-        out_units = "year-1"
-        var_unit_str = "a$^{-1}$"
-        ylabel = ("strain rate [%s]" % var_unit_str)
-    elif var in ("taud", "taud_mag", "taud_x", "taud_y", "bwp"):
-        out_units = "Pa"
-        var_unit_str = "Pa"
-        ylabel = ("pressure [%s]" % var_unit_str)
-    elif var in ("csurf", "cbase", "cbar", "velsurf_mag", "velbase_mag"):
-        out_units = "m year-1"
-        var_unit_str = "m a$^{-1}$"
-        ylabel = ("speed [%s]" % var_unit_str)
-    else:
-        print("unit %s not recognized" % var_units)
-    var_ylabels.append(ylabel)
-
-    try:
-        var_vals = unit_converter(np.squeeze(permute(nc.variables[var],
-                                                     output_order=output_order)), var_units, out_units)
-    except:
-        var_vals = unit_converter(np.squeeze(permute(nc.variables[var],
-                                                     output_order=output_order_cdo)), var_units, out_units)
-    if normalize:
-        var_vals -= var_vals[0]
-
-    var_values.append(var_vals)
-
-nc.close()
-
-nt = len(var_values[0][0, :])
 
 aspect_ratio = golden_mean
 
@@ -195,8 +135,61 @@ cNorm = colors.Normalize(vmin=0, vmax=len(date))
 scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
 
 skip = 1
-for k in range(len(variables)):
 
+for k, profile in enumerate(nc.variables['profile_name']):
+    print(k, profile)
+
+    profile = nc.variables["profile"]
+    profile_units = profile.units
+    profile_outunits = 'km'
+    profile_axis = np.squeeze(
+        unit_converter(profile[k, :], profile_units, profile_outunits))
+
+    var_units = nc.variables[plot_var].units
+    var_longname = nc.variables[plot_var].long_name
+    if plot_var in ("ivol"):
+        scale_exponent = 6
+        scale = 10 ** scale_exponent
+        out_units = "km3"
+        var_unit_str = ("10$^{%i}$ km$^{3}$" % scale_exponent)
+    elif plot_var in ("imass", "mass", "ocean_kill_flux_cumulative",
+                 "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
+                 "climatic_mass_balance_cumulative",
+                 "effective_climatic_mass_balance_cumulative",
+                 "effective_ice_discharge_cumulative"):
+        out_units = "Gt"
+        var_unit_str = "Gt"
+        ylabel = ("mass change [%s]" % var_unit_str)
+    elif plot_var in ("ocean_kill_flux"):
+        out_units = "Gt year-1"
+        var_unit_str = "Gt a$^{-1}$"
+        ylabel = ("mass change [%s]" % var_unit_str)
+    elif plot_var in ("usurf", "topg"):
+        out_units = "m"
+        var_unit_str = "m a.s.l"
+        ylabel = ("elevation [%s]" % var_unit_str)
+    elif plot_var in ("eigen1", "eigen2"):
+        out_units = "year-1"
+        var_unit_str = "a$^{-1}$"
+        ylabel = ("strain rate [%s]" % var_unit_str)
+    elif plot_var in ("taud", "taud_mag", "taud_x", "taud_y", "bwp"):
+        out_units = "Pa"
+        var_unit_str = "Pa"
+        ylabel = ("pressure [%s]" % var_unit_str)
+    elif plot_var in ("csurf", "cbase", "cbar", "velsurf_mag", "velbase_mag"):
+        out_units = "m year-1"
+        var_unit_str = "m a$^{-1}$"
+        ylabel = ("speed [%s]" % var_unit_str)
+    else:
+        print(("unit %s not recognized" % var_units))
+    var_ylabels.append(ylabel)
+
+    var_vals = unit_converter(np.squeeze(nc.variables[plot_var]), var_units, out_units)
+                              
+    if normalize:
+        var_vals -= var_vals[0]
+
+    
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
@@ -220,5 +213,5 @@ for k in range(len(variables)):
     outfile = "foo"
     for out_format in out_formats:
         out_file = outfile + '_' + variables[k] + '.' + out_format
-        print "  - writing image %s ..." % out_file
+        print("  - writing image %s ..." % out_file)
         fig.savefig(out_file, bbox_inches='tight', dpi=out_res)

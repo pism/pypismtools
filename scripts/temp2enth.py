@@ -67,6 +67,6 @@ for m in range(M):
 
 # Compare with enthalpy field in file.
 # Note that difference is only zero in the absence of temperate ice
-print enthalpy - enthalpy_true
+print(enthalpy - enthalpy_true)
 
 nc.close()

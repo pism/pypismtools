@@ -128,7 +128,7 @@ var = variables[0]
 
 for k in range(no_args):
     file_name = args[k]
-    print("opening file %s" % file_name)
+    print(("opening file %s" % file_name))
     nc = NC(file_name, 'r')
 
     profile = nc.variables["profile"]
@@ -183,7 +183,7 @@ for k in range(no_args):
         var_units_str = "m a$^{-1}$"
         ylabel = ("speed [%s]" % var_units_str)
     else:
-        print("unit %s not recognized" % var_units)
+        print(("unit %s not recognized" % var_units))
     var_ylabels.append(ylabel)
 
     try:
@@ -238,5 +238,5 @@ if labels:
 plt.title(figure_title)
 for out_format in out_formats:
     out_file = outfile + '_' + var + '.' + out_format
-    print "  - writing image %s ..." % out_file
+    print("  - writing image %s ..." % out_file)
     fig.savefig(out_file, bbox_inches='tight', dpi=out_res)

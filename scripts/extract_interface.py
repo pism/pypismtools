@@ -182,7 +182,7 @@ elif extract_type in ('contour'):
     a_value = level
     b_value = level
 else:
-    print('Type {} not recognized'.format(extact_type))
+    print(('Type {} not recognized'.format(extact_type)))
     import sys
     sys.exit(0)
 

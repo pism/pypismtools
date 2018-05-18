@@ -145,8 +145,8 @@ if __name__ == '__main__':
 
         subprocess.call(["ncks", "-O", from_file_name, to_file_name])
         if copy_thickness:
-            print("copy ice thickness from %s to %s." %
-                  (thk_file_name, to_file_name))
+            print(("copy ice thickness from %s to %s." %
+                  (thk_file_name, to_file_name)))
             subprocess.call(["ncks", "-A -v thk", thk_file_name, to_file_name])
 
         # open file in append mode
@@ -206,7 +206,7 @@ if __name__ == '__main__':
     t = time.time()
     var_new = interp(z, var_old, thk_to, thk_from)
     elapsed = time.time() - t
-    print("time spent interpolating: %f" % elapsed)
+    print(("time spent interpolating: %f" % elapsed))
 
     if not test:
 
@@ -214,11 +214,9 @@ if __name__ == '__main__':
         input_dimensions = interp_var.dimensions
 
         # filter out irrelevant dimensions
-        dimensions = filter(lambda(x): x in input_dimensions,
-                            var_order)
+        dimensions = [x for x in var_order if x in input_dimensions]
         # create the mapping
-        mapping = map(lambda(x): dimensions.index(x),
-                      input_dimensions)
+        mapping = [dimensions.index(x) for x in input_dimensions]
 
         if mapping:
             var_new = np.transpose(var_new, mapping)

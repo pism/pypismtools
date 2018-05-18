@@ -46,8 +46,8 @@ def get_contours(array, x, y, projection, level):
     contours = sorted(measure.find_contours(array, level),
                       key=lambda x: len(x))
 
-    i = range(0, len(x))
-    j = range(0, len(y))
+    i = list(range(0, len(x)))
+    j = list(range(0, len(y)))
 
     lon = []
     lat = []
@@ -140,7 +140,7 @@ if tdim:
         else:
             timestamp = cdftime.num2date(t)
             my_year = 0
-        print('Processing {}'.format(timestamp))
+        print(('Processing {}'.format(timestamp)))
         for level in contour_levels:
             contour_var = np.array(
                 ppt.permute(nc.variables[varname], var_order), order='C')[k, Ellipsis]

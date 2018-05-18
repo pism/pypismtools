@@ -363,7 +363,7 @@ elif varname in vars_temp:
 
     attr_keys = ('ticks', 'vmin', 'vmax', 'norm', 'cmap', 'extend', 'format',
                  'colorbar_label')
-    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, u'\u00B0C')
+    attr_vals = (None, vmin, vmax, norm, cmap, 'both', None, '\u00B0C')
     var_dict = dict(list(zip(attr_keys, attr_vals)))
     variable = Variable(varname, var_dict)
 
@@ -495,7 +495,7 @@ if obs_file is not None:
 
 
 if obs_file is not None:
-    print("  opening NetCDF file %s ..." % obs_file)
+    print(("  opening NetCDF file %s ..." % obs_file))
     try:
         # open netCDF file in 'append' mode
         nc = NC(obs_file, 'r')
@@ -511,11 +511,11 @@ if obs_file is not None:
     dim_order = (tdim, zdim, ydim, xdim)
 
     myvar = varname
-    for name in nc.variables.keys():
+    for name in list(nc.variables.keys()):
         v = nc.variables[name]
         if getattr(v, "standard_name", "") == varname:
-            print("variabe {0} found by its standard_name {1}".format(name,
-                                                                      varname))
+            print(("variabe {0} found by its standard_name {1}".format(name,
+                                                                      varname)))
             myvar = name
     print(("    - reading variable %s from file %s" % (myvar, obs_file)))
     try:
@@ -562,7 +562,7 @@ ocean_mask = []
 for k in range(0, nt):
 
     filename = args[k]
-    print("  opening NetCDF file %s ..." % filename)
+    print(("  opening NetCDF file %s ..." % filename))
     try:
         # open netCDF file in 'append' mode
         nc = NC(filename, 'r')
@@ -581,11 +581,11 @@ for k in range(0, nt):
     ys.append(np.squeeze(ppt.permute(nc.variables[ydim], dim_order)))
 
     myvar = varname
-    for name in nc.variables.keys():
+    for name in list(nc.variables.keys()):
         v = nc.variables[name]
         if getattr(v, "standard_name", "") == varname:
-            print("variabe {0} found by its standard_name {1}".format(name,
-                                                                      varname))
+            print(("variabe {0} found by its standard_name {1}".format(name,
+                                                                      varname)))
             myvar = name
             pass
     print(("    - reading variable %s from file %s" % (myvar, filename)))
@@ -622,7 +622,7 @@ for k in range(0, nt):
             values.append(data)
 
     ocean_mask_varname = 'oceanmask'
-    if ocean_mask_varname in nc.variables.keys():
+    if ocean_mask_varname in list(nc.variables.keys()):
         ocean_mask.append(np.squeeze(ppt.permute(nc.variables['mask'])))
     else:
         ocean_mask.append(np.zeros_like(data))
@@ -792,7 +792,7 @@ cbar.solids.set_edgecolor("face")
 if colorbar_label:
     cbar.set_label(variable.colorbar_label)
 
-print("  writing image %s ..." % out_file)
+print(("  writing image %s ..." % out_file))
 fig.savefig(out_file, bbox_inches='tight', dpi=out_res)
 
 plt.close()

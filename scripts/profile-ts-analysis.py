@@ -116,7 +116,7 @@ var_values = []
 var_ylabels = []
 var_longnames = []
 var_units_strings = []
-print("opening file %s" % args[0])
+print(("opening file %s" % args[0]))
 nc = NC(args[0], 'r')
 calendar = nc.variables["time"].calendar
 time_units = nc.variables["time"].units
@@ -133,7 +133,7 @@ except:
     pass
 
 profile_var = 'profile'
-if profile_var in nc.variables.keys():
+if profile_var in list(nc.variables.keys()):
     profile = nc.variables["profile"]
     profile_units = profile.units
     profile_outunits = 'km'
@@ -190,7 +190,7 @@ for var in variables:
         var_units_str = "m a$^{-1}$"
         ylabel = ("speed [%s]" % var_units_str)
     else:
-        print("unit %s not recognized" % var_units)
+        print(("unit %s not recognized" % var_units))
     var_ylabels.append(ylabel)
     var_units_strings.append(var_units_str)
     try:
@@ -274,7 +274,7 @@ for k in range(len(variables)):
             ax.plot_date(date, p[0] + p[1] * t, fmt='--', color='w')
             ax.plot_date(
                 date, p[0] + p[1] * t, fmt='--', color=my_colors[m], alpha=0.75)
-        print (lag % 1) * 365.2
+        print((lag % 1) * 365.2)
     ax.set_xlabel("year")
     ax.set_ylabel(var_ylabels[k])
     plt.legend(numpoints=1)
@@ -298,5 +298,5 @@ for k in range(len(variables)):
 
     for out_format in out_formats:
         out_file = outfile + '_' + variables[k] + '.' + out_format
-        print "  - writing image %s ..." % out_file
+        print("  - writing image %s ..." % out_file)
         fig.savefig(out_file, bbox_inches='tight', dpi=out_res)

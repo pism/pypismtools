@@ -243,7 +243,7 @@ class ProfileInterpolationMatrix(object):
 
     def _compute_bilinear_matrix(self, x, y, dx, dy, px, py):
         """Initialize a bilinear interpolation matrix."""
-        for k in xrange(self.A.shape[0]):
+        for k in range(self.A.shape[0]):
             x_k = px[k]
             y_k = py[k]
 
@@ -298,7 +298,7 @@ class ProfileInterpolationMatrix(object):
 
         output_mask = np.zeros(n_points, dtype=np.bool_)
 
-        for r in xrange(n_points):
+        for r in range(n_points):
             # for each row, i.e. each point along the profile
             row = np.s_[A.indptr[r]:A.indptr[r + 1]]
             # get the locations and values
@@ -528,7 +528,7 @@ def profile_extraction_test():
     try:
         # 2D variables
         for d in P(["x", "y"]) + P(["time", "x", "y"]):
-            print "Trying %s..." % str(d)
+            print("Trying %s..." % str(d))
             variable_name = "test_2D_" + "_".join(d)
             variable = nc.variables[variable_name]
 
@@ -537,7 +537,7 @@ def profile_extraction_test():
             assert np.max(np.fabs(np.squeeze(result) - desired_result)) < 1e-9
         # 3D variables
         for d in P(["x", "y", "z"]) + P(["time", "x", "y", "z"]):
-            print "Trying %s..." % str(d)
+            print("Trying %s..." % str(d))
             variable_name = "test_3D_" + "_".join(d)
             variable = nc.variables[variable_name]
 
@@ -613,7 +613,7 @@ def create_dummy_input_file(filename, F):
             T = np.transpose
 
         if "z" in dimensions:
-            for k in xrange(Mz):
+            for k in range(Mz):
                 indexes[dimensions.index("z")] = k
                 variable[indexes] = T(F(xx, yy, z[k]))
         else:
@@ -758,8 +758,8 @@ def read_shapefile(filename):
     layer_type = ogr.GeometryTypeToName(layer.GetGeomType())
     srs = layer.GetSpatialRef()
     if not srs.IsGeographic():
-        print('''Spatial Reference System in % s is not latlon. Converting.'''
-              % filename)
+        print(('''Spatial Reference System in % s is not latlon. Converting.'''
+              % filename))
         # Create spatialReference, EPSG 4326 (lonlat)
         srs_geo = osr.SpatialReference()
         srs_geo.ImportFromEPSG(4326)
@@ -939,11 +939,11 @@ def define_station_variables(nc):
           "standard_name": "latitude"}),
     ]
 
-    print "Defining station variables...",
+    print("Defining station variables...", end=' ')
     for name, datatype, dimensions, attributes in variables:
         variable = nc.createVariable(name, datatype, dimensions)
         variable.setncatts(attributes)
-    print "done."
+    print("done.")
 
 def define_profile_variables(nc, special_vars=False):
     "Define variables used to store information about profiles."
@@ -1047,11 +1047,11 @@ def define_profile_variables(nc, special_vars=False):
                      ("ty", "f", (stationdim, profiledim),
                       {"long_name": "y-component of the tangential vector"})]
 
-    print "Defining profile variables...",
+    print("Defining profile variables...", end=' ')
     for name, datatype, dimensions, attributes in variables:
         variable = nc.createVariable(name, datatype, dimensions)
         variable.setncatts(attributes)
-    print "done."
+    print("done.")
 
 
 def copy_attributes(var_in, var_out):
@@ -1076,10 +1076,10 @@ def copy_attributes(var_in, var_out):
 
 def copy_global_attributes(in_file, out_file):
     "Copy global attributes from in_file to out_file."
-    print "Copying global attributes...",
+    print("Copying global attributes...", end=' ')
     for attribute in in_file.ncattrs():
         setattr(out_file, attribute, getattr(in_file, attribute))
-    print "done."
+    print("done.")
 
 
 def file_handling_test():
@@ -1112,10 +1112,10 @@ def file_handling_test():
         create_variable_like(input_file, "test_2D_y_x", output_file,
                              output_dimensions(input_file.variables["test_2D_y_x"].dimensions))
 
-        print output_dimensions(("x", "y"))
-        print output_dimensions(("x", "y", "time"))
-        print output_dimensions(("x", "y", "z"))
-        print output_dimensions(("x", "y", "z", "time"))
+        print(output_dimensions(("x", "y")))
+        print(output_dimensions(("x", "y", "time")))
+        print(output_dimensions(("x", "y", "z")))
+        print(output_dimensions(("x", "y", "z", "time")))
 
         write_profile(output_file, 0, create_dummy_profile(in_filename))
 
@@ -1135,7 +1135,7 @@ def extract_profile(variable, profile):
     x = group.variables[xdim][:]
     y = group.variables[ydim][:]
 
-    dim_length = dict(zip(variable.dimensions, variable.shape))
+    dim_length = dict(list(zip(variable.dimensions, variable.shape)))
 
     def init_interpolation():
         """Initialize interpolation weights. Takes care of the transpose."""
@@ -1186,18 +1186,18 @@ def extract_profile(variable, profile):
     if tdim and zdim:
         dim_names = ["time", "profile", "z"]
         result = np.zeros((dim_length[tdim], n_points, dim_length[zdim]))
-        for j in xrange(dim_length[tdim]):
-            for k in xrange(dim_length[zdim]):
+        for j in range(dim_length[tdim]):
+            for k in range(dim_length[zdim]):
                 result[j, :, k] = A.apply_to_subset(read_subset(t=j, z=k))
     elif tdim:
         dim_names = ["time", "profile"]
         result = np.zeros((dim_length[tdim], n_points))
-        for j in xrange(dim_length[tdim]):
+        for j in range(dim_length[tdim]):
             result[j, :] = A.apply_to_subset(read_subset(t=j))
     elif zdim:
         dim_names = ["profile", "z"]
         result = np.zeros((n_points, dim_length[zdim]))
-        for k in xrange(dim_length[zdim]):
+        for k in range(dim_length[zdim]):
             result[:, k] = A.apply_to_subset(read_subset(z=k))
     else:
         dim_names = ["profile"]
@@ -1208,15 +1208,15 @@ def extract_profile(variable, profile):
 def copy_dimensions(in_file, out_file, exclude_list):
     """Copy dimensions from in_file to out_file, excluding ones in
     exclude_list."""
-    print "Copying dimensions...",
-    for name, dim in in_file.dimensions.iteritems():
+    print("Copying dimensions...", end=' ')
+    for name, dim in in_file.dimensions.items():
         if (name not in exclude_list and
             name not in out_file.dimensions):
             if dim.isunlimited():
                 out_file.createDimension(name, None)
             else:
                 out_file.createDimension(name, len(dim))
-    print "done."
+    print("done.")
 
 
 def create_variable_like(in_file, var_name, out_file, dimensions=None,
@@ -1306,8 +1306,8 @@ def timing(f):
         time1 = time.time()
         ret = f(*args)
         time2 = time.time()
-        print ('{} function took {:0.3f} s'.format(
-            f.func_name, (time2 - time1)))
+        print(('{} function took {:0.3f} s'.format(
+            f.__name__, (time2 - time1))))
         return ret
     return wrap
 
@@ -1318,7 +1318,7 @@ def extract_variable(nc_in, nc_out, profiles, var_name, stations):
     if var_name in vars_not_copied:
         return
 
-    print("  Reading variable %s" % var_name)
+    print(("  Reading variable %s" % var_name))
 
     var_in = nc_in.variables[var_name]
     in_dims = var_in.dimensions
@@ -1334,11 +1334,11 @@ def extract_variable(nc_in, nc_out, profiles, var_name, stations):
             dimensions=out_dims)
 
         for k, profile in enumerate(profiles):
-            print("    - processing profile {0}".format(profile.name))
+            print(("    - processing profile {0}".format(profile.name)))
             values, dim_names = extract_profile(var_in, profile)
 
             # assemble dimension lengths
-            lengths = dict(zip(dim_names, values.shape))
+            lengths = dict(list(zip(dim_names, values.shape)))
 
             if stations:
                 dim_names.remove(profiledim)
@@ -1350,7 +1350,7 @@ def extract_variable(nc_in, nc_out, profiles, var_name, stations):
                 index = [k] + [slice(0, k) for k in values.shape]
                 var_out[index] = values
             except:
-                print "extract_profiles failed while writing {}".format(var_name)
+                print("extract_profiles failed while writing {}".format(var_name))
                 raise
     else:
         # it is a scalar or a 1D variable; just copy it
@@ -1358,13 +1358,13 @@ def extract_variable(nc_in, nc_out, profiles, var_name, stations):
         try:
             var_out[:] = var_in[:]
         except RuntimeError as e:
-            print "extract_profiles failed while writing {}".format(var_name)
+            print("extract_profiles failed while writing {}".format(var_name))
             raise
         except IndexError:
-            print "Failed to copy {}. Ignoring it...".format(var_name)
+            print("Failed to copy {}. Ignoring it...".format(var_name))
 
     copy_attributes(var_in, var_out)
-    print("  - done with %s" % var_name)
+    print(("  - done with %s" % var_name))
 
 if __name__ == "__main__":
     # Set up the option parser
@@ -1406,9 +1406,9 @@ if __name__ == "__main__":
     variables = options.variables.split(',')
 
     print("-----------------------------------------------------------------")
-    print("Running script %s ..." % __file__.split('/')[-1])
+    print(("Running script %s ..." % __file__.split('/')[-1]))
     print("-----------------------------------------------------------------")
-    print("Opening NetCDF file %s ..." % options.INPUTFILE[0])
+    print(("Opening NetCDF file %s ..." % options.INPUTFILE[0]))
     try:
         # open netCDF file in 'read' mode
         nc_in = NC(options.INPUTFILE[0], 'r')
@@ -1428,12 +1428,12 @@ if __name__ == "__main__":
             try:
                 projection = Proj(srs)
             except:
-                print('Could not process {}'.format(srs))
+                print(('Could not process {}'.format(srs)))
     else:
         projection = ppt.get_projection_from_file(nc_in)
 
     # Read in profile data
-    print("  reading profile from %s" % options.SHAPEFILE[0])
+    print(("  reading profile from %s" % options.SHAPEFILE[0]))
     profiles = load_profiles(options.SHAPEFILE[0], projection, options.flip)
 
     # switch to writing "station" information if all profiles have
@@ -1449,16 +1449,16 @@ if __name__ == "__main__":
     # define variables storing profile information
     if stations:
         define_station_variables(nc_out)
-        print "Writing stations...",
+        print("Writing stations...", end=' ')
         for k, profile in enumerate(profiles):
             write_station(nc_out, k, profile)
-        print "done."
+        print("done.")
     else:
         define_profile_variables(nc_out, special_vars=special_vars)
-        print "Writing profiles...",
+        print("Writing profiles...", end=' ')
         for k, profile in enumerate(profiles):
             write_profile(nc_out, k, profile)
-        print "done."
+        print("done.")
 
     # re-create dimensions from an input file in an output file, but
     # skip x and y dimensions and dimensions that are already present
@@ -1501,7 +1501,7 @@ if __name__ == "__main__":
         extract_variable(nc_in, nc_out, profiles, name, stations)
 
     if options.n_cpus > 1:
-        print "Trying to use {} workers...".format(options.n_cpus)
+        print("Trying to use {} workers...".format(options.n_cpus))
         from multiprocessing import Pool
         p = Pool(options.n_cpus)
         p.map(extract, vars_list)
@@ -1510,8 +1510,8 @@ if __name__ == "__main__":
             extract(var_name)
 
     if len(vars_not_found) > 0:
-        print("The following variables could not be found in {}:".format(options.INPUTFILE[0]))
-        print vars_not_found
+        print(("The following variables could not be found in {}:".format(options.INPUTFILE[0])))
+        print(vars_not_found)
 
     # writing global attributes
     import sys
@@ -1525,4 +1525,4 @@ if __name__ == "__main__":
 
     nc_in.close()
     nc_out.close()
-    print("Extracted profiles to file %s" % options.OUTPUTFILE[0])
+    print(("Extracted profiles to file %s" % options.OUTPUTFILE[0]))

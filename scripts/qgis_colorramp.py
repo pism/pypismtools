@@ -22,13 +22,13 @@ def cmap_map(function, cmap):
     step_dict = {}
     # First get the list of points where the segments start or end
     for key in ('red', 'green', 'blue'):
-        step_dict[key] = map(lambda x: x[0], cdict[key])
-    step_list = sum(step_dict.values(), [])
+        step_dict[key] = [x[0] for x in cdict[key]]
+    step_list = sum(list(step_dict.values()), [])
     step_list = np.array(list(set(step_list)))
     # Then compute the LUT, and apply the function to the LUT
     reduced_cmap = lambda step: np.array(cmap(step)[0:3])
-    old_LUT = np.array(map(reduced_cmap, step_list))
-    new_LUT = np.array(map(function, old_LUT))
+    old_LUT = np.array(list(map(reduced_cmap, step_list)))
+    new_LUT = np.array(list(map(function, old_LUT)))
     # Now try to make a minimal segment definition of the new LUT
     cdict = {}
     for i, key in enumerate(('red', 'green', 'blue')):
@@ -38,7 +38,7 @@ def cmap_map(function, cmap):
                 this_cdict[step] = new_LUT[j, i]
             elif new_LUT[j, i] != old_LUT[j, i]:
                 this_cdict[step] = new_LUT[j, i]
-        colorvector = sorted(map(lambda x: x + (x[1], ), this_cdict.items()))
+        colorvector = sorted([x + (x[1], ) for x in list(this_cdict.items())])
         cdict[key] = colorvector
 
     return mpl.colors.LinearSegmentedColormap('colormap', cdict, 1024)
@@ -262,7 +262,7 @@ if colorbar_label:
 for format in ['png']:
     prefix = prefix + '_' + orientation
     out_file = '.'.join([prefix, format])
-    print("  writing colorbar %s ..." % out_file)
+    print(("  writing colorbar %s ..." % out_file))
     fig.savefig(out_file, bbox_inches='tight', dpi=1200, transparent=True)
 
 # convert to RGBA array
@@ -294,7 +294,7 @@ else:
 
 # save as ascii file
 out_file = '.'.join([prefix, 'txt'])
-print("  writing colorramp %s ..." % out_file)
+print(("  writing colorramp %s ..." % out_file))
 np.savetxt(
     out_file,
     qgis_array,

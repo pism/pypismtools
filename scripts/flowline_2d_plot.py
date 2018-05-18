@@ -100,7 +100,7 @@ scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cmap)
 profile_axis_o_units = 'm'
 
 filename = args[0]
-print("  opening NetCDF file %s ..." % filename)
+print(("  opening NetCDF file %s ..." % filename))
 try:
     nc0 = NC(filename, 'r')
 except:
@@ -120,17 +120,17 @@ for in_varname in variables:
         V = np.linspace(0, 125, 26)
     elif in_varname in ('temp_pa'):
         o_units = 'deg_C'
-        o_units_str = u'\u00B0C'
+        o_units_str = '\u00B0C'
         V = np.linspace(-30, 0, 31)
     elif in_varname in ('liqfrac'):
         o_units = '1'
         o_units_str = '1'
         V = np.linspace(0, 2, 11)
     else:
-        print("variable {} not supported".format(in_varname))
+        print(("variable {} not supported".format(in_varname)))
 
     filename = args[0]
-    print("  opening NetCDF file %s ..." % filename)
+    print(("  opening NetCDF file %s ..." % filename))
     try:
         nc = NC(filename, 'r')
     except:
@@ -142,8 +142,8 @@ for in_varname in variables:
     for name in nc.variables:
         v = nc.variables[name]
         if getattr(v, "standard_name", "") == in_varname:
-            print("variabe {0} found by its standard_name {1}".format(name,
-                                                                      in_varname))
+            print(("variabe {0} found by its standard_name {1}".format(name,
+                                                                      in_varname)))
             varname = name
         else:
             varname = in_varname
@@ -221,7 +221,7 @@ for in_varname in variables:
             profile_name = '_'.join(
                 ['profile', unidecode(profile_name), varname])
             out_name = '.'.join([profile_name, out_format]).replace(' ', '_')
-            print "  - writing image %s ..." % out_name
+            print("  - writing image %s ..." % out_name)
             fig.tight_layout()
             fig.savefig(out_name, bbox_inches='tight', dpi=out_res)
 

@@ -43,7 +43,7 @@ class GeoImgInfo:
         try:
             self.gd = gdal.Open(self.filename)
         except:
-            print("could not open file %s" % self.filename)
+            print(("could not open file %s" % self.filename))
 
         self.gt = self.gd.GetGeoTransform()
         self.proj = self.gd.GetProjection()
@@ -140,7 +140,7 @@ scale_factor = args.scale_factor
 threshold = args.threshold
 
 nc_file_u = args.Udata.split(':')[1]
-print nc_file_u
+print(nc_file_u)
 nc = NC(nc_file_u, 'r')
 xdim, ydim, zdim, tdim = get_dims(nc)
 
@@ -197,7 +197,7 @@ with fiona.open(args.FILE[0], 'w', crs=from_epsg(
         else:
             timestamp = timestamps[k]
         logger.info('Processing {}'.format(timestamp))
-        print('Processing {}'.format(timestamp))
+        print(('Processing {}'.format(timestamp)))
 
         Ux = getRasterBandArray(args.Udata, BandNo=k+1)[::prune_factor,::prune_factor]
         Uy = getRasterBandArray(args.Vdata, BandNo=k+1)[::prune_factor,::prune_factor]
@@ -234,14 +234,14 @@ with fiona.open(args.FILE[0], 'w', crs=from_epsg(
                     x_e, y_e = X[i,j] + scale_factor * Ux[i,j] / 2, Y[i,j] + scale_factor * Uy[i,j] / 2
                     # Create LineString
                     line = LineString([[x_a, y_a], [x_c, y_c], [x_e, y_e]])
-                    line_dict = dict([(k, float(v[i,j])) for (k, v) in prop_dict.iteritems()])
+                    line_dict = dict([(k, float(v[i,j])) for (k, v) in prop_dict.items()])
                     line_dict['timestamp'] = str(timestamp)
                     output.write(
                         {'properties': line_dict, 'geometry': mapping(line)})
                     
-        print "  {} points found and written".format(str(m))
+        print("  {} points found and written".format(str(m)))
         
-print "Done writing {}".format(args.FILE[0])
+print("Done writing {}".format(args.FILE[0]))
 # close the shapefile now that we're all done
 output.close()
 

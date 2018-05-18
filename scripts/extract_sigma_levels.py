@@ -60,7 +60,7 @@ class TimeProfiler:
         # Note: 'slot' has to be string type
         # we are not checking it here.
 
-        if self.timedict.has_key(slot):
+        if slot in self.timedict:
             del self.timedict[slot]
 
     def lastdiff(self):
@@ -86,14 +86,14 @@ class TimeProfiler:
         """ Return maximum time difference marked """
 
         # Difference of max time with min time
-        times = self.timedict.values()
+        times = list(self.timedict.values())
         return max(times) - min(times)
 
     def timegap(self):
         """ Return the full time-gap since we started marking """
 
         # Return now minus min
-        times = self.timedict.values()
+        times = list(self.timedict.values())
         return time.time() - min(times)
 
     def cleanup(self):
@@ -121,12 +121,10 @@ def permute(variable, output_order=('time', 'z', 'zb', 'y', 'x')):
     input_dimensions = variable.dimensions
 
     # filter out irrelevant dimensions
-    dimensions = filter(lambda x: x in input_dimensions,
-                        output_order)
+    dimensions = [x for x in output_order if x in input_dimensions]
 
     # create the mapping
-    mapping = map(lambda x: input_dimensions.index(x),
-                  dimensions)
+    mapping = [input_dimensions.index(x) for x in dimensions]
 
     if mapping:
         return np.transpose(variable[:], mapping)
@@ -188,7 +186,7 @@ def get_dims_from_variable(var_dimensions):
 def copy_dimensions(in_file, out_file, exclude_list):
     """Copy dimensions from in_file to out_file, excluding ones in
     exclude_list."""
-    for name, dim in in_file.dimensions.iteritems():
+    for name, dim in in_file.dimensions.items():
         if (name not in exclude_list and
                 name not in out_file.dimensions):
             if dim.isunlimited():
@@ -296,9 +294,9 @@ if __name__ == "__main__":
     n_age_iso = len(age_iso)
 
     print("-----------------------------------------------------------------")
-    print("Running script %s ..." % __file__.split('/')[-1])
+    print(("Running script %s ..." % __file__.split('/')[-1]))
     print("-----------------------------------------------------------------")
-    print("Opening NetCDF file %s ..." % options.INPUTFILE[0])
+    print(("Opening NetCDF file %s ..." % options.INPUTFILE[0]))
     try:
         # open netCDF file in 'read' mode
         nc_in = NC(options.INPUTFILE[0], 'r')
@@ -361,11 +359,11 @@ if __name__ == "__main__":
         copy_time_dimension(nc_in, nc_out, tdim)
 
     standard_name = 'land_ice_thickness'
-    for name in nc_in.variables.keys():
+    for name in list(nc_in.variables.keys()):
         v = nc_in.variables[name]
         if getattr(v, "standard_name", "") == standard_name:
-            print("variabe {0} found by its standard_name {1}".format(name,
-                                                                      standard_name))
+            print(("variabe {0} found by its standard_name {1}".format(name,
+                                                                      standard_name)))
             myvar = name
             pass
 
@@ -381,7 +379,7 @@ if __name__ == "__main__":
 
     for var_name in variables:
 
-        print("  Reading variable %s" % var_name)
+        print(("  Reading variable %s" % var_name))
         profiler = timeprofile()
         var_in = nc_in.variables[var_name]
         in_dims = var_in.dimensions
@@ -472,7 +470,7 @@ if __name__ == "__main__":
         iso_var_norm.grid_mapping = 'mapping'
         
         p = profiler.elapsed('interpolation')
-        print("    - interpolated in %3.4f s" % p)
+        print(("    - interpolated in %3.4f s" % p))
 
     for var in ('run_stats', 'pism_config', 'mapping'):
         if var in nc_in.variables:
@@ -491,5 +489,5 @@ if __name__ == "__main__":
 
     nc_in.close()
     nc_out.close()
-    print("Extracted 3D variable(s) {} to file {}".format(
-        variables, options.OUTPUTFILE[0]))
+    print(("Extracted 3D variable(s) {} to file {}".format(
+        variables, options.OUTPUTFILE[0])))

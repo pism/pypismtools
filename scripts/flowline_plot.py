@@ -96,7 +96,7 @@ params_formatting = (
     '{:1.2f}',
     '{}',
     '{:1.2f}')
-params_formatting_dict = dict(zip(params, params_formatting))
+params_formatting_dict = dict(list(zip(params, params_formatting)))
 params_abbr = (
     '$q$',
     '$\\delta$',
@@ -113,7 +113,7 @@ params_abbr = (
     'E$_{\mathregular{ssa}}$',
     'B',
     'f')
-params_abbr_dict = dict(zip(params, params_abbr))
+params_abbr_dict = dict(list(zip(params, params_abbr)))
 
 
 try:
@@ -170,7 +170,7 @@ for in_varname in variables:
         o_units = 'm'
         o_units_str = 'm a.s.l.'
     else:
-        print("variable {} not supported".format(in_varname))
+        print(("variable {} not supported".format(in_varname)))
 
     # filename = args[0]
     # print("  opening NetCDF file %s ..." % filename)
@@ -192,7 +192,7 @@ for in_varname in variables:
         labels = []
         for idx, filename in enumerate(args):
 
-            print("  opening NetCDF file %s ..." % filename)
+            print(("  opening NetCDF file %s ..." % filename))
             try:
                 nc = NC(filename, 'r')
             except:
@@ -204,8 +204,8 @@ for in_varname in variables:
             for name in nc.variables:
                 v = nc.variables[name]
                 if getattr(v, "standard_name", "") == in_varname:
-                    print("variabe {0} found by its standard_name {1}".format(name,
-                                                                              in_varname))
+                    print(("variabe {0} found by its standard_name {1}".format(name,
+                                                                              in_varname)))
                     varname = name
             
             profile_axis = nc.variables['profile'][profile_id]
@@ -258,8 +258,8 @@ for in_varname in variables:
             for name in nc_obs.variables:
                 v = nc_obs.variables[name]
                 if getattr(v, "standard_name", "") == in_varname:
-                    print("variabe {0} found by its standard_name {1}".format(name,
-                                                                              in_varname))
+                    print(("variabe {0} found by its standard_name {1}".format(name,
+                                                                              in_varname)))
                     varname = name
             
 
@@ -324,7 +324,7 @@ for in_varname in variables:
             profile_name = '_'.join(
                 [outfile, 'profile', unidecode(profile_name), varname])
             out_name = '.'.join([profile_name, out_format]).replace(' ', '_')
-            print "  - writing image %s ..." % out_name
+            print("  - writing image %s ..." % out_name)
             fig.tight_layout()
             fig.savefig(out_name, bbox_inches='tight', dpi=out_res)
 

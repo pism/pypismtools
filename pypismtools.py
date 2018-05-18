@@ -46,10 +46,10 @@ class GeoTIFF(object):
         self.file_name = file_name
 
         try:
-            print("\n  opening GeoTIFF file %s" % file_name)
+            print(("\n  opening GeoTIFF file %s" % file_name))
             self.gtiff = gdal.Open(file_name)
         except:
-            print("could not open file %s" % file_name)
+            print(("could not open file %s" % file_name))
 
         self.RasterArray = self.gtiff.ReadAsArray()
         self.gtiff_projection = self.gtiff.GetProjection()
@@ -156,12 +156,12 @@ def get_projection_from_file(nc):
         except:
             try:
                 # go through variables and look for 'grid_mapping' attribute
-                for var in nc.variables.keys():
+                for var in list(nc.variables.keys()):
                     if hasattr(nc.variables[var], 'grid_mapping'):
                         mappingvarname = nc.variables[var].grid_mapping
-                        print(
+                        print((
                             'Found projection information in variable "%s", using it' %
-                            mappingvarname)
+                            mappingvarname))
                         break
                 var_mapping = nc.variables[mappingvarname]
                 p = Proj(proj="stere",
@@ -531,7 +531,7 @@ def set_mode(mode, aspect_ratio=0.95):
     elif (mode == "height"):
         return set_height()
     else:
-        print("%s mode not recognized, using onecol instead" % mode)
+        print(("%s mode not recognized, using onecol instead" % mode))
         return set_twocol()
 
 
@@ -654,7 +654,7 @@ def gmtColormap(fileName, log_color=False, reverse=False):
             my_file = os.path.join(basedir, 'colormaps', fileName)
             f = open(my_file)
     except:
-        print "file ", fileName, "not found"
+        print("file ", fileName, "not found")
         return None
 
     lines = f.readlines()
@@ -1005,12 +1005,10 @@ def permute(variable, output_order=('time', 'z', 'zb', 'y', 'x')):
     input_dimensions = variable.dimensions
 
     # filter out irrelevant dimensions
-    dimensions = filter(lambda x: x in input_dimensions,
-                        output_order)
+    dimensions = [x for x in output_order if x in input_dimensions]
 
     # create the mapping
-    mapping = map(lambda x: dimensions.index(x),
-                  input_dimensions)
+    mapping = [dimensions.index(x) for x in input_dimensions]
 
     if mapping:
         return np.transpose(variable[:], mapping)

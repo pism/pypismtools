@@ -57,7 +57,7 @@ with fiona.open(ifile) as input:
         e = sorted(input, key=lambda k: k['properties'][field])
         # group by the attribute field 
         for key, group in itertools.groupby(e, key=lambda x:x['properties'][field]):
-            properties, geom = zip(*[(feature['properties'], shape(feature['geometry'])) for feature in group])
+            properties, geom = list(zip(*[(feature['properties'], shape(feature['geometry'])) for feature in group]))
             # write the feature, computing the unary_union of the elements in the group with the properties of the first element in the group
             output.write({'geometry': mapping(unary_union(geom)), 'properties': properties[0]})
 

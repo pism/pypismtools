@@ -186,7 +186,7 @@ for var in variables:
     dates = []
     values = []
     for k in range(nt):
-        print("opening file %s" % args[k])
+        print(("opening file %s" % args[k]))
         if lon_lat is not None:
             index_i, index_j = compute_indices(args[k], lon, lat)
         nc = NC(args[k], 'r')
@@ -312,7 +312,7 @@ for var in variables:
             var_unit_str = "km$^3$"
             ylabel = ("runoff (%s)" % var_unit_str)
         else:
-            print("unit %s not recognized" % var_units)
+            print(("unit %s not recognized" % var_units))
             ylabel = ("%s (%s)" % (var, var_units))
         var_ylabels.append(ylabel)
 
@@ -498,7 +498,7 @@ for l in range(len(variables)):
         
     for out_format in out_formats:
         out_file = outfile + '_' + variables[l] + '.' + out_format
-        print "  - writing image %s ..." % out_file
+        print("  - writing image %s ..." % out_file)
         fig.savefig(out_file, bbox_inches='tight', dpi=out_res)
     if show:
         plt.show()
