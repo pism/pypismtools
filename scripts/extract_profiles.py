@@ -21,6 +21,7 @@ import time
 from pyproj import Proj
 from netCDF4 import Dataset as NC
 
+
 try:
     import pypismtools.pypismtools as ppt
 except ImportError:             # pragma: nocover
@@ -63,6 +64,7 @@ def tangential(point0, point1):
         return a / norm
     else:
         return a
+
 
 class Profile(object):
 
@@ -523,7 +525,7 @@ def profile_extraction_test():
 
     from itertools import permutations
 
-    P = lambda x: list(permutations(x))
+    def P(x): return list(permutations(x))
 
     try:
         # 2D variables
@@ -608,7 +610,7 @@ def create_dummy_input_file(filename, F):
 
         # transpose 2D array if needed
         if dimensions.index("y") < dimensions.index("x"):
-            T = lambda x: x
+            def T(x): return x
         else:
             T = np.transpose
 
@@ -621,7 +623,7 @@ def create_dummy_input_file(filename, F):
 
     from itertools import permutations
 
-    P = lambda x: list(permutations(x))
+    def P(x): return list(permutations(x))
 
     for d in sorted(P(["x", "y"]) + P(["time", "x", "y"])):
         write("test_2D_", d)
@@ -759,7 +761,7 @@ def read_shapefile(filename):
     srs = layer.GetSpatialRef()
     if not srs.IsGeographic():
         print(('''Spatial Reference System in % s is not latlon. Converting.'''
-              % filename))
+               % filename))
         # Create spatialReference, EPSG 4326 (lonlat)
         srs_geo = osr.SpatialReference()
         srs_geo.ImportFromEPSG(4326)
@@ -795,7 +797,7 @@ def read_shapefile(filename):
             # Transform to latlon if needed
             if not srs.IsGeographic():
                 geometry.TransformTo(srs_geo)
-                
+
             point = geometry.GetPoint()
             lon.append(point[0])
             lat.append(point[1])
@@ -818,7 +820,7 @@ def read_shapefile(filename):
                              flightline,
                              glaciertype,
                              flowtype])
-                
+
     elif layer_type in ("Line String", "Multi Line String"):
         for pt in range(0, cnt):
             feature = layer.GetFeature(pt)
@@ -920,6 +922,7 @@ def get_dims_from_variable(var_dimensions):
 
     return [find(dim, var_dimensions) for dim in [xdims, ydims, zdims, tdims]]
 
+
 def define_station_variables(nc):
     "Define variables used to store information about a station."
     # create dimensions
@@ -944,6 +947,7 @@ def define_station_variables(nc):
         variable = nc.createVariable(name, datatype, dimensions)
         variable.setncatts(attributes)
     print("done.")
+
 
 def define_profile_variables(nc, special_vars=False):
     "Define variables used to store information about profiles."
@@ -1205,13 +1209,14 @@ def extract_profile(variable, profile):
 
     return result, dim_names
 
+
 def copy_dimensions(in_file, out_file, exclude_list):
     """Copy dimensions from in_file to out_file, excluding ones in
     exclude_list."""
     print("Copying dimensions...", end=' ')
     for name, dim in in_file.dimensions.items():
         if (name not in exclude_list and
-            name not in out_file.dimensions):
+                name not in out_file.dimensions):
             if dim.isunlimited():
                 out_file.createDimension(name, None)
             else:
@@ -1262,6 +1267,7 @@ def copy_time_dimension(in_file, out_file, name):
         # we get here if var_in does not have a bounds attribute
         pass
 
+
 def write_station(out_file, index, profile):
     """Write information about a station (name, latitude, longitude) to an
     output file.
@@ -1270,7 +1276,8 @@ def write_station(out_file, index, profile):
     out_file.variables['lat'][index] = profile.lat
     out_file.variables['station_name'][index] = profile.name
 
-def write_profile(out_file, index, profile):
+
+def write_profile(out_file, index, profile, special_vars=None):
     """Write information about a profile (name, latitude, longitude,
     center latitude, center longitude, normal x, normal y, distance
     along profile) to an output file.
@@ -1366,6 +1373,7 @@ def extract_variable(nc_in, nc_out, profiles, var_name, stations):
     copy_attributes(var_in, var_out)
     print(("  - done with %s" % var_name))
 
+
 if __name__ == "__main__":
     # Set up the option parser
     description = '''A script to extract data along (possibly multiple) profile using
@@ -1393,17 +1401,16 @@ if __name__ == "__main__":
                         help="Projection of netCDF files as a proj4 string", default=None)
     parser.add_argument("-v", "--variable", dest="variables",
                         help="comma-separated list with variables",
-                        default='x,y,thk,velsurf_mag,flux_mag,uflux,vflux,pism_config,run_stats,uvelsurf,vvelsurf,topg,usurf,tillphi,tauc')
-    parser.add_argument(
-        "-a", "--all_variables", dest="all_vars", action="store_true",
-        help='''Process all variables, overwrite -v/--variable''',
-        default=False)
+                        default=None)
 
     options = parser.parse_args()
     fill_value = -2e9
     special_vars = options.special_vars
     srs = options.srs
-    variables = options.variables.split(',')
+    if options.variables is not None:
+        variables = options.variables.split(',')
+    else:
+        variables = None
 
     print("-----------------------------------------------------------------")
     print(("Running script %s ..." % __file__.split('/')[-1]))
@@ -1477,7 +1484,7 @@ if __name__ == "__main__":
         if hasattr(var, 'bounds'):
             bounds_var_name = var.bounds
             vars_not_copied.append(bounds_var_name)
-
+    vars_not_copied.remove(None)
     vars_not_copied.sort()
     last = vars_not_copied[-1]
     for i in range(len(vars_not_copied) - 2, -1, -1):
@@ -1490,12 +1497,12 @@ if __name__ == "__main__":
         copy_time_dimension(nc_in, nc_out, tdim)
 
     print("Copying variables...")
-    if options.all_vars:
-        vars_list = nc_in.variables
-        vars_not_found = ()
-    else:
+    if variables is not None:
         vars_list = [x for x in variables if x in nc_in.variables]
         vars_not_found = [x for x in variables if x not in nc_in.variables]
+    else:
+        vars_list = nc_in.variables
+        vars_not_found = ()
 
     def extract(name):
         extract_variable(nc_in, nc_out, profiles, name, stations)
