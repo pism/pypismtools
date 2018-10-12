@@ -942,7 +942,7 @@ def define_station_variables(nc):
           "standard_name": "latitude"}),
     ]
 
-    print("Defining station variables...", end=' ')
+    print("Defining station variables...")
     for name, datatype, dimensions, attributes in variables:
         variable = nc.createVariable(name, datatype, dimensions)
         variable.setncatts(attributes)
@@ -1051,7 +1051,7 @@ def define_profile_variables(nc, special_vars=False):
                      ("ty", "f", (stationdim, profiledim),
                       {"long_name": "y-component of the tangential vector"})]
 
-    print("Defining profile variables...", end=' ')
+    print("Defining profile variables...")
     for name, datatype, dimensions, attributes in variables:
         variable = nc.createVariable(name, datatype, dimensions)
         variable.setncatts(attributes)
@@ -1080,7 +1080,7 @@ def copy_attributes(var_in, var_out):
 
 def copy_global_attributes(in_file, out_file):
     "Copy global attributes from in_file to out_file."
-    print("Copying global attributes...", end=' ')
+    print("Copying global attributes...")
     for attribute in in_file.ncattrs():
         setattr(out_file, attribute, getattr(in_file, attribute))
     print("done.")
@@ -1213,7 +1213,7 @@ def extract_profile(variable, profile):
 def copy_dimensions(in_file, out_file, exclude_list):
     """Copy dimensions from in_file to out_file, excluding ones in
     exclude_list."""
-    print("Copying dimensions...", end=' ')
+    print("Copying dimensions...")
     for name, dim in in_file.dimensions.items():
         if (name not in exclude_list and
                 name not in out_file.dimensions):
@@ -1420,8 +1420,8 @@ if __name__ == "__main__":
         # open netCDF file in 'read' mode
         nc_in = NC(options.INPUTFILE[0], 'r')
     except:
-        print(("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
-               % options.INPUTFILE[0]))
+        print("ERROR:  file '%s' not found or not NetCDF format ... ending ..."
+               % options.INPUTFILE[0])
         import sys
         sys.exit()
 
@@ -1456,13 +1456,13 @@ if __name__ == "__main__":
     # define variables storing profile information
     if stations:
         define_station_variables(nc_out)
-        print("Writing stations...", end=' ')
+        print("Writing stations...")
         for k, profile in enumerate(profiles):
             write_station(nc_out, k, profile)
         print("done.")
     else:
         define_profile_variables(nc_out, special_vars=special_vars)
-        print("Writing profiles...", end=' ')
+        print("Writing profiles...")
         for k, profile in enumerate(profiles):
             write_profile(nc_out, k, profile)
         print("done.")

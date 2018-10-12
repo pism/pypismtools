@@ -114,14 +114,14 @@ orientation = options.orientation
 # read in CPT colormap
 cmap_file = args[0]
 try:
-    cdict = plt.cm.datad[cmap_file]
+    cmap = getattr(plt.cm, cmap_file)
     prefix = cmap_file
 except:
     # import and convert colormap
     cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
     prefix = '.'.join(cmap_file.split('.')[0:-1])
     suffix = cmap_file.split('.')[-1]
-
+    cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, N)
 
 class nlcmap(object):
     def __init__(self, cmap, levels):
@@ -140,7 +140,6 @@ class nlcmap(object):
 levels = [0, 10, 100, 250, 750, 3000]
 levels.sort()
 
-cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, N)
 
 
 if colorbar_type in ('linear'):
@@ -148,7 +147,7 @@ if colorbar_type in ('linear'):
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     cb_extend = cb_extend
     format = '%2.0f'
-    ticks = [-750, 0, 250, 500, 750]
+    ticks = None
 elif colorbar_type in ('log_speed_10_3000'):
     data_values = np.linspace(vmin, vmax, N)
     norm = mpl.colors.LogNorm(vmin=10, vmax=3000)
@@ -174,7 +173,7 @@ elif colorbar_type in ('gris_bath_topo'):
     format = '%i'
     ticks = [vmin, 0, 1000, 2000, vmax]
 elif colorbar_type in ('gris_bath_topo_2'):
-    vmin = -2000
+    vmin = -1500
     vmax = 2000
     data_values = np.linspace(vmin, vmax, N)
     N = len(data_values)
@@ -183,7 +182,7 @@ elif colorbar_type in ('gris_bath_topo_2'):
     if colorbar_label is None:
         colorbar_label = 'm a.s.l.'
     format = '%i'
-    ticks = [vmin, -1000, 0, 1000, 2000, vmax]
+    ticks = [vmin, -750, 0, 1000, 2000, vmax]
 elif colorbar_type in ('gris_topo'):
     vmin = 0
     vmax = 2000
