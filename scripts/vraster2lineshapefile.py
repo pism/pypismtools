@@ -19,13 +19,13 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # create file handler which logs even debug messages
-fh = logging.handlers.RotatingFileHandler('extract.log')
+fh = logging.handlers.RotatingFileHandler("extract.log")
 fh.setLevel(logging.DEBUG)
 # create console handler with a higher log level
 ch = logging.StreamHandler()
 ch.setLevel(logging.ERROR)
 # create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(lineno)d - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(lineno)d - %(message)s")
 
 # add formatter to ch and fh
 ch.setFormatter(formatter)
@@ -37,8 +37,7 @@ logger.addHandler(fh)
 
 
 class GeoImgInfo:
-
-    def __init__(self, in_filename, in_dir='.'):
+    def __init__(self, in_filename, in_dir="."):
         self.filename = in_filename
         self.in_dir_path = in_dir
         try:
@@ -51,10 +50,8 @@ class GeoImgInfo:
         self.npix_x = self.gd.RasterXSize
         self.npix_y = self.gd.RasterYSize
         self.xmin = self.gt[0]
-        self.xmax = self.gt[0] + self.npix_x * \
-            self.gt[1] + self.npix_y * self.gt[2]
-        self.ymin = self.gt[3] + self.npix_x * \
-            self.gt[4] + self.npix_y * self.gt[5]
+        self.xmax = self.gt[0] + self.npix_x * self.gt[1] + self.npix_y * self.gt[2]
+        self.ymin = self.gt[3] + self.npix_x * self.gt[4] + self.npix_y * self.gt[5]
         self.ymax = self.gt[3]
         self.dx = self.gt[1]
         self.dy = self.gt[5]
@@ -70,7 +67,7 @@ def getRasterBandArray(in_filename, BandNo=1):
 
 
 def get_dims(nc):
-    '''
+    """
     Gets dimensions from netcdf instance
 
     Parameters:
@@ -80,16 +77,16 @@ def get_dims(nc):
     Returns:
     --------
     xdim, ydim, zdim, tdim: dimensions
-    '''
+    """
 
     # a list of possible x-dimensions names
-    xdims = ['x', 'x1']
+    xdims = ["x", "x1"]
     # a list of possible y-dimensions names
-    ydims = ['y', 'y1']
+    ydims = ["y", "y1"]
     # a list of possible z-dimensions names
-    zdims = ['z', 'z1']
+    zdims = ["z", "z1"]
     # a list of possible time-dimensions names
-    tdims = ['t', 'time']
+    tdims = ["t", "time"]
 
     xdim = None
     ydim = None
@@ -115,34 +112,43 @@ def get_dims(nc):
     return xdim, ydim, zdim, tdim
 
 
-parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
-                        description="Convert rasters containing (U,V) components of velocity field to vector line data.")
+parser = ArgumentParser(
+    formatter_class=ArgumentDefaultsHelpFormatter,
+    description="Convert rasters containing (U,V) components of velocity field to vector line data.",
+)
 parser.add_argument("FILE", nargs=1)
-parser.add_argument("-U", "--Udata", dest="Udata",
-                    help="Raster containing x components of velocity")
-parser.add_argument("-V", "--Vdata", dest="Vdata",
-                    help="Raster containing y components of velocity")
-parser.add_argument("--Uerror", dest="Uerror",
-                    help="Raster containing x components of error", default=None)
-parser.add_argument("--Verror", dest="Verror",
-                    help="Raster containing y components of error", default=None)
-parser.add_argument("--epsg",
-                    dest="epsg", help="EPSG code of project. Overrides input projection", default=None)
-parser.add_argument("-s", "--scale_factor", type=float,
-                    dest="scale_factor", help="Scales length of line. Default=1.", default=1.)
-parser.add_argument("-p", "--prune_factor", type=int,
-                    dest="prune_factor", help="Pruning. Only use every x-th value. Default=1", default=1)
-parser.add_argument("-t", "--threshold", type=float,
-                    dest="threshold", help="Magnitude values smaller or equal than threshold will be masked. Default=None",
-                    default=None)
+parser.add_argument("-U", "--Udata", dest="Udata", help="Raster containing x components of velocity")
+parser.add_argument("-V", "--Vdata", dest="Vdata", help="Raster containing y components of velocity")
+parser.add_argument("--Uerror", dest="Uerror", help="Raster containing x components of error", default=None)
+parser.add_argument("--Verror", dest="Verror", help="Raster containing y components of error", default=None)
+parser.add_argument("--epsg", dest="epsg", help="EPSG code of project. Overrides input projection", default=None)
+parser.add_argument(
+    "-s", "--scale_factor", type=float, dest="scale_factor", help="Scales length of line. Default=1.", default=1.0
+)
+parser.add_argument(
+    "-p",
+    "--prune_factor",
+    type=int,
+    dest="prune_factor",
+    help="Pruning. Only use every x-th value. Default=1",
+    default=1,
+)
+parser.add_argument(
+    "-t",
+    "--threshold",
+    type=float,
+    dest="threshold",
+    help="Magnitude values smaller or equal than threshold will be masked. Default=None",
+    default=None,
+)
 args = parser.parse_args()
 prune_factor = args.prune_factor
 scale_factor = args.scale_factor
 threshold = args.threshold
 
-nc_file_u = args.Udata.split(':')[1]
+nc_file_u = args.Udata.split(":")[1]
 print(nc_file_u)
-nc = NC(nc_file_u, 'r')
+nc = NC(nc_file_u, "r")
 xdim, ydim, zdim, tdim = get_dims(nc)
 
 if tdim:
@@ -168,7 +174,7 @@ Ufill_value = URasterInfo.nodatavalue
 Vfill_value = VRasterInfo.nodatavalue
 
 if args.epsg is None:
-    epsg = int(RasterInfo.proj.split(',')[-1].translate(None, '[]"'''))
+    epsg = int(RasterInfo.proj.split(",")[-1].translate(None, '[]"' ""))
 else:
     epsg = args.epsg
 
@@ -184,41 +190,42 @@ nx, ny = X.shape
 
 # create the schema (fields) and get the EPSG information for the dataset
 schema = {
-    'properties': [('ux', 'float'), ('uy', 'float'), ('speed', 'float'), ('timestamp', 'str')], 'geometry': 'LineString'}
+    "properties": [("ux", "float"), ("uy", "float"), ("speed", "float"), ("timestamp", "str")],
+    "geometry": "LineString",
+}
 
 
 # open the shapefile
-logger.info('Processing')
-with fiona.open(args.FILE[0], 'w', crs=from_epsg(
-        epsg), driver='ESRI Shapefile', schema=schema) as output:
+logger.info("Processing")
+with fiona.open(args.FILE[0], "w", crs=from_epsg(epsg), driver="ESRI Shapefile", schema=schema) as output:
     #    for k in range(RasterCount):
     for k in range(8):
         if tdim is None:
-            timestamp = '0-0-0'
+            timestamp = "0-0-0"
         else:
             timestamp = timestamps[k]
-        logger.info('Processing {}'.format(timestamp))
-        print(('Processing {}'.format(timestamp)))
+        logger.info("Processing {}".format(timestamp))
+        print(("Processing {}".format(timestamp)))
 
-        Ux = getRasterBandArray(args.Udata, BandNo=k+1)[::prune_factor, ::prune_factor]
-        Uy = getRasterBandArray(args.Vdata, BandNo=k+1)[::prune_factor, ::prune_factor]
-        Speed = np.sqrt(Ux**2 + Uy**2)
+        Ux = getRasterBandArray(args.Udata, BandNo=k + 1)[::prune_factor, ::prune_factor]
+        Uy = getRasterBandArray(args.Vdata, BandNo=k + 1)[::prune_factor, ::prune_factor]
+        Speed = np.sqrt(Ux ** 2 + Uy ** 2)
 
         prop_dict = {}
-        prop_dict['ux'] = Ux
-        prop_dict['uy'] = Uy
-        prop_dict['speed'] = Speed
+        prop_dict["ux"] = Ux
+        prop_dict["uy"] = Uy
+        prop_dict["speed"] = Speed
 
         # Read and add error of U component
         if args.Uerror is not None:
-            Ex = getRasterBandArray(args.Uerror, BandNo=k+1)[::prune_factor, ::prune_factor]
-            schema['properties'].append(('ex', 'float'))
-            prop_dict['ex'] = ex
+            Ex = getRasterBandArray(args.Uerror, BandNo=k + 1)[::prune_factor, ::prune_factor]
+            schema["properties"].append(("ex", "float"))
+            prop_dict["ex"] = ex
         # Read and add error of V component
         if args.Verror is not None:
-            Ey = getRasterBandArray(args.Verror, BandNo=k+1)[::prune_factor, ::prune_factor]
-            schema['properties'].append(('ey', 'float'))
-            prop_dict['ey'] = ey
+            Ey = getRasterBandArray(args.Verror, BandNo=k + 1)[::prune_factor, ::prune_factor]
+            schema["properties"].append(("ey", "float"))
+            prop_dict["ey"] = ey
 
         # create features for each x,y pair, and give them the right properties
         m = 0
@@ -226,7 +233,7 @@ with fiona.open(args.FILE[0], 'w', crs=from_epsg(
             for j in range(ny):
                 if (Ux[i, j] != Ufill_value) & (Uy[i, j] != Vfill_value) & (Speed[i, j] > threshold):
                     m += 1
-                    sys.stdout.write('\r')
+                    sys.stdout.write("\r")
                     # Center cooridinates
                     x_c, y_c = X[i, j], Y[i, j]
                     # Start point
@@ -236,9 +243,8 @@ with fiona.open(args.FILE[0], 'w', crs=from_epsg(
                     # Create LineString
                     line = LineString([[x_a, y_a], [x_c, y_c], [x_e, y_e]])
                     line_dict = dict([(k, float(v[i, j])) for (k, v) in prop_dict.items()])
-                    line_dict['timestamp'] = str(timestamp)
-                    output.write(
-                        {'properties': line_dict, 'geometry': mapping(line)})
+                    line_dict["timestamp"] = str(timestamp)
+                    output.write({"properties": line_dict, "geometry": mapping(line)})
 
         print("  {} points found and written".format(str(m)))
 

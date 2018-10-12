@@ -22,28 +22,30 @@ def cmap_map(function, cmap):
     cdict = cmap._segmentdata
     step_dict = {}
     # First get the list of points where the segments start or end
-    for key in ('red', 'green', 'blue'):
+    for key in ("red", "green", "blue"):
         step_dict[key] = [x[0] for x in cdict[key]]
     step_list = sum(list(step_dict.values()), [])
     step_list = np.array(list(set(step_list)))
     # Then compute the LUT, and apply the function to the LUT
 
-    def reduced_cmap(step): return np.array(cmap(step)[0:3])
+    def reduced_cmap(step):
+        return np.array(cmap(step)[0:3])
+
     old_LUT = np.array(list(map(reduced_cmap, step_list)))
     new_LUT = np.array(list(map(function, old_LUT)))
     # Now try to make a minimal segment definition of the new LUT
     cdict = {}
-    for i, key in enumerate(('red', 'green', 'blue')):
+    for i, key in enumerate(("red", "green", "blue")):
         this_cdict = {}
         for j, step in enumerate(step_list):
             if step in step_dict[key]:
                 this_cdict[step] = new_LUT[j, i]
             elif new_LUT[j, i] != old_LUT[j, i]:
                 this_cdict[step] = new_LUT[j, i]
-        colorvector = sorted([x + (x[1], ) for x in list(this_cdict.items())])
+        colorvector = sorted([x + (x[1],) for x in list(this_cdict.items())])
         cdict[key] = colorvector
 
-    return mpl.colors.LinearSegmentedColormap('colormap', cdict, 1024)
+    return mpl.colors.LinearSegmentedColormap("colormap", cdict, 1024)
 
 
 # Set up the option parser
@@ -52,46 +54,77 @@ parser.description = """
 A script to convert a GMT (*.cpt) colormap or matplotlib colormap into QGIS-readable color ramp.
 """
 parser.add_argument("FILE", nargs=1)
-parser.add_argument("--tick_format", dest="tick_format",
-                    help="Overwrite ormat of the tick marks.", default=None)
-parser.add_argument("--font_size", dest="font_size",
-                    help="Font size", default=12)
-parser.add_argument("--type", dest="colorbar_type",
-                    choices=['linear',
-                             'log_speed_10_1500',
-                             'log_speed_10_3000',
-                             'log_speed_j',
-                             'log_speed_2',
-                             'log_speed_3',
-                             'log_speed_4',
-                             'gris_bath_topo',
-                             'gris_bath_topo_2',
-                             'gris_topo',
-                             'log_speed_m_day'],
-                    help="Type of colorbar", default='linear')
-parser.add_argument("--ticks", dest="fticks", nargs='*', type=float,
-                    help="tick marks", default=None)
-parser.add_argument("--colorbar_extend", dest="cb_extend", choices=['neither', 'both', 'min', 'max'],
-                    help='''Extend of colorbar. Default='both'.''', default='both')
-parser.add_argument("--colorbar_label", dest="colorbar_label",
-                    help='''Label for colorbar.''', default=None)
-parser.add_argument("--vmin", dest="vmin", type=float,
-                    help='''
-                    Vmin''', default=1)
-parser.add_argument("--vmax", dest="vmax", type=float,
-                    help='''
-                    Vmax)''', default=3000)
-parser.add_argument("--extend", dest="extend", nargs=2, type=float,
-                    help='''
-                  appends color ramp by repeating first and last color for value''',
-                    default=None)
-parser.add_argument("--N", dest="N", type=int,
-                    help='''
-                  a * logspace(vmin, vmax, N''', default=1022)
-parser.add_argument("-r", "--reverse", dest="reverse", action="store_true",
-                    help="reverse color scale", default=False)
-parser.add_argument("--orientation", dest="orientation", choices=['horizontal', 'vertical'],
-                    help="Orientation, default = 'horizontal", default='horizontal')
+parser.add_argument("--tick_format", dest="tick_format", help="Overwrite ormat of the tick marks.", default=None)
+parser.add_argument("--font_size", dest="font_size", help="Font size", default=12)
+parser.add_argument(
+    "--type",
+    dest="colorbar_type",
+    choices=[
+        "linear",
+        "log_speed_10_1500",
+        "log_speed_10_3000",
+        "log_speed_j",
+        "log_speed_2",
+        "log_speed_3",
+        "log_speed_4",
+        "gris_bath_topo",
+        "gris_bath_topo_2",
+        "gris_topo",
+        "log_speed_m_day",
+    ],
+    help="Type of colorbar",
+    default="linear",
+)
+parser.add_argument("--ticks", dest="fticks", nargs="*", type=float, help="tick marks", default=None)
+parser.add_argument(
+    "--colorbar_extend",
+    dest="cb_extend",
+    choices=["neither", "both", "min", "max"],
+    help="""Extend of colorbar. Default='both'.""",
+    default="both",
+)
+parser.add_argument("--colorbar_label", dest="colorbar_label", help="""Label for colorbar.""", default=None)
+parser.add_argument(
+    "--vmin",
+    dest="vmin",
+    type=float,
+    help="""
+                    Vmin""",
+    default=1,
+)
+parser.add_argument(
+    "--vmax",
+    dest="vmax",
+    type=float,
+    help="""
+                    Vmax)""",
+    default=3000,
+)
+parser.add_argument(
+    "--extend",
+    dest="extend",
+    nargs=2,
+    type=float,
+    help="""
+                  appends color ramp by repeating first and last color for value""",
+    default=None,
+)
+parser.add_argument(
+    "--N",
+    dest="N",
+    type=int,
+    help="""
+                  a * logspace(vmin, vmax, N""",
+    default=1022,
+)
+parser.add_argument("-r", "--reverse", dest="reverse", action="store_true", help="reverse color scale", default=False)
+parser.add_argument(
+    "--orientation",
+    dest="orientation",
+    choices=["horizontal", "vertical"],
+    help="Orientation, default = 'horizontal",
+    default="horizontal",
+)
 
 options = parser.parse_args()
 args = options.FILE
@@ -119,18 +152,18 @@ try:
 except:
     # import and convert colormap
     cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
-    prefix = '.'.join(cmap_file.split('.')[0:-1])
-    suffix = cmap_file.split('.')[-1]
-    cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, N)
+    prefix = ".".join(cmap_file.split(".")[0:-1])
+    suffix = cmap_file.split(".")[-1]
+    cmap = mpl.colors.LinearSegmentedColormap("my_colormap", cdict, N)
+
 
 class nlcmap(object):
     def __init__(self, cmap, levels):
         self.cmap = cmap
-        self.levels = np.asarray(levels, dtype='float64')
+        self.levels = np.asarray(levels, dtype="float64")
         self._x = self.levels
         self.levmax = self.levels.max()
-        self.transformed_levels = np.linspace(0.0, self.levmax,
-                                              len(self.levels))
+        self.transformed_levels = np.linspace(0.0, self.levmax, len(self.levels))
 
     def __call__(self, xi, alpha=1.0, **kw):
         yi = np.interp(xi, self._x, self.transformed_levels)
@@ -141,91 +174,90 @@ levels = [0, 10, 100, 250, 750, 3000]
 levels.sort()
 
 
-
-if colorbar_type in ('linear'):
+if colorbar_type in ("linear"):
     data_values = np.linspace(vmin, vmax, N)
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     cb_extend = cb_extend
-    format = '%2.0f'
+    format = "%2.0f"
     ticks = None
-elif colorbar_type in ('log_speed_10_3000'):
+elif colorbar_type in ("log_speed_10_3000"):
     data_values = np.linspace(vmin, vmax, N)
     norm = mpl.colors.LogNorm(vmin=10, vmax=3000)
     cb_extend = cb_extend
-    colorbar_label = 'm yr$^{-1}$'
-    format = '%2.0f'
+    colorbar_label = "m yr$^{-1}$"
+    format = "%2.0f"
     ticks = [0, 10, 100, 300, 1000, 3000]
-elif colorbar_type in ('log_speed_10_1500'):
+elif colorbar_type in ("log_speed_10_1500"):
     data_values = np.linspace(vmin, vmax, N)
     norm = mpl.colors.LogNorm(vmin=10, vmax=1500)
     cb_extend = cb_extend
     if colorbar_label is None:
-        colorbar_label = 'm yr$^{-1}$'
-    format = '%2.0f'
+        colorbar_label = "m yr$^{-1}$"
+    format = "%2.0f"
     ticks = [0, 10, 100, 300, 1000, 3000]
-elif colorbar_type in ('gris_bath_topo'):
+elif colorbar_type in ("gris_bath_topo"):
     vmin = -800
     vmax = 3000
     data_values = np.linspace(vmin, vmax, N)
     N = len(data_values)
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-    cb_extend = 'both'
-    format = '%i'
+    cb_extend = "both"
+    format = "%i"
     ticks = [vmin, 0, 1000, 2000, vmax]
-elif colorbar_type in ('gris_bath_topo_2'):
+elif colorbar_type in ("gris_bath_topo_2"):
     vmin = -1500
     vmax = 2000
     data_values = np.linspace(vmin, vmax, N)
     N = len(data_values)
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-    cb_extend = 'both'
+    cb_extend = "both"
     if colorbar_label is None:
-        colorbar_label = 'm a.s.l.'
-    format = '%i'
+        colorbar_label = "m a.s.l."
+    format = "%i"
     ticks = [vmin, -750, 0, 1000, 2000, vmax]
-elif colorbar_type in ('gris_topo'):
+elif colorbar_type in ("gris_topo"):
     vmin = 0
     vmax = 2000
     data_values = np.linspace(vmin, vmax, N)
     N = len(data_values)
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-    cb_extend = 'both'
+    cb_extend = "both"
     if colorbar_label is None:
-        colorbar_label = 'm a.s.l.'
-    format = '%i'
+        colorbar_label = "m a.s.l."
+    format = "%i"
     ticks = [vmin, 0, 1000, 2000, vmax]
-    cmap.set_under('#2171b5')
-elif colorbar_type in ('log_speed_j', 'log_speed_3'):
+    cmap.set_under("#2171b5")
+elif colorbar_type in ("log_speed_j", "log_speed_3"):
     data_values = np.logspace(-1, 3, N)[0:889]
     data_values[-1] = vmax
     N = len(data_values)
     norm = mpl.colors.LogNorm(vmin=1, vmax=vmax)
-    cb_extend = 'both'
-    format = '%i'
+    cb_extend = "both"
+    format = "%i"
     ticks = [1, 3, 10, 30, 100, 300, 1000, 3000]
-elif colorbar_type in ('log_speed_2'):
+elif colorbar_type in ("log_speed_2"):
     data_values = np.logspace(-1, 2, N)[0:889]
     data_values[-1] = vmax
     N = len(data_values)
     norm = mpl.colors.LogNorm(vmin=1, vmax=vmax)
-    cb_extend = 'both'
-    format = '%i'
+    cb_extend = "both"
+    format = "%i"
     ticks = [1, 3, 10, 30, 100, 300]
-elif colorbar_type in ('log_speed_4'):
+elif colorbar_type in ("log_speed_4"):
     data_values = np.logspace(-1, 4, N)[0:889]
     data_values[-1] = vmax
     N = len(data_values)
     norm = mpl.colors.LogNorm(vmin=1, vmax=vmax)
-    cb_extend = 'both'
-    format = '%i'
+    cb_extend = "both"
+    format = "%i"
     ticks = [1, 3, 10, 30, 100, 300, 1000, 3000, 10000]
-elif colorbar_type in ('log_speed_m_day'):
+elif colorbar_type in ("log_speed_m_day"):
     data_values = np.logspace(vmin, vmax, N)[0:889]
     data_values[-1] = vmax
     N = len(data_values)
     norm = mpl.colors.LogNorm(vmin=vmin, vmax=vmax)
-    cb_extend = 'both'
-    format = '%2.2f'
+    cb_extend = "both"
+    format = "%2.2f"
     ticks = [0.01, 0.1, 0.5, 1, 5, 10]
 else:
     pass
@@ -240,32 +272,34 @@ matplotlib.rc("font", **{"sans-serif": ["Helvetica"]})  # "size": fontsize}
 matplotlib.rc("font", **{"size": font_size})
 # create the colorbar
 fig = plt.figure()
-if orientation == 'horizontal':
+if orientation == "horizontal":
     ax1 = fig.add_axes([0.0, 0.5, 0.5, 0.03])
 else:
     ax1 = fig.add_axes([0.05, 0.05, 0.03, 0.65])
 if fticks is not None:
     ticks = fticks
 
-cb1 = mpl.colorbar.ColorbarBase(ax1,
-                                cmap=cmap,
-                                norm=norm,
-                                ticks=ticks,
-                                format=format,
-                                extend=cb_extend,
-                                spacing='proportional',
-                                orientation=orientation)
+cb1 = mpl.colorbar.ColorbarBase(
+    ax1,
+    cmap=cmap,
+    norm=norm,
+    ticks=ticks,
+    format=format,
+    extend=cb_extend,
+    spacing="proportional",
+    orientation=orientation,
+)
 
 if colorbar_label:
     cb1.set_label(colorbar_label)
 
 
 # save high-res colorbar as png
-for format in ['png']:
-    prefix = prefix + '_' + orientation
-    out_file = '.'.join([prefix, format])
+for format in ["png"]:
+    prefix = prefix + "_" + orientation
+    out_file = ".".join([prefix, format])
     print(("  writing colorbar %s ..." % out_file))
-    fig.savefig(out_file, bbox_inches='tight', dpi=1200, transparent=True)
+    fig.savefig(out_file, bbox_inches="tight", dpi=1200, transparent=True)
 
 # convert to RGBA array
 rgba = cb1.to_rgba(data_values, alpha=None)
@@ -295,15 +329,6 @@ else:
         qgis_array[k, 4] = 255
 
 # save as ascii file
-out_file = '.'.join([prefix, 'txt'])
+out_file = ".".join([prefix, "txt"])
 print(("  writing colorramp %s ..." % out_file))
-np.savetxt(
-    out_file,
-    qgis_array,
-    delimiter=',',
-    fmt=[
-        '%10.5f',
-        '%i',
-        '%i',
-        '%i',
-        '%i,'])
+np.savetxt(out_file, qgis_array, delimiter=",", fmt=["%10.5f", "%i", "%i", "%i", "%i,"])

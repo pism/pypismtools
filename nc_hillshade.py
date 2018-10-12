@@ -10,13 +10,13 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from netCDF4 import Dataset as NC
 
 # create logger
-logger = logging.getLogger('hillshade')
+logger = logging.getLogger("hillshade")
 logger.setLevel(logging.INFO)
 
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 # create formatter
-formatter = logging.Formatter('%(name)s - %(module)s - %(message)s')
+formatter = logging.Formatter("%(name)s - %(module)s - %(message)s")
 
 # add formatter to ch and fh
 ch.setFormatter(formatter)
@@ -27,7 +27,7 @@ logger.addHandler(ch)
 
 class Hillshade(object):
 
-    '''
+    """
     A class to add a hillshade to a netCDF time-series.
 
     Parameters
@@ -46,9 +46,9 @@ class Hillshade(object):
     threshold_masking_variable: if threshold_masking is True, use this variable to mask variable
     threshold_masking_value: if threshold_masking is True, use this value to mask variable
     zf: 
-    '''
+    """
 
-    def __init__(self, ifile, variable='usurf', threshold_masking=True, variables_to_mask=None, *args, **kwargs):
+    def __init__(self, ifile, variable="usurf", threshold_masking=True, variables_to_mask=None, *args, **kwargs):
         super(Hillshade, self).__init__(*args, **kwargs)
 
         self.threshold_masking = threshold_masking
@@ -56,18 +56,20 @@ class Hillshade(object):
         self.ifile = ifile
         self.variable = variable
         if variables_to_mask is not None:
-            self.variables_to_mask = variables_to_mask.split(',')
+            self.variables_to_mask = variables_to_mask.split(",")
             self.do_masking = True
         else:
             self.variables_to_mask = variables_to_mask
-        self.params = {'altitude': 45,
-                       'azimuth': 45,
-                       'fill_value': 0,
-                       'threshold_masking_variable': 'thk',
-                       'threshold_masking_value': 10,
-                       'zf': 5}
+        self.params = {
+            "altitude": 45,
+            "azimuth": 45,
+            "fill_value": 0,
+            "threshold_masking_variable": "thk",
+            "threshold_masking_value": 10,
+            "zf": 5,
+        }
         for key, value in kwargs:
-            if key in ('altitude', 'azimuth', 'fill_value', 'hillshade_var', 'zf'):
+            if key in ("altitude", "azimuth", "fill_value", "hillshade_var", "zf"):
                 self.params[key] = value
 
         self._check_vars()
@@ -76,48 +78,48 @@ class Hillshade(object):
 
     def _check_vars(self):
 
-        nc = NC(self.ifile, 'r')
-        for mvar in (['time'] + [self.variable]):
+        nc = NC(self.ifile, "r")
+        for mvar in ["time"] + [self.variable]:
             if mvar in nc.variables:
-                logger.info('variable {} found'.format(mvar))
+                logger.info("variable {} found".format(mvar))
             else:
-                logger.info('variable {} NOT found'.format(mvar))
+                logger.info("variable {} NOT found".format(mvar))
 
         if self.do_masking:
-            for mvar in (self.variables_to_mask + [self.params['threshold_masking_variable']]):
+            for mvar in self.variables_to_mask + [self.params["threshold_masking_variable"]]:
                 if mvar in nc.variables:
-                    logger.info('variable {} found'.format(mvar))
+                    logger.info("variable {} found".format(mvar))
                 else:
-                    logger.info('variable {} NOT found'.format(mvar))
+                    logger.info("variable {} NOT found".format(mvar))
         nc.close()
 
     def _cart2pol(self, x, y):
-        '''
+        """
         cartesian to polar coordinates
-        '''
+        """
         theta = np.arctan2(y, x)
-        rho = np.sqrt(x**2 + y**2)
+        rho = np.sqrt(x ** 2 + y ** 2)
         return (theta, rho)
 
     def _create_vars(self):
-        '''
+        """
         create netCDF variables if they don't exist yet
-        '''
+        """
 
         ifile = self.ifile
-        nc = NC(ifile, 'a')
+        nc = NC(ifile, "a")
         variable = self.variable
-        hs_var = variable + '_hs'
+        hs_var = variable + "_hs"
         if hs_var not in nc.variables:
-            nc.createVariable(hs_var, 'i', dimensions=('time', 'y', 'x'), fill_value=fill_value)
+            nc.createVariable(hs_var, "i", dimensions=("time", "y", "x"), fill_value=fill_value)
         nc.close()
 
     def _get_dx(self):
 
-        nc = NC(self.ifile, 'r')
+        nc = NC(self.ifile, "r")
 
-        x0, x1 = nc.variables['x'][0:2]
-        y0, y1 = nc.variables['y'][0:2]
+        x0, x1 = nc.variables["x"][0:2]
+        y0, y1 = nc.variables["y"][0:2]
 
         nc.close()
 
@@ -129,19 +131,19 @@ class Hillshade(object):
         return dx
 
     def _hillshade(self, dem):
-        '''
+        """
         shaded relief using the ESRI algorithm
-        '''
+        """
 
         # lighting azimuth
-        azimuth = self.params['azimuth']
+        azimuth = self.params["azimuth"]
         azimuth = 360.0 - azimuth + 90  # convert to mathematic unit
         if (azimuth > 360) or (azimuth == 360):
             azimuth = azimuth - 360
         azimuth = azimuth * (np.pi / 180)  # convert to radians
 
         # lighting altitude
-        altitude = self.params['altitude']
+        altitude = self.params["altitude"]
         altitude = (90 - altitude) * (np.pi / 180)  # convert to zenith angle in radians
 
         # calc slope and aspect (radians)
@@ -149,43 +151,42 @@ class Hillshade(object):
         fx, fy = np.gradient(dem, dx)  # uses simple, unweighted gradient of immediate
         [asp, grad] = self._cart2pol(fy, fx)  # convert to carthesian coordinates
 
-        zf = self.params['zf']
+        zf = self.params["zf"]
         grad = np.arctan(zf * grad)  # steepest slope
         # convert asp
-        asp[asp < np.pi] = asp[asp < np.pi]+(np.pi / 2)
+        asp[asp < np.pi] = asp[asp < np.pi] + (np.pi / 2)
         asp[asp < 0] = asp[asp < 0] + (2 * np.pi)
 
         # hillshade calculation
-        h = 255.0 * ((np.cos(altitude) * np.cos(grad))
-                     + (np.sin(altitude) * np.sin(grad) * np.cos(azimuth - asp)))
+        h = 255.0 * ((np.cos(altitude) * np.cos(grad)) + (np.sin(altitude) * np.sin(grad) * np.cos(azimuth - asp)))
         h[h < 0] = 0  # set hillshade values to min of 0.
 
         return h
 
     def run(self):
-        logger.info('Processing file {}'.format(ifile))
-        fill_value = self.params['fill_value']
-        hs_var = self.variable + '_hs'
-        nc = NC(ifile, 'a')
-        nt = len(nc.variables['time'][:])
+        logger.info("Processing file {}".format(ifile))
+        fill_value = self.params["fill_value"]
+        hs_var = self.variable + "_hs"
+        nc = NC(ifile, "a")
+        nt = len(nc.variables["time"][:])
         for t in range(nt):
-            logger.info('Processing time {} of {}'.format(t, nt))
-            dem = nc.variables['usurf'][t, Ellipsis]
+            logger.info("Processing time {} of {}".format(t, nt))
+            dem = nc.variables["usurf"][t, Ellipsis]
             hs = self._hillshade(dem)
             hs[dem == 0] = fill_value
             nc.variables[hs_var][t, Ellipsis] = hs
             if self.threshold_masking:
-                m = nc.variables[self.params['threshold_masking_variable']][t, Ellipsis]
-                hs[m <= self.params['threshold_masking_value']] = fill_value
+                m = nc.variables[self.params["threshold_masking_variable"]][t, Ellipsis]
+                hs[m <= self.params["threshold_masking_value"]] = fill_value
             if self.do_masking:
                 for mvar in self.variables_to_mask:
-                    mt = nc.variables[self.params['threshold_masking_variable']][t, Ellipsis]
+                    mt = nc.variables[self.params["threshold_masking_variable"]][t, Ellipsis]
                     m = nc.variables[mvar][t, Ellipsis]
                     try:
                         m_fill_value = nc.variables[mvar]._FillValue
                     except:
                         m_fill_value = fill_value
-                    m[mt < self.params['threshold_masking_value']] = m_fill_value
+                    m[mt < self.params["threshold_masking_value"]] = m_fill_value
                     nc.variables[mvar][t, Ellipsis] = m
 
         nc.close()
@@ -196,29 +197,41 @@ if __name__ == "__main__":
     # set up the option parser
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.description = "Adding a hillshade to a netCDF file."
-    parser.add_argument("FILE", nargs=1,
-                        help="netCDF file with dimensions ('time', 'y', 'x'). Other permutations are currently not supported")
-    parser.add_argument("-v", "--variable", dest='variable',
-                        help="Variable used for hillshade", default='usurf')
-    parser.add_argument("--altitude", dest='altitude', type=float,
-                        help="Altitude for hillshade", default=45)
-    parser.add_argument("--azimuth", dest='azimuth', type=float,
-                        help="Azimuth for hillshade", default=45)
-    parser.add_argument("--fill_value", dest='fill_value', type=float,
-                        help="Fill value for masking", default=0)
-    parser.add_argument("--threshold_masking", dest='threshold_masking', action="store_false",
-                        help="Masking above threshold", default=True)
-    parser.add_argument("--threshold_masking_variable", dest='threshold_masking_variable',
-                        help="Variable to use for threshold masking", default='thk')
-    parser.add_argument("--threshold_masking_value", dest='threshold_masking_value', type=float,
-                        help="Value to use for threshold masking", default=10)
-    parser.add_argument("--zf", dest='zf', type=float,
-                        help="Zf", default=5)
+    parser.add_argument(
+        "FILE",
+        nargs=1,
+        help="netCDF file with dimensions ('time', 'y', 'x'). Other permutations are currently not supported",
+    )
+    parser.add_argument("-v", "--variable", dest="variable", help="Variable used for hillshade", default="usurf")
+    parser.add_argument("--altitude", dest="altitude", type=float, help="Altitude for hillshade", default=45)
+    parser.add_argument("--azimuth", dest="azimuth", type=float, help="Azimuth for hillshade", default=45)
+    parser.add_argument("--fill_value", dest="fill_value", type=float, help="Fill value for masking", default=0)
+    parser.add_argument(
+        "--threshold_masking",
+        dest="threshold_masking",
+        action="store_false",
+        help="Masking above threshold",
+        default=True,
+    )
+    parser.add_argument(
+        "--threshold_masking_variable",
+        dest="threshold_masking_variable",
+        help="Variable to use for threshold masking",
+        default="thk",
+    )
+    parser.add_argument(
+        "--threshold_masking_value",
+        dest="threshold_masking_value",
+        type=float,
+        help="Value to use for threshold masking",
+        default=10,
+    )
+    parser.add_argument("--zf", dest="zf", type=float, help="Zf", default=5)
 
     options = parser.parse_args()
     ifile = options.FILE[0]
-    delattr(options, 'FILE')
+    delattr(options, "FILE")
     variable = options.variable
-    delattr(options, 'variable')
+    delattr(options, "variable")
     hs = Hillshade(ifile, variable, **vars(options))
     hs.run()

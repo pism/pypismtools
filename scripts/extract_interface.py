@@ -21,13 +21,13 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # create file handler which logs even debug messages
-fh = logging.handlers.RotatingFileHandler('extract.log')
+fh = logging.handlers.RotatingFileHandler("extract.log")
 fh.setLevel(logging.DEBUG)
 # create console handler with a higher log level
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 # create formatter
-formatter = logging.Formatter('%(module)s:%(lineno)d - %(message)s')
+formatter = logging.Formatter("%(module)s:%(lineno)d - %(message)s")
 
 # add formatter to ch and fh
 ch.setFormatter(formatter)
@@ -39,16 +39,16 @@ logger.addHandler(fh)
 
 
 def create_memory_layer(dst_fieldname):
-    '''
+    """
     Create a in-memory layer with 1 OFTInteger field
-    '''
+    """
 
     srs = None
-    if src_ds.GetProjectionRef() != '':
+    if src_ds.GetProjectionRef() != "":
         srs = osr.SpatialReference()
         srs.ImportFromWkt(src_ds.GetProjection())
 
-    layer = mem_ds.CreateLayer('poly', srs, ogr.wkbPolygon)
+    layer = mem_ds.CreateLayer("poly", srs, ogr.wkbPolygon)
 
     fd = ogr.FieldDefn(dst_fieldname, ogr.OFTInteger)
     layer.CreateField(fd)
@@ -58,18 +58,18 @@ def create_memory_layer(dst_fieldname):
 
 
 def validateShapePath(shapePath):
-    '''Validate shapefile extension'''
-    return os.path.splitext(str(shapePath))[0] + '.shp'
+    """Validate shapefile extension"""
+    return os.path.splitext(str(shapePath))[0] + ".shp"
 
 
 def validateShapeData(shapeData):
-    '''Make sure we can access the shapefile'''
+    """Make sure we can access the shapefile"""
     # Make sure the shapefile exists
     if not shapeData:
-        raise ShapeDataError('The shapefile is invalid')
+        raise ShapeDataError("The shapefile is invalid")
     # Make sure there is exactly one layer
     if shapeData.GetLayerCount() != 1:
-        raise ShapeDataError('The shapefile must have exactly one layer')
+        raise ShapeDataError("The shapefile must have exactly one layer")
 
 
 # Error
@@ -77,29 +77,40 @@ class ShapeDataError(Exception):
     pass
 
 
-parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
-                        description='''A script to extract interfaces (calving front, ice-ocean, or groundling line) from a PISM netCDF file, and save it as a shapefile (polygon).''')
+parser = ArgumentParser(
+    formatter_class=ArgumentDefaultsHelpFormatter,
+    description="""A script to extract interfaces (calving front, ice-ocean, or groundling line) from a PISM netCDF file, and save it as a shapefile (polygon).""",
+)
 parser.add_argument("FILE", nargs=1)
-parser.add_argument("-a", "--area_threshold", dest="area_threshold",
-                    help="Only save features with an area > area_threshold", default=200)
-parser.add_argument("-e", "--epsg", dest="epsg", type=int,
-                    help="Sets EPSG code", default=None)
-parser.add_argument("-l", "--level", dest="level", type=float,
-                    help="Which contour level to extract. Used in combination with 'contour'", default=1000)
-parser.add_argument("-o", "--output_filename", dest="out_file",
-                    help="Name of the output shape file", default='interface.shp')
-parser.add_argument("-m", "--mask_variable", dest="dst_fieldname",
-                    help="Name of variable to use", default='mask')
-parser.add_argument("-s", "--step", dest="step", type=int,
-                    help="Only extract every step value", default=1)
-parser.add_argument("-t", "--type", dest="extract_type",
-                    choices=['calving_front',
-                             'grounded_floating',
-                             'ice_noice', 'ice_ocean',
-                             'grounding_line',
-                             'ela',
-                             'contour'],
-                    help="Interface to extract.", default='ice_ocean')
+parser.add_argument(
+    "-a",
+    "--area_threshold",
+    dest="area_threshold",
+    help="Only save features with an area > area_threshold",
+    default=200,
+)
+parser.add_argument("-e", "--epsg", dest="epsg", type=int, help="Sets EPSG code", default=None)
+parser.add_argument(
+    "-l",
+    "--level",
+    dest="level",
+    type=float,
+    help="Which contour level to extract. Used in combination with 'contour'",
+    default=1000,
+)
+parser.add_argument(
+    "-o", "--output_filename", dest="out_file", help="Name of the output shape file", default="interface.shp"
+)
+parser.add_argument("-m", "--mask_variable", dest="dst_fieldname", help="Name of variable to use", default="mask")
+parser.add_argument("-s", "--step", dest="step", type=int, help="Only extract every step value", default=1)
+parser.add_argument(
+    "-t",
+    "--type",
+    dest="extract_type",
+    choices=["calving_front", "grounded_floating", "ice_noice", "ice_ocean", "grounding_line", "ela", "contour"],
+    help="Interface to extract.",
+    default="ice_ocean",
+)
 
 
 options = parser.parse_args()
@@ -109,11 +120,11 @@ epsg = options.epsg
 extract_type = options.extract_type
 level = options.level
 shp_filename = options.out_file
-ts_fieldname = 'timestamp'
+ts_fieldname = "timestamp"
 dst_fieldname = options.dst_fieldname
 step = options.step
 
-nc = NC(filename, 'r')
+nc = NC(filename, "r")
 xdim, ydim, zdim, tdim = ppt.get_dims(nc)
 
 if tdim:
@@ -127,21 +138,21 @@ else:
     tdim = None
 nc.close()
 
-src_ds = gdal.Open('NETCDF:{}:{}'.format(filename, dst_fieldname))
+src_ds = gdal.Open("NETCDF:{}:{}".format(filename, dst_fieldname))
 
 # Get Memory Driver
-mem_driver = ogr.GetDriverByName('Memory')
-mem_ds = mem_driver.CreateDataSource('memory_layer')
+mem_driver = ogr.GetDriverByName("Memory")
+mem_ds = mem_driver.CreateDataSource("memory_layer")
 
 # Get SHP Driver
-shp_driver = ogr.GetDriverByName('ESRI Shapefile')
+shp_driver = ogr.GetDriverByName("ESRI Shapefile")
 shp_filename = validateShapePath(shp_filename)
 if os.path.exists(shp_filename):
     os.remove(shp_filename)
 dst_ds = shp_driver.CreateDataSource(shp_filename)
 
 srs = None
-if src_ds.GetProjectionRef() != '':
+if src_ds.GetProjectionRef() != "":
     srs = osr.SpatialReference()
     srs.ImportFromWkt(src_ds.GetProjection())
 
@@ -150,60 +161,60 @@ if epsg is not None:
     srs.ImportFromEPSG(epsg)
 
 
-interface_layer = dst_ds.CreateLayer('interface', srs, ogr.wkbPolygon)
+interface_layer = dst_ds.CreateLayer("interface", srs, ogr.wkbPolygon)
 fd = ogr.FieldDefn(ts_fieldname, ogr.OFTString)
 interface_layer.CreateField(fd)
-fd = ogr.FieldDefn('area', ogr.OFTInteger)
+fd = ogr.FieldDefn("area", ogr.OFTInteger)
 interface_layer.CreateField(fd)
-fd = ogr.FieldDefn('timestep', ogr.OFTInteger)
+fd = ogr.FieldDefn("timestep", ogr.OFTInteger)
 interface_layer.CreateField(fd)
 interface_dst_field = 0
 
 bufferDist = 1
-if extract_type in ('calving_front'):
+if extract_type in ("calving_front"):
     a_value = 4
     b_value = 3
-elif extract_type in ('grounded_floating'):
+elif extract_type in ("grounded_floating"):
     a_value = 3
     b_value = 2
-elif extract_type in ('ice_ocean'):
+elif extract_type in ("ice_ocean"):
     a_value = 4
     b_value = [2, 3]
-elif extract_type in ('ice_noice'):
+elif extract_type in ("ice_noice"):
     a_value = 1
     b_value = 0
-elif extract_type in ('grounding_line'):
+elif extract_type in ("grounding_line"):
     a_value = 2
     b_value = [0, 3, 4]
-elif extract_type in ('ela'):
+elif extract_type in ("ela"):
     a_value = 0
     b_value = 0
-elif extract_type in ('contour'):
+elif extract_type in ("contour"):
     a_value = level
     b_value = level
 else:
-    print(('Type {} not recognized'.format(extact_type)))
+    print(("Type {} not recognized".format(extact_type)))
     import sys
+
     sys.exit(0)
 
 time_step = 0
 for k in np.arange(0, src_ds.RasterCount, step):
 
     if tdim is None:
-        timestamp = '0-0-0'
+        timestamp = "0-0-0"
     else:
         timestamp = timestamps[k]
-    logger.info('Processing {}'.format(timestamp))
+    logger.info("Processing {}".format(timestamp))
     srcband = src_ds.GetRasterBand(k + 1)
     poly_layer, dst_field = create_memory_layer(dst_fieldname)
-    logger.debug('Running gdal.Polygonize()')
-    result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [],
-                             callback=gdal.TermProgress)
-    if extract_type in ['ela', 'contour']:
+    logger.debug("Running gdal.Polygonize()")
+    result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [], callback=gdal.TermProgress)
+    if extract_type in ["ela", "contour"]:
         poly_layer.SetAttributeFilter("{} > {}".format(dst_fieldname, b_value))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, a_value))
-    logger.debug('Extracting interface A')
+    logger.debug("Extracting interface A")
     a_layer, dst_field = create_memory_layer(dst_fieldname)
     featureDefn = a_layer.GetLayerDefn()
     for m, feature in enumerate(poly_layer):
@@ -214,17 +225,21 @@ for k in np.arange(0, src_ds.RasterCount, step):
         outFeature.SetGeometry(geomBuffer)
         a_layer.CreateFeature(outFeature)
 
-    if extract_type in ['grounding_line']:
-        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}  OR {dn} = {val3}".format(
-            dn=dst_fieldname, val1=b_value[0], val2=b_value[1], val3=b_value[2]))
-    elif extract_type in ['ice_ocean']:
-        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(
-            dn=dst_fieldname, val1=b_value[0], val2=b_value[1]))
-    elif extract_type in ['ela', 'contour']:
+    if extract_type in ["grounding_line"]:
+        poly_layer.SetAttributeFilter(
+            "{dn} = {val1} OR {dn} = {val2}  OR {dn} = {val3}".format(
+                dn=dst_fieldname, val1=b_value[0], val2=b_value[1], val3=b_value[2]
+            )
+        )
+    elif extract_type in ["ice_ocean"]:
+        poly_layer.SetAttributeFilter(
+            "{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1])
+        )
+    elif extract_type in ["ela", "contour"]:
         poly_layer.SetAttributeFilter("{} < {}".format(dst_fieldname, b_value))
     else:
         poly_layer.SetAttributeFilter("{} = {}".format(dst_fieldname, b_value))
-    logger.debug('Extracting interface B')
+    logger.debug("Extracting interface B")
     b_layer, dst_field = create_memory_layer(dst_fieldname)
     featureDefn = b_layer.GetLayerDefn()
     for m, feature in enumerate(poly_layer):
@@ -236,26 +251,26 @@ for k in np.arange(0, src_ds.RasterCount, step):
         b_layer.CreateFeature(outFeature)
 
     # Now clip layers
-    logger.debug('Clipping A and B')
+    logger.debug("Clipping A and B")
     tmp_layer, dst_field = create_memory_layer(dst_fieldname)
     a_layer.Clip(b_layer, tmp_layer)
     poly_layer = None
     a_layer = None
     b_layer = None
 
-    logger.info('Saving results')
+    logger.info("Saving results")
     featureDefn = interface_layer.GetLayerDefn()
     for feature in tmp_layer:
         # create a new feature
         outFeature = ogr.Feature(featureDefn)
         outFeature.SetGeometry(feature.GetGeometryRef())
-        i = outFeature.GetFieldIndex('timestep')
+        i = outFeature.GetFieldIndex("timestep")
         outFeature.SetField(i, int(time_step))
         i = outFeature.GetFieldIndex(ts_fieldname)
         outFeature.SetField(i, str(timestamp))
         geom = feature.GetGeometryRef()
         area = geom.GetArea()
-        i = outFeature.GetFieldIndex('area')
+        i = outFeature.GetFieldIndex("area")
         outFeature.SetField(i, int(area))
         # add the feature to the output layer
         if area >= area_threshold:

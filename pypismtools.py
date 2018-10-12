@@ -1,4 +1,4 @@
-'''
+"""
 pypismtools: Tools to evaluate PISM parameter studies
 
 pypismtools is a module to facilitate evaluation of PISM parameter
@@ -12,7 +12,7 @@ is to provide a robust tool to evaluate data, and to avoid common mistakes
 such as mis-labeling plots. Additional functions include routines to
 permute (netcdf) dimension, convert units using udunits, to estimate
 trends, and to import GMT colormaps.
-'''
+"""
 
 __author__ = "Andy Aschwanden"
 
@@ -32,14 +32,14 @@ DEBUG = None
 
 class GeoTIFF(object):
 
-    '''
+    """
     A class to read a GeoTIFF
 
     Parameters
     ----------
 
     filename: a valid geotiff file
-    '''
+    """
 
     def __init__(self, file_name):
 
@@ -76,13 +76,12 @@ class GeoTIFF(object):
         self.X, self.Y = np.meshgrid(self.easting, self.northing)
 
         p_osr_gtiff = Proj(self.proj4)
-        self.lon_0, self.lat_0 = p_osr_gtiff(self.center_x, self.center_y,
-                                             inverse=True)
+        self.lon_0, self.lat_0 = p_osr_gtiff(self.center_x, self.center_y, inverse=True)
         self.lon, self.lat = p_osr_gtiff(self.X, self.Y, inverse=True)
 
 
 def get_dims(nc):
-    '''
+    """
     Gets dimensions from netcdf instance
 
     Parameters:
@@ -92,16 +91,16 @@ def get_dims(nc):
     Returns:
     --------
     xdim, ydim, zdim, tdim: dimensions
-    '''
+    """
 
     # a list of possible x-dimensions names
-    xdims = ['x', 'x1']
+    xdims = ["x", "x1"]
     # a list of possible y-dimensions names
-    ydims = ['y', 'y1']
+    ydims = ["y", "y1"]
     # a list of possible z-dimensions names
-    zdims = ['z', 'z1']
+    zdims = ["z", "z1"]
     # a list of possible time-dimensions names
-    tdims = ['t', 'time']
+    tdims = ["t", "time"]
 
     xdim = None
     ydim = None
@@ -128,7 +127,7 @@ def get_dims(nc):
 
 
 def get_projection_from_file(nc):
-    '''
+    """
     Gets a Proj projection instance from a pointer to a netCDF file
 
     Parameters
@@ -138,7 +137,7 @@ def get_projection_from_file(nc):
     Returns
     -------
     p : Proj4 projection instance
-    '''
+    """
 
     from pyproj import Proj
 
@@ -146,66 +145,63 @@ def get_projection_from_file(nc):
     # which contains a Proj4 string:
     try:
         p = Proj(str(nc.proj4))
-        print(
-            'Found projection information in global attribute proj4, using it')
+        print("Found projection information in global attribute proj4, using it")
     except:
         try:
             p = Proj(str(nc.projection))
-            print(
-                'Found projection information in global attribute projection, using it')
+            print("Found projection information in global attribute projection, using it")
         except:
             try:
                 # go through variables and look for 'grid_mapping' attribute
                 for var in list(nc.variables.keys()):
-                    if hasattr(nc.variables[var], 'grid_mapping'):
+                    if hasattr(nc.variables[var], "grid_mapping"):
                         mappingvarname = nc.variables[var].grid_mapping
-                        print((
-                            'Found projection information in variable "%s", using it' %
-                            mappingvarname))
+                        print(('Found projection information in variable "%s", using it' % mappingvarname))
                         break
                 var_mapping = nc.variables[mappingvarname]
-                p = Proj(proj="stere",
-                         ellps=var_mapping.ellipsoid,
-                         datum=var_mapping.ellipsoid,
-                         units="m",
-                         lat_ts=var_mapping.standard_parallel,
-                         lat_0=var_mapping.latitude_of_projection_origin,
-                         lon_0=var_mapping.straight_vertical_longitude_from_pole,
-                         x_0=var_mapping.false_easting,
-                         y_0=var_mapping.false_northing)
+                p = Proj(
+                    proj="stere",
+                    ellps=var_mapping.ellipsoid,
+                    datum=var_mapping.ellipsoid,
+                    units="m",
+                    lat_ts=var_mapping.standard_parallel,
+                    lat_0=var_mapping.latitude_of_projection_origin,
+                    lon_0=var_mapping.straight_vertical_longitude_from_pole,
+                    x_0=var_mapping.false_easting,
+                    y_0=var_mapping.false_northing,
+                )
             except:
-                print('No mapping information found, return empy string.')
-                p = ''
+                print("No mapping information found, return empy string.")
+                p = ""
 
     return p
 
 
 def add_inner_title(ax, title, loc, size=None, **kwargs):
-    '''
+    """
     Adds an inner title to a given axis, with location loc.
 
     from http://matplotlib.sourceforge.net/examples/axes_grid/demo_axes_grid2.html
-    '''
+    """
     from matplotlib.offsetbox import AnchoredText
     from matplotlib.patheffects import withStroke
+
     if size is None:
-        size = dict(size=plt.rcParams['legend.fontsize'])
-    at = AnchoredText(title, loc=loc, prop=size,
-                      pad=0., borderpad=0.5,
-                      frameon=False, **kwargs)
+        size = dict(size=plt.rcParams["legend.fontsize"])
+    at = AnchoredText(title, loc=loc, prop=size, pad=0.0, borderpad=0.5, frameon=False, **kwargs)
     ax.add_artist(at)
     return at
 
 
 def get_golden_mean():
-    '''
+    """
     Returns golden mean (sqrt(5) - 1.0) / 2.0
-    '''
+    """
     return (np.sqrt(5) - 1.0) / 2.0
 
 
 def set_mode(mode, aspect_ratio=0.95):
-    '''
+    """
     Set the print mode, i.e. document and font size. Options are:
     - onecol: width=80mm, font size=8pt. Appropriate for 1-column figures
     - twocol: width=160mm, font size=8pt. Default.
@@ -215,14 +211,14 @@ def set_mode(mode, aspect_ratio=0.95):
     - height: height=2.5in.
     - small: width=80mm, font size=6pt
     - presentation: width=85mm, font size=10pt. For presentations.
-    '''
+    """
 
-    linestyle = '-'
+    linestyle = "-"
 
     def set_onecol():
-        '''
+        """
         Define parameters for "publish" mode and return value for pad_inches
-        '''
+        """
 
         fontsize = 6
         lw = 0.5
@@ -231,27 +227,29 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'ps',
-                  'axes.linewidth': 0.5,
-                  'lines.linewidth': lw,
-                  'axes.labelsize': fontsize,
-                  'font.size': fontsize,
-                  'xtick.labelsize': fontsize,
-                  'ytick.labelsize': fontsize,
-                  'legend.fontsize': fontsize,
-                  'lines.linestyle': linestyle,
-                  'lines.markersize': markersize,
-                  'font.size': fontsize,
-                  'figure.figsize': fig_size}
+        params = {
+            "backend": "ps",
+            "axes.linewidth": 0.5,
+            "lines.linewidth": lw,
+            "axes.labelsize": fontsize,
+            "font.size": fontsize,
+            "xtick.labelsize": fontsize,
+            "ytick.labelsize": fontsize,
+            "legend.fontsize": fontsize,
+            "lines.linestyle": linestyle,
+            "lines.markersize": markersize,
+            "font.size": fontsize,
+            "figure.figsize": fig_size,
+        }
 
         plt.rcParams.update(params)
 
         return lw, 0.30
 
     def set_small():
-        '''
+        """
         Define parameters for "publish" mode and return value for pad_inches
-        '''
+        """
 
         fontsize = 6
         lw = 0.5
@@ -260,28 +258,30 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'ps',
-                  'axes.linewidth': 0.5,
-                  'lines.linewidth': lw,
-                  'axes.labelsize': fontsize,
-                  'font.size': fontsize,
-                  'xtick.labelsize': fontsize,
-                  'ytick.labelsize': fontsize,
-                  'legend.fontsize': fontsize,
-                  'lines.linestyle': linestyle,
-                  'lines.markersize': markersize,
-                  'lines.markeredgewidth': 0.2,
-                  'font.size': fontsize,
-                  'figure.figsize': fig_size}
+        params = {
+            "backend": "ps",
+            "axes.linewidth": 0.5,
+            "lines.linewidth": lw,
+            "axes.labelsize": fontsize,
+            "font.size": fontsize,
+            "xtick.labelsize": fontsize,
+            "ytick.labelsize": fontsize,
+            "legend.fontsize": fontsize,
+            "lines.linestyle": linestyle,
+            "lines.markersize": markersize,
+            "lines.markeredgewidth": 0.2,
+            "font.size": fontsize,
+            "figure.figsize": fig_size,
+        }
 
         plt.rcParams.update(params)
 
         return lw, 0.20
 
     def set_72mm():
-        '''
+        """
         Define parameters for "72mm" mode and return value for pad_inches
-        '''
+        """
 
         fontsize = 6
         markersize = 3
@@ -290,56 +290,60 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'ps',
-                  'axes.linewidth': 0.35,
-                  'lines.linewidth': lw,
-                  'axes.labelsize': fontsize,
-                  'font.size': fontsize,
-                  'xtick.labelsize': fontsize,
-                  'ytick.labelsize': fontsize,
-                  'legend.fontsize': fontsize,
-                  'lines.linestyle': linestyle,
-                  'lines.markersize': markersize,
-                  'font.size': fontsize,
-                  'figure.figsize': fig_size}
+        params = {
+            "backend": "ps",
+            "axes.linewidth": 0.35,
+            "lines.linewidth": lw,
+            "axes.labelsize": fontsize,
+            "font.size": fontsize,
+            "xtick.labelsize": fontsize,
+            "ytick.labelsize": fontsize,
+            "legend.fontsize": fontsize,
+            "lines.linestyle": linestyle,
+            "lines.markersize": markersize,
+            "font.size": fontsize,
+            "figure.figsize": fig_size,
+        }
 
         plt.rcParams.update(params)
 
         return lw, 0.20
 
     def set_50mm():
-        '''
+        """
         Define parameters for "72mm" mode and return value for pad_inches
-        '''
+        """
 
         fontsize = 5
         markersize = 2.5
         lw = 0.6
-        fig_width = 2.  # inch
+        fig_width = 2.0  # inch
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'ps',
-                  'axes.linewidth': 0.3,
-                  'lines.linewidth': lw,
-                  'axes.labelsize': fontsize,
-                  'font.size': fontsize,
-                  'xtick.labelsize': fontsize,
-                  'ytick.labelsize': fontsize,
-                  'legend.fontsize': fontsize,
-                  'lines.linestyle': linestyle,
-                  'lines.markersize': markersize,
-                  'font.size': fontsize,
-                  'figure.figsize': fig_size}
+        params = {
+            "backend": "ps",
+            "axes.linewidth": 0.3,
+            "lines.linewidth": lw,
+            "axes.labelsize": fontsize,
+            "font.size": fontsize,
+            "xtick.labelsize": fontsize,
+            "ytick.labelsize": fontsize,
+            "legend.fontsize": fontsize,
+            "lines.linestyle": linestyle,
+            "lines.markersize": markersize,
+            "font.size": fontsize,
+            "figure.figsize": fig_size,
+        }
 
         plt.rcParams.update(params)
 
         return lw, 0.10
 
     def set_medium():
-        '''
+        """
         Define parameters for "medium" mode and return value for pad_inches
-        '''
+        """
 
         fontsize = 8
         markersize = 3
@@ -348,27 +352,29 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'ps',
-                  'axes.linewidth': 0.5,
-                  'lines.linewidth': lw,
-                  'axes.labelsize': fontsize,
-                  'font.size': fontsize,
-                  'xtick.labelsize': fontsize,
-                  'ytick.labelsize': fontsize,
-                  'legend.fontsize': fontsize,
-                  'lines.linestyle': linestyle,
-                  'lines.markersize': markersize,
-                  'font.size': fontsize,
-                  'figure.figsize': fig_size}
+        params = {
+            "backend": "ps",
+            "axes.linewidth": 0.5,
+            "lines.linewidth": lw,
+            "axes.labelsize": fontsize,
+            "font.size": fontsize,
+            "xtick.labelsize": fontsize,
+            "ytick.labelsize": fontsize,
+            "legend.fontsize": fontsize,
+            "lines.linestyle": linestyle,
+            "lines.markersize": markersize,
+            "font.size": fontsize,
+            "figure.figsize": fig_size,
+        }
 
         plt.rcParams.update(params)
 
         return lw, 0.10
 
     def set_small_font():
-        '''
+        """
         Define parameters for "small_font" mode and return value for pad_inches
-        '''
+        """
 
         fontsize = 6
         markersize = 2
@@ -377,27 +383,29 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'ps',
-                  'axes.linewidth': 0.5,
-                  'lines.linewidth': lw,
-                  'axes.labelsize': fontsize,
-                  'font.size': fontsize,
-                  'xtick.labelsize': fontsize,
-                  'ytick.labelsize': fontsize,
-                  'legend.fontsize': fontsize,
-                  'lines.linestyle': linestyle,
-                  'lines.markersize': markersize,
-                  'font.size': fontsize,
-                  'figure.figsize': fig_size}
+        params = {
+            "backend": "ps",
+            "axes.linewidth": 0.5,
+            "lines.linewidth": lw,
+            "axes.labelsize": fontsize,
+            "font.size": fontsize,
+            "xtick.labelsize": fontsize,
+            "ytick.labelsize": fontsize,
+            "legend.fontsize": fontsize,
+            "lines.linestyle": linestyle,
+            "lines.markersize": markersize,
+            "font.size": fontsize,
+            "figure.figsize": fig_size,
+        }
 
         plt.rcParams.update(params)
 
         return lw, 0.10
 
     def set_large_font():
-        '''
+        """
         Define parameters for "large_font" mode and return value for pad_inches
-        '''
+        """
 
         fontsize = 10
         markersize = 9
@@ -406,28 +414,30 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'ps',
-                  'axes.linewidth': 0.5,
-                  'lines.linewidth': lw,
-                  'axes.labelsize': fontsize,
-                  'font.size': fontsize,
-                  'xtick.labelsize': fontsize,
-                  'ytick.labelsize': fontsize,
-                  'legend.fontsize': fontsize,
-                  'lines.linestyle': linestyle,
-                  'lines.markersize': markersize,
-                  'font.size': fontsize,
-                  'figure.figsize': fig_size}
+        params = {
+            "backend": "ps",
+            "axes.linewidth": 0.5,
+            "lines.linewidth": lw,
+            "axes.labelsize": fontsize,
+            "font.size": fontsize,
+            "xtick.labelsize": fontsize,
+            "ytick.labelsize": fontsize,
+            "legend.fontsize": fontsize,
+            "lines.linestyle": linestyle,
+            "lines.markersize": markersize,
+            "font.size": fontsize,
+            "figure.figsize": fig_size,
+        }
 
         plt.rcParams.update(params)
 
         return lw, 0.20
 
     def set_presentation():
-        '''
+        """
         Define parameters for "presentation" mode and return value
         for pad_inches
-        '''
+        """
 
         fontsize = 8
         lw = 1.5
@@ -436,99 +446,105 @@ def set_mode(mode, aspect_ratio=0.95):
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'ps',
-                  'axes.linewidth': 0.75,
-                  'lines.linewidth': lw,
-                  'axes.labelsize': fontsize,
-                  'font.size': fontsize,
-                  'xtick.labelsize': fontsize,
-                  'ytick.labelsize': fontsize,
-                  'lines.linestyle': linestyle,
-                  'lines.markersize': markersize,
-                  'legend.fontsize': fontsize,
-                  'font.size': fontsize,
-                  'figure.figsize': fig_size}
+        params = {
+            "backend": "ps",
+            "axes.linewidth": 0.75,
+            "lines.linewidth": lw,
+            "axes.labelsize": fontsize,
+            "font.size": fontsize,
+            "xtick.labelsize": fontsize,
+            "ytick.labelsize": fontsize,
+            "lines.linestyle": linestyle,
+            "lines.markersize": markersize,
+            "legend.fontsize": fontsize,
+            "font.size": fontsize,
+            "figure.figsize": fig_size,
+        }
 
         plt.rcParams.update(params)
 
         return lw, 0.2
 
     def set_twocol():
-        '''
+        """
         Define parameters for "twocol" mode and return value for pad_inches
-        '''
+        """
 
         fontsize = 7
-        lw = .75
+        lw = 0.75
         markersize = 3
-        fig_width = 6.3   # inch
+        fig_width = 6.3  # inch
         fig_height = aspect_ratio * fig_width  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'ps',
-                  'axes.linewidth': 0.5,
-                  'lines.linewidth': lw,
-                  'axes.labelsize': fontsize,
-                  'font.size': fontsize,
-                  'xtick.labelsize': fontsize,
-                  'ytick.labelsize': fontsize,
-                  'lines.linestyle': linestyle,
-                  'lines.markersize': markersize,
-                  'legend.fontsize': fontsize,
-                  'font.size': fontsize,
-                  'figure.figsize': fig_size}
+        params = {
+            "backend": "ps",
+            "axes.linewidth": 0.5,
+            "lines.linewidth": lw,
+            "axes.labelsize": fontsize,
+            "font.size": fontsize,
+            "xtick.labelsize": fontsize,
+            "ytick.labelsize": fontsize,
+            "lines.linestyle": linestyle,
+            "lines.markersize": markersize,
+            "legend.fontsize": fontsize,
+            "font.size": fontsize,
+            "figure.figsize": fig_size,
+        }
 
         plt.rcParams.update(params)
 
         return lw, 0.35
 
     def set_height():
-        '''
+        """
         Define parameters for "twocol" mode and return value for pad_inches
-        '''
+        """
         fontsize = 8
         lw = 1.1
         markersize = 1.5
-        fig_height = 2.5   # inch
+        fig_height = 2.5  # inch
         fig_width = fig_height / aspect_ratio  # inch
         fig_size = [fig_width, fig_height]
 
-        params = {'backend': 'ps',
-                  'axes.linewidth': 0.65,
-                  'lines.linewidth': lw,
-                  'axes.labelsize': fontsize,
-                  'font.size': fontsize,
-                  'xtick.labelsize': fontsize,
-                  'ytick.labelsize': fontsize,
-                  'lines.linestyle': linestyle,
-                  'lines.markersize': markersize,
-                  'legend.fontsize': fontsize,
-                  'font.size': fontsize,
-                  'figure.figsize': fig_size}
+        params = {
+            "backend": "ps",
+            "axes.linewidth": 0.65,
+            "lines.linewidth": lw,
+            "axes.labelsize": fontsize,
+            "font.size": fontsize,
+            "xtick.labelsize": fontsize,
+            "ytick.labelsize": fontsize,
+            "lines.linestyle": linestyle,
+            "lines.markersize": markersize,
+            "legend.fontsize": fontsize,
+            "font.size": fontsize,
+            "figure.figsize": fig_size,
+        }
 
         plt.rcParams.update(params)
 
         return lw, 0.025
 
-    if (mode == "onecol"):
+    if mode == "onecol":
         return set_onecol()
-    elif (mode == "small"):
+    elif mode == "small":
         return set_small()
-    elif (mode == "medium"):
+    elif mode == "medium":
         return set_medium()
-    elif (mode == "72mm"):
+    elif mode == "72mm":
         return set_72mm()
-    elif (mode == "50mm"):
+    elif mode == "50mm":
         return set_50mm()
-    elif (mode == "small_font"):
+    elif mode == "small_font":
         return set_small_font()
-    elif (mode == "large_font"):
+    elif mode == "large_font":
         return set_large_font()
-    elif (mode == "presentation"):
+    elif mode == "presentation":
         return set_presentation()
-    elif (mode == "twocol"):
+    elif mode == "twocol":
         return set_twocol()
-    elif (mode == "height"):
+    elif mode == "height":
         return set_height()
     else:
         print(("%s mode not recognized, using onecol instead" % mode))
@@ -536,7 +552,7 @@ def set_mode(mode, aspect_ratio=0.95):
 
 
 def trend_estimator(x, y):
-    '''
+    """
     Trend estimator
 
     Simultaneous estimation of bias, trend, annual, semi-annual and
@@ -588,7 +604,7 @@ def trend_estimator(x, y):
     Code snipplet provided by Anthony Arendt, March 13, 2011.
     Uses scipy.optimize.leastsq, see documentation of
     scipy.optimize.leastsq for details.
-    '''
+    """
 
     try:
         from scipy import optimize
@@ -596,37 +612,45 @@ def trend_estimator(x, y):
         print("scipy.optimize not found. Please install.")
         exit(1)
 
-    def fitfunc(p, x): return (p[0] + p[1] * x +
-                               p[2] * np.cos(2.0 * np.pi * (x - p[3]) / 1.0) +
-                               p[4] * np.cos(2.0 * np.pi * (x - p[5]) / 0.5) +
-                               p[6] * np.cos(2.0 * np.pi * (x - p[7]) / 0.440794))
+    def fitfunc(p, x):
+        return (
+            p[0]
+            + p[1] * x
+            + p[2] * np.cos(2.0 * np.pi * (x - p[3]) / 1.0)
+            + p[4] * np.cos(2.0 * np.pi * (x - p[5]) / 0.5)
+            + p[6] * np.cos(2.0 * np.pi * (x - p[7]) / 0.440794)
+        )
 
-    def errfunc(p, x, y): return fitfunc(p, x) - y
+    def errfunc(p, x, y):
+        return fitfunc(p, x) - y
+
     p0 = [0.0, -80.0, 40.0, 0.0, 10.0, 0.0, 1.0, 0.0]
 
     return optimize.leastsq(errfunc, p0[:], args=(x, y), full_output=1)
 
 
 def colorList():
-    '''
+    """
     Returns a list with colors, e.g for line plots. etc.
-    '''
-    colors = ['#084594',  # dark blue
-              '#FF7F00',  # orange
-              '#984EA3',  # violet
-              '#E41A1C',  # red
-              '#4DAF4A',  # green
-              '#377EB8',  # light blue
-              '#FB9A99',  # light red
-              '#FB9A99',  # light orange
-              '#CAB2D6',  # light violet
-              'brown',
-              'pink']
+    """
+    colors = [
+        "#084594",  # dark blue
+        "#FF7F00",  # orange
+        "#984EA3",  # violet
+        "#E41A1C",  # red
+        "#4DAF4A",  # green
+        "#377EB8",  # light blue
+        "#FB9A99",  # light red
+        "#FB9A99",  # light orange
+        "#CAB2D6",  # light violet
+        "brown",
+        "pink",
+    ]
     return colors
 
 
 def gmtColormap(fileName, log_color=False, reverse=False):
-    '''
+    """
     Import a CPT colormap from GMT.
 
     Parameters
@@ -642,7 +666,7 @@ def gmtColormap(fileName, log_color=False, reverse=False):
     -----
     This code snipplet modified after
     http://www.mail-archive.com/matplotlib-users@lists.sourceforge.net/msg09547.html
-    '''
+    """
     import colorsys
     import os
 
@@ -652,7 +676,7 @@ def gmtColormap(fileName, log_color=False, reverse=False):
         except:
             # Check if it's a colormap provided in colormaps/
             basedir, fname = os.path.split(__file__)
-            my_file = os.path.join(basedir, 'colormaps', fileName)
+            my_file = os.path.join(basedir, "colormaps", fileName)
             f = open(my_file)
     except:
         print("file ", fileName, "not found")
@@ -702,23 +726,23 @@ def gmtColormap(fileName, log_color=False, reverse=False):
     b = np.array(b, np.float32)
     if colorModel == "HSV":
         for i in range(r.shape[0]):
-            rr, gg, bb = colorsys.hsv_to_rgb(r[i] / 360., g[i], b[i])
+            rr, gg, bb = colorsys.hsv_to_rgb(r[i] / 360.0, g[i], b[i])
             r[i] = rr
             g[i] = gg
             b[i] = bb
     if colorModel == "HSV":
         for i in range(r.shape[0]):
-            rr, gg, bb = colorsys.hsv_to_rgb(r[i] / 360., g[i], b[i])
+            rr, gg, bb = colorsys.hsv_to_rgb(r[i] / 360.0, g[i], b[i])
             r[i] = rr
             g[i] = gg
             b[i] = bb
     if colorModel == "RGB":
-        r = r / 255.
-        g = g / 255.
-        b = b / 255.
+        r = r / 255.0
+        g = g / 255.0
+        b = b / 255.0
 
     if log_color:
-        xNorm = np.zeros((len(x), ))
+        xNorm = np.zeros((len(x),))
         xNorm[1::] = np.logspace(-1, 0, len(x) - 1)
         xNorm[1::-2] /= 4
     else:
@@ -731,12 +755,12 @@ def gmtColormap(fileName, log_color=False, reverse=False):
         red.append([xNorm[i], r[i], r[i]])
         green.append([xNorm[i], g[i], g[i]])
         blue.append([xNorm[i], b[i], b[i]])
-    colorDict = {'red': red, 'green': green, 'blue': blue}
-    return (colorDict)
+    colorDict = {"red": red, "green": green, "blue": blue}
+    return colorDict
 
 
-def smooth(x, window_len=11, window='hanning'):
-    '''
+def smooth(x, window_len=11, window="hanning"):
+    """
     Smooth the data using a window with requested size (running mean,
     moving average, low pass filtering).
 
@@ -776,7 +800,7 @@ def smooth(x, window_len=11, window='hanning'):
     ----
     the window parameter could be the window itself if an array instead
     of a string
-    '''
+    """
 
     if x.ndim != 1:
         raise ValueError("smooth only accepts 1 dimension arrays.")
@@ -787,25 +811,22 @@ def smooth(x, window_len=11, window='hanning'):
     if window_len < 3:
         return x
 
-    if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
-        raise ValueError(
-            "Window is one of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
+    if not window in ["flat", "hanning", "hamming", "bartlett", "blackman"]:
+        raise ValueError("Window is one of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
 
-    s = np.r_[2 * x[0] - x[window_len:1:-1],
-              x,
-              2 * x[-1] - x[-1:-window_len:-1]]
+    s = np.r_[2 * x[0] - x[window_len:1:-1], x, 2 * x[-1] - x[-1:-window_len:-1]]
 
-    if window == 'flat':  # moving average
-        w = np.ones(window_len, 'd')
+    if window == "flat":  # moving average
+        w = np.ones(window_len, "d")
     else:
-        w = eval('np.' + window + '(window_len)')
+        w = eval("np." + window + "(window_len)")
 
-    y = np.convolve(w / w.sum(), s, mode='same')
-    return y[window_len - 1:-window_len + 1]
+    y = np.convolve(w / w.sum(), s, mode="same")
+    return y[window_len - 1 : -window_len + 1]
 
 
-def fftsmooth(x, window_len=11, window='hanning'):
-    '''
+def fftsmooth(x, window_len=11, window="hanning"):
+    """
     Smooth the data using a window with requested size (running mean,
     moving average, low pass filtering).
 
@@ -846,7 +867,7 @@ def fftsmooth(x, window_len=11, window='hanning'):
     ----
     the window parameter could be the window itself if an array instead
     of a string
-    '''
+    """
 
     from scipy.signal import fftconvolve
 
@@ -859,25 +880,22 @@ def fftsmooth(x, window_len=11, window='hanning'):
     if window_len < 3:
         return x
 
-    if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
-        raise ValueError(
-            "Window is one of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
+    if not window in ["flat", "hanning", "hamming", "bartlett", "blackman"]:
+        raise ValueError("Window is one of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
 
-    s = np.r_[2 * x[0] - x[window_len:1:-1],
-              x,
-              2 * x[-1] - x[-1:-window_len:-1]]
+    s = np.r_[2 * x[0] - x[window_len:1:-1], x, 2 * x[-1] - x[-1:-window_len:-1]]
 
-    if window == 'flat':  # moving average
-        w = np.ones(window_len, 'd')
+    if window == "flat":  # moving average
+        w = np.ones(window_len, "d")
     else:
-        w = eval('np.' + window + '(window_len)')
+        w = eval("np." + window + "(window_len)")
 
-    y = fftconvolve(w / w.sum(), s, mode='same')
-    return y[window_len - 1:-window_len + 1]
+    y = fftconvolve(w / w.sum(), s, mode="same")
+    return y[window_len - 1 : -window_len + 1]
 
 
 def get_rmse(a, b, N, w=None):
-    '''
+    """
     Returns the (weighted) root mean square error of differences between a and b.
 
     Parameters
@@ -889,7 +907,7 @@ def get_rmse(a, b, N, w=None):
     Returns
     -------
     rmse : scalar
-    '''
+    """
 
     if w is None:
         w = np.ones_like(a)
@@ -901,7 +919,7 @@ def get_rmse(a, b, N, w=None):
 
 
 def get_avg(a, b, N, relative=False):
-    '''
+    """
     Returns the average difference between a and b.
 
     Parameters
@@ -917,11 +935,11 @@ def get_avg(a, b, N, relative=False):
     -----
     The average is the sum of elements of the difference (a - b)
     divided by the number of elements N.
-    '''
+    """
     if relative is False:
         c = a.ravel() - b.ravel()
     else:
-        c = (a.ravel() - b.ravel() / b.ravel())
+        c = a.ravel() - b.ravel() / b.ravel()
     if isinstance(c, np.ma.MaskedArray):
         return np.linalg.norm(np.ma.compressed(c), 1) / N
     else:
@@ -929,7 +947,7 @@ def get_avg(a, b, N, relative=False):
 
 
 def unit_converter(data, inunit, outunit):
-    '''
+    """
     Unit converter. Takes an (numpy) array, valid udunits inunits and outunits
     as strings, and returns the array in outunits.
 
@@ -951,7 +969,7 @@ def unit_converter(data, inunit, outunit):
     >>> c = Converter("kg","Gt")
     >>> out = c(np.array([1,2])*1e12)
     >>> out = array([ 1.,  2.])
-    '''
+    """
 
     inunit = str(inunit)
     outunit = str(outunit)
@@ -964,18 +982,19 @@ def unit_converter(data, inunit, outunit):
         try:
             try:
                 from cf_units import Unit
+
                 in_unit = Unit(inunit)
                 out_unit = Unit(outunit)
                 outdata = in_unit.convert(data, out_unit)
             except:
                 from udunits2 import Converter, System, Unit
+
                 sys = System()
                 c = Converter((Unit(sys, inunit), Unit(sys, outunit)))
                 outdata = c(data)
         except:
-            print(
-                "Neither cf_units or udunits2 module found, you're on your own.")
-            c = 1. / 1e3
+            print("Neither cf_units or udunits2 module found, you're on your own.")
+            c = 1.0 / 1e3
             outdata = c * data
     else:
         outdata = data
@@ -986,8 +1005,8 @@ def unit_converter(data, inunit, outunit):
         return outdata
 
 
-def permute(variable, output_order=('time', 'z', 'zb', 'y', 'x')):
-    '''
+def permute(variable, output_order=("time", "z", "zb", "y", "x")):
+    """
     Permute dimensions of a NetCDF variable to match the output
     storage order.
 
@@ -1001,7 +1020,7 @@ def permute(variable, output_order=('time', 'z', 'zb', 'y', 'x')):
     Returns
     -------
     var_perm : array_like
-    '''
+    """
 
     input_dimensions = variable.dimensions
 

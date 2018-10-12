@@ -18,18 +18,18 @@ except:
 
 
 def validateShapePath(shapePath):
-    '''Validate shapefile extension'''
-    return os.path.splitext(str(shapePath))[0] + '.shp'
+    """Validate shapefile extension"""
+    return os.path.splitext(str(shapePath))[0] + ".shp"
 
 
 def validateShapeData(shapeData):
-    '''Make sure we can access the shapefile'''
+    """Make sure we can access the shapefile"""
     # Make sure the shapefile exists
     if not shapeData:
-        raise ShapeDataError('The shapefile is invalid')
+        raise ShapeDataError("The shapefile is invalid")
     # Make sure there is exactly one layer
     if shapeData.GetLayerCount() != 1:
-        raise ShapeDataError('The shapefile must have exactly one layer')
+        raise ShapeDataError("The shapefile must have exactly one layer")
 
 
 # Error
@@ -38,13 +38,12 @@ class ShapeDataError(Exception):
 
 
 def get_contours(array, x, y, projection, level):
-    '''
+    """
     Find contours for a given level
-    '''
+    """
 
     # Find contours at a constant value
-    contours = sorted(measure.find_contours(array, level),
-                      key=lambda x: len(x))
+    contours = sorted(measure.find_contours(array, level), key=lambda x: len(x))
 
     i = list(range(0, len(x)))
     j = list(range(0, len(y)))
@@ -57,12 +56,10 @@ def get_contours(array, x, y, projection, level):
         contour_x = x[0] + contour[:, 1] * (x[-1] - x[0]) / (len(i) - 1)
         contour_y = y[0] + contour[:, 0] * (y[-1] - y[0]) / (len(j) - 1)
         # Convert to EPSG:4326
-        contour_lon, contour_lat = projection(
-            contour_x, contour_y, inverse=True)
+        contour_lon, contour_lat = projection(contour_x, contour_y, inverse=True)
         lon.append(contour_lon)
         lat.append(contour_lat)
-        points = [(contour_lon[k], contour_lat[k])
-                  for k in range(len(contour_lat))]
+        points = [(contour_lon[k], contour_lat[k]) for k in range(len(contour_lat))]
         contour_points.append(points)
     # reverse direction, last entry (longest contour) first.
     contour_points.reverse()
@@ -74,17 +71,29 @@ def get_contours(array, x, y, projection, level):
 
 
 parser = ArgumentParser(
-    description='''A script to extract a (closed) contour line from a variable in a netCDF file, and save it as a shapefile (polygon).''')
+    description="""A script to extract a (closed) contour line from a variable in a netCDF file, and save it as a shapefile (polygon)."""
+)
 parser.add_argument("FILE", nargs=1)
-parser.add_argument("-o", "--output_filename", dest="out_file",
-                    help="Name of the output shape file", default='countour.shp')
-parser.add_argument("-v", "--variable", dest="varname",
-                    help='''Variable to plot, default = 'mask'.''', default='mask')
-parser.add_argument("-c", "--countour_levels", nargs='*',
-                    dest="contour_levels",
-                    help='''Contour-levels to extract, default = 0.''', default='0')
-parser.add_argument("-s", "--single", dest="single", action="store_true",
-                    help="save only the longest contour line, Default=False", default=False)
+parser.add_argument(
+    "-o", "--output_filename", dest="out_file", help="Name of the output shape file", default="countour.shp"
+)
+parser.add_argument("-v", "--variable", dest="varname", help="""Variable to plot, default = 'mask'.""", default="mask")
+parser.add_argument(
+    "-c",
+    "--countour_levels",
+    nargs="*",
+    dest="contour_levels",
+    help="""Contour-levels to extract, default = 0.""",
+    default="0",
+)
+parser.add_argument(
+    "-s",
+    "--single",
+    dest="single",
+    action="store_true",
+    help="save only the longest contour line, Default=False",
+    default=False,
+)
 
 
 options = parser.parse_args()
@@ -94,7 +103,7 @@ contour_levels = options.contour_levels
 varname = options.varname
 single = options.single
 
-nc = NC(filename, 'r')
+nc = NC(filename, "r")
 nc_projection = ppt.get_projection_from_file(nc)
 
 xdim, ydim, zdim, tdim = ppt.get_dims(nc)
@@ -105,7 +114,7 @@ y = np.squeeze(nc.variables[ydim])
 
 
 # Get driver
-driver = ogr.GetDriverByName('ESRI Shapefile')
+driver = ogr.GetDriverByName("ESRI Shapefile")
 # Create shapeData
 shp_filename = validateShapePath(shp_filename)
 if os.path.exists(shp_filename):
@@ -125,7 +134,7 @@ field_defn = ogr.FieldDefn("timestamp", ogr.OFTDateTime)
 layer.CreateField(field_defn)
 
 if tdim:
-    time = nc.variables['time']
+    time = nc.variables["time"]
     time_units = time.units
     time_calendar = time.calendar
     if time[0] < 0:
@@ -135,17 +144,15 @@ if tdim:
     cdftime = utime(time_units, time_calendar)
     for k, t in enumerate(time):
         if is_paleo:
-            timestamp = '1-1-1'
+            timestamp = "1-1-1"
             my_year = k
         else:
             timestamp = cdftime.num2date(t)
             my_year = 0
-        print(('Processing {}'.format(timestamp)))
+        print(("Processing {}".format(timestamp)))
         for level in contour_levels:
-            contour_var = np.array(
-                ppt.permute(nc.variables[varname], var_order), order='C')[k, Ellipsis]
-            contour_points = get_contours(
-                contour_var, x, y, nc_projection, level)
+            contour_var = np.array(ppt.permute(nc.variables[varname], var_order), order="C")[k, Ellipsis]
+            contour_points = get_contours(contour_var, x, y, nc_projection, level)
             # For each contour
             polygon = ogr.Geometry(ogr.wkbPolygon)
             for point in range(0, len(contour_points)):
@@ -175,8 +182,7 @@ if tdim:
             feature = None
 else:
     for level in contour_levels:
-        contour_var = np.array(
-            np.squeeze(ppt.permute(nc.variables[varname], var_order)), order='C')
+        contour_var = np.array(np.squeeze(ppt.permute(nc.variables[varname], var_order)), order="C")
         contour_points = get_contours(contour_var, x, y, nc_projection, level)
         # For each contour
         polygon = ogr.Geometry(ogr.wkbPolygon)
