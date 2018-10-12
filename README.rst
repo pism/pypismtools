@@ -10,8 +10,6 @@ more. Additionally, some scripts are included, to plot netCDF
 variables over GeoTIFF files using basemap, to generate colorramps
 for QGIS, and to extract contour lines.
 
-Some scripts (e.g. ``flowline-plot.py``) are experimental, and currently undocumented.
-
 Requirements
 -------------------------
 
