@@ -10,6 +10,7 @@ try:
 except:
     from pypismtools.pypismtools import gmtColormap
 
+
 def cmap_map(function, cmap):
     """
     Applies function (which should operate on vectors of shape 3:
@@ -26,7 +27,8 @@ def cmap_map(function, cmap):
     step_list = sum(list(step_dict.values()), [])
     step_list = np.array(list(set(step_list)))
     # Then compute the LUT, and apply the function to the LUT
-    reduced_cmap = lambda step: np.array(cmap(step)[0:3])
+
+    def reduced_cmap(step): return np.array(cmap(step)[0:3])
     old_LUT = np.array(list(map(reduced_cmap, step_list)))
     new_LUT = np.array(list(map(function, old_LUT)))
     # Now try to make a minimal segment definition of the new LUT
@@ -120,6 +122,7 @@ except:
     prefix = '.'.join(cmap_file.split('.')[0:-1])
     suffix = cmap_file.split('.')[-1]
 
+
 class nlcmap(object):
     def __init__(self, cmap, levels):
         self.cmap = cmap
@@ -127,11 +130,12 @@ class nlcmap(object):
         self._x = self.levels
         self.levmax = self.levels.max()
         self.transformed_levels = np.linspace(0.0, self.levmax,
-             len(self.levels))
+                                              len(self.levels))
 
     def __call__(self, xi, alpha=1.0, **kw):
         yi = np.interp(xi, self._x, self.transformed_levels)
         return self.cmap(yi / self.levmax, alpha)
+
 
 levels = [0, 10, 100, 250, 750, 3000]
 levels.sort()
@@ -229,7 +233,6 @@ else:
 
 if tick_format is not None:
     format = tick_format
-    
 
 
 # you could apply a function to the colormap, e.g. to desaturate the colormap:
@@ -247,7 +250,7 @@ if fticks is not None:
 
 cb1 = mpl.colorbar.ColorbarBase(ax1,
                                 cmap=cmap,
-                                norm = norm,
+                                norm=norm,
                                 ticks=ticks,
                                 format=format,
                                 extend=cb_extend,
@@ -257,7 +260,7 @@ cb1 = mpl.colorbar.ColorbarBase(ax1,
 if colorbar_label:
     cb1.set_label(colorbar_label)
 
-    
+
 # save high-res colorbar as png
 for format in ['png']:
     prefix = prefix + '_' + orientation

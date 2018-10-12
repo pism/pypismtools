@@ -596,11 +596,12 @@ def trend_estimator(x, y):
         print("scipy.optimize not found. Please install.")
         exit(1)
 
-    fitfunc = lambda p, x: (p[0] + p[1] * x +
-                            p[2] * np.cos(2.0 * np.pi * (x - p[3]) / 1.0) +
-                            p[4] * np.cos(2.0 * np.pi * (x - p[5]) / 0.5) +
-                            p[6] * np.cos(2.0 * np.pi * (x - p[7]) / 0.440794))
-    errfunc = lambda p, x, y: fitfunc(p, x) - y
+    def fitfunc(p, x): return (p[0] + p[1] * x +
+                               p[2] * np.cos(2.0 * np.pi * (x - p[3]) / 1.0) +
+                               p[4] * np.cos(2.0 * np.pi * (x - p[5]) / 0.5) +
+                               p[6] * np.cos(2.0 * np.pi * (x - p[7]) / 0.440794))
+
+    def errfunc(p, x, y): return fitfunc(p, x) - y
     p0 = [0.0, -80.0, 40.0, 0.0, 10.0, 0.0, 1.0, 0.0]
 
     return optimize.leastsq(errfunc, p0[:], args=(x, y), full_output=1)
@@ -963,8 +964,8 @@ def unit_converter(data, inunit, outunit):
         try:
             try:
                 from cf_units import Unit
-                in_unit  = Unit(inunit)
-                out_unit  = Unit(outunit)
+                in_unit = Unit(inunit)
+                out_unit = Unit(outunit)
                 outdata = in_unit.convert(data, out_unit)
             except:
                 from udunits2 import Converter, System, Unit

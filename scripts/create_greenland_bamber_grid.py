@@ -60,7 +60,7 @@ if __name__ == "__main__":
     lon, lat = proj(ee, nn, inverse=True)
 
     nc = CDF(nc_outfile, 'w', format=fileformat)
-    
+
     # number of grid corners
     grid_corners = 4
     # grid corner dimension name
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     gc_lat = np.zeros((N, M, grid_corners))
     # array holding lon-component of grid corners
     gc_lon = np.zeros((N, M, grid_corners))
-    
+
     for corner in range(0, grid_corners):
         ## grid_corners in x-direction
         gc_easting[:, corner] = easting + de_vec[corner]
@@ -93,12 +93,11 @@ if __name__ == "__main__":
         gc_lon[:, :, corner], gc_lat[:, :, corner] = proj(
             gc_ee, gc_nn, inverse=True)
 
-
     nc = CDF(nc_outfile, 'w', format=fileformat)
 
     nc.createDimension(xdim, size=easting.shape[0])
     nc.createDimension(ydim, size=northing.shape[0])
-    
+
     var = xdim
     var_out = nc.createVariable(var, 'f', dimensions=(xdim))
     var_out.axis = xdim
@@ -141,7 +140,7 @@ if __name__ == "__main__":
     var_out.units = "degreesE"
     # Assign values to variable 'lon_nds'
     var_out[:] = gc_lon
-        
+
     var = 'lat_bnds'
     # Create variable 'lat_bnds'
     var_out = nc.createVariable(

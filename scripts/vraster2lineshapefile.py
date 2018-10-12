@@ -35,6 +35,7 @@ fh.setFormatter(formatter)
 logger.addHandler(ch)
 logger.addHandler(fh)
 
+
 class GeoImgInfo:
 
     def __init__(self, in_filename, in_dir='.'):
@@ -62,7 +63,7 @@ class GeoImgInfo:
 
 
 def getRasterBandArray(in_filename, BandNo=1):
-        
+
     gd = gdal.Open(in_filename)
     rb = gd.GetRasterBand(BandNo)
     return rb.ReadAsArray()
@@ -115,7 +116,7 @@ def get_dims(nc):
 
 
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
-    description="Convert rasters containing (U,V) components of velocity field to vector line data.")
+                        description="Convert rasters containing (U,V) components of velocity field to vector line data.")
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("-U", "--Udata", dest="Udata",
                     help="Raster containing x components of velocity")
@@ -175,8 +176,8 @@ x = np.linspace(RasterInfo.xmin, RasterInfo.xmax, RasterInfo.npix_x)
 y = np.linspace(RasterInfo.ymin, RasterInfo.ymax, RasterInfo.npix_y)
 
 X, Y = np.meshgrid(x, np.flipud(y))
-X = X[::prune_factor,::prune_factor]
-Y = Y[::prune_factor,::prune_factor]
+X = X[::prune_factor, ::prune_factor]
+Y = Y[::prune_factor, ::prune_factor]
 
 nx, ny = X.shape
 
@@ -189,8 +190,8 @@ schema = {
 # open the shapefile
 logger.info('Processing')
 with fiona.open(args.FILE[0], 'w', crs=from_epsg(
-    epsg), driver='ESRI Shapefile', schema=schema) as output:
-#    for k in range(RasterCount):
+        epsg), driver='ESRI Shapefile', schema=schema) as output:
+    #    for k in range(RasterCount):
     for k in range(8):
         if tdim is None:
             timestamp = '0-0-0'
@@ -199,49 +200,48 @@ with fiona.open(args.FILE[0], 'w', crs=from_epsg(
         logger.info('Processing {}'.format(timestamp))
         print(('Processing {}'.format(timestamp)))
 
-        Ux = getRasterBandArray(args.Udata, BandNo=k+1)[::prune_factor,::prune_factor]
-        Uy = getRasterBandArray(args.Vdata, BandNo=k+1)[::prune_factor,::prune_factor]
+        Ux = getRasterBandArray(args.Udata, BandNo=k+1)[::prune_factor, ::prune_factor]
+        Uy = getRasterBandArray(args.Vdata, BandNo=k+1)[::prune_factor, ::prune_factor]
         Speed = np.sqrt(Ux**2 + Uy**2)
 
         prop_dict = {}
         prop_dict['ux'] = Ux
         prop_dict['uy'] = Uy
         prop_dict['speed'] = Speed
-        
+
         # Read and add error of U component
         if args.Uerror is not None:
-            Ex = getRasterBandArray(args.Uerror, BandNo=k+1)[::prune_factor,::prune_factor]
+            Ex = getRasterBandArray(args.Uerror, BandNo=k+1)[::prune_factor, ::prune_factor]
             schema['properties'].append(('ex', 'float'))
             prop_dict['ex'] = ex
         # Read and add error of V component
         if args.Verror is not None:
-            Ey = getRasterBandArray(args.Verror, BandNo=k+1)[::prune_factor,::prune_factor]
+            Ey = getRasterBandArray(args.Verror, BandNo=k+1)[::prune_factor, ::prune_factor]
             schema['properties'].append(('ey', 'float'))
             prop_dict['ey'] = ey
-                                
+
         # create features for each x,y pair, and give them the right properties
         m = 0
         for i in range(nx):
             for j in range(ny):
-                if (Ux[i,j] != Ufill_value) & (Uy[i,j] != Vfill_value) & (Speed[i,j] > threshold):
+                if (Ux[i, j] != Ufill_value) & (Uy[i, j] != Vfill_value) & (Speed[i, j] > threshold):
                     m += 1
                     sys.stdout.write('\r')
                     # Center cooridinates
-                    x_c, y_c = X[i,j], Y[i,j]
+                    x_c, y_c = X[i, j], Y[i, j]
                     # Start point
-                    x_a, y_a = X[i,j] - scale_factor * Ux[i,j] / 2, Y[i,j] - scale_factor * Uy[i,j] / 2
+                    x_a, y_a = X[i, j] - scale_factor * Ux[i, j] / 2, Y[i, j] - scale_factor * Uy[i, j] / 2
                     # End point
-                    x_e, y_e = X[i,j] + scale_factor * Ux[i,j] / 2, Y[i,j] + scale_factor * Uy[i,j] / 2
+                    x_e, y_e = X[i, j] + scale_factor * Ux[i, j] / 2, Y[i, j] + scale_factor * Uy[i, j] / 2
                     # Create LineString
                     line = LineString([[x_a, y_a], [x_c, y_c], [x_e, y_e]])
-                    line_dict = dict([(k, float(v[i,j])) for (k, v) in prop_dict.items()])
+                    line_dict = dict([(k, float(v[i, j])) for (k, v) in prop_dict.items()])
                     line_dict['timestamp'] = str(timestamp)
                     output.write(
                         {'properties': line_dict, 'geometry': mapping(line)})
-                    
+
         print("  {} points found and written".format(str(m)))
-        
+
 print("Done writing {}".format(args.FILE[0]))
 # close the shapefile now that we're all done
 output.close()
-

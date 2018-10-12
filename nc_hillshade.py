@@ -47,7 +47,7 @@ class Hillshade(object):
     threshold_masking_value: if threshold_masking is True, use this value to mask variable
     zf: 
     '''
-    
+
     def __init__(self, ifile, variable='usurf', threshold_masking=True, variables_to_mask=None, *args, **kwargs):
         super(Hillshade, self).__init__(*args, **kwargs)
 
@@ -75,7 +75,7 @@ class Hillshade(object):
         self._create_vars()
 
     def _check_vars(self):
-       
+
         nc = NC(self.ifile, 'r')
         for mvar in (['time'] + [self.variable]):
             if mvar in nc.variables:
@@ -90,14 +90,14 @@ class Hillshade(object):
                 else:
                     logger.info('variable {} NOT found'.format(mvar))
         nc.close()
-           
+
     def _cart2pol(self, x, y):
         '''
         cartesian to polar coordinates
         '''
         theta = np.arctan2(y, x)
         rho = np.sqrt(x**2 + y**2)
-        return (theta, rho) 
+        return (theta, rho)
 
     def _create_vars(self):
         '''
@@ -107,18 +107,18 @@ class Hillshade(object):
         ifile = self.ifile
         nc = NC(ifile, 'a')
         variable = self.variable
-        hs_var = variable  + '_hs'
-        if hs_var  not in nc.variables:
+        hs_var = variable + '_hs'
+        if hs_var not in nc.variables:
             nc.createVariable(hs_var, 'i', dimensions=('time', 'y', 'x'), fill_value=fill_value)
         nc.close()
-                
+
     def _get_dx(self):
-        
+
         nc = NC(self.ifile, 'r')
 
         x0, x1 = nc.variables['x'][0:2]
         y0, y1 = nc.variables['y'][0:2]
-        
+
         nc.close()
 
         dx = x1 - x0
@@ -129,50 +129,50 @@ class Hillshade(object):
         return dx
 
     def _hillshade(self, dem):
-       '''
-       shaded relief using the ESRI algorithm
-       '''
+        '''
+        shaded relief using the ESRI algorithm
+        '''
 
-       # lighting azimuth
-       azimuth = self.params['azimuth']
-       azimuth = 360.0 - azimuth + 90 # convert to mathematic unit
-       if (azimuth>360) or (azimuth==360):
-          azimuth = azimuth - 360
-       azimuth = azimuth * (np.pi / 180)  # convert to radians
+        # lighting azimuth
+        azimuth = self.params['azimuth']
+        azimuth = 360.0 - azimuth + 90  # convert to mathematic unit
+        if (azimuth > 360) or (azimuth == 360):
+            azimuth = azimuth - 360
+        azimuth = azimuth * (np.pi / 180)  # convert to radians
 
-       # lighting altitude
-       altitude = self.params['altitude']
-       altitude = (90 - altitude) * (np.pi / 180)  # convert to zenith angle in radians
+        # lighting altitude
+        altitude = self.params['altitude']
+        altitude = (90 - altitude) * (np.pi / 180)  # convert to zenith angle in radians
 
-       # calc slope and aspect (radians)
-       dx = self.dx
-       fx, fy = np.gradient(dem, dx)  # uses simple, unweighted gradient of immediate
-       [asp, grad] = self._cart2pol(fy, fx)  # convert to carthesian coordinates
+        # calc slope and aspect (radians)
+        dx = self.dx
+        fx, fy = np.gradient(dem, dx)  # uses simple, unweighted gradient of immediate
+        [asp, grad] = self._cart2pol(fy, fx)  # convert to carthesian coordinates
 
-       zf = self.params['zf']
-       grad = np.arctan(zf * grad)  # steepest slope
-       # convert asp
-       asp[asp<np.pi] = asp[asp < np.pi]+(np.pi / 2)
-       asp[asp<0] = asp[asp<0] + (2 * np.pi)
+        zf = self.params['zf']
+        grad = np.arctan(zf * grad)  # steepest slope
+        # convert asp
+        asp[asp < np.pi] = asp[asp < np.pi]+(np.pi / 2)
+        asp[asp < 0] = asp[asp < 0] + (2 * np.pi)
 
-       ## hillshade calculation
-       h = 255.0 * ((np.cos(altitude) * np.cos(grad))
-                    + (np.sin(altitude) * np.sin(grad) * np.cos(azimuth - asp)))
-       h[h<0] = 0  # set hillshade values to min of 0.
+        # hillshade calculation
+        h = 255.0 * ((np.cos(altitude) * np.cos(grad))
+                     + (np.sin(altitude) * np.sin(grad) * np.cos(azimuth - asp)))
+        h[h < 0] = 0  # set hillshade values to min of 0.
 
-       return h
+        return h
 
     def run(self):
         logger.info('Processing file {}'.format(ifile))
         fill_value = self.params['fill_value']
-        hs_var = self.variable  + '_hs'
+        hs_var = self.variable + '_hs'
         nc = NC(ifile, 'a')
         nt = len(nc.variables['time'][:])
         for t in range(nt):
             logger.info('Processing time {} of {}'.format(t, nt))
             dem = nc.variables['usurf'][t, Ellipsis]
             hs = self._hillshade(dem)
-            hs[dem==0] = fill_value
+            hs[dem == 0] = fill_value
             nc.variables[hs_var][t, Ellipsis] = hs
             if self.threshold_masking:
                 m = nc.variables[self.params['threshold_masking_variable']][t, Ellipsis]
@@ -187,7 +187,7 @@ class Hillshade(object):
                         m_fill_value = fill_value
                     m[mt < self.params['threshold_masking_value']] = m_fill_value
                     nc.variables[mvar][t, Ellipsis] = m
-            
+
         nc.close()
 
 
@@ -215,12 +215,10 @@ if __name__ == "__main__":
     parser.add_argument("--zf", dest='zf', type=float,
                         help="Zf", default=5)
 
-
     options = parser.parse_args()
     ifile = options.FILE[0]
     delattr(options, 'FILE')
     variable = options.variable
     delattr(options, 'variable')
     hs = Hillshade(ifile, variable, **vars(options))
-    hs.run() 
-
+    hs.run()

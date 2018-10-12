@@ -101,6 +101,7 @@ class TimeProfiler:
 
         self.timedict.clear()
 
+
 def permute(variable, output_order=('time', 'z', 'zb', 'y', 'x')):
     '''
     Permute dimensions of a NetCDF variable to match the output
@@ -131,7 +132,7 @@ def permute(variable, output_order=('time', 'z', 'zb', 'y', 'x')):
     else:
         return variable[:]  # so that it does not break processing "mapping"
 
-    
+
 def output_dimensions(input_dimensions):
     """Build a list of dimension names used to define a variable in the
     output file."""
@@ -363,7 +364,7 @@ if __name__ == "__main__":
         v = nc_in.variables[name]
         if getattr(v, "standard_name", "") == standard_name:
             print(("variabe {0} found by its standard_name {1}".format(name,
-                                                                      standard_name)))
+                                                                       standard_name)))
             myvar = name
             pass
 
@@ -468,14 +469,14 @@ if __name__ == "__main__":
 
         iso_var.grid_mapping = 'mapping'
         iso_var_norm.grid_mapping = 'mapping'
-        
+
         p = profiler.elapsed('interpolation')
         print(("    - interpolated in %3.4f s" % p))
 
     for var in ('run_stats', 'pism_config', 'mapping'):
         if var in nc_in.variables:
             create_variable_like(nc_in, var, nc_out)
-        
+
     # writing global attributes
     import time
     import sys

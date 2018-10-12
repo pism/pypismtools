@@ -18,7 +18,7 @@ try:
     import pypismtools.pypismtools as ppt
 except:
     import pypismtools as ppt
-    
+
 from udunits2 import Converter, System, Unit
 
 
@@ -182,7 +182,6 @@ for in_varname in variables:
     #     import sys
     #     sys.exit(1)
 
-
     for profile_id, profile_name in enumerate(profile_names):
 
         fig = plt.figure()
@@ -205,9 +204,9 @@ for in_varname in variables:
                 v = nc.variables[name]
                 if getattr(v, "standard_name", "") == in_varname:
                     print(("variabe {0} found by its standard_name {1}".format(name,
-                                                                              in_varname)))
+                                                                               in_varname)))
                     varname = name
-            
+
             profile_axis = nc.variables['profile'][profile_id]
             profile_axis_units = nc.variables['profile'].units
             profile_axis_name = nc.variables['profile'].long_name
@@ -225,7 +224,7 @@ for in_varname in variables:
             if tdim:
                 data = np.squeeze(my_var_p[profile_id, 0, Ellipsis])
             else:
-                data = np.squeeze(my_var_p[profile_id, Ellipsis])                
+                data = np.squeeze(my_var_p[profile_id, Ellipsis])
             data = ppt.unit_converter(data, my_var_units, o_units)
 
             if label_params[0] == 'none':
@@ -243,7 +242,7 @@ for in_varname in variables:
                     key].format(config[key])]) for key in label_params])
 
             labels.append(exp_str)
-            
+
             colorVal = scalarMap.to_rgba(idx)
             if nt > len(my_colors):
                 retLine, = ax.plot(
@@ -259,9 +258,8 @@ for in_varname in variables:
                 v = nc_obs.variables[name]
                 if getattr(v, "standard_name", "") == in_varname:
                     print(("variabe {0} found by its standard_name {1}".format(name,
-                                                                              in_varname)))
+                                                                               in_varname)))
                     varname = name
-            
 
             profile_axis = nc_obs.variables['profile'][profile_id]
             profile_axis_units = nc_obs.variables['profile'].units
@@ -287,12 +285,12 @@ for in_varname in variables:
                 data_obs = np.squeeze(my_var_obs_p[profile_id, Ellipsis])
             data_obs = ppt.unit_converter(data_obs, my_var_obs_units, o_units)
             mask = np.zeros_like(data_obs)
-            mask[data_obs==my_var_obs_fill_value] = 1
+            mask[data_obs == my_var_obs_fill_value] = 1
             data_obs = np.ma.array(data=data_obs, mask=mask)
             labels.append('observed')
             ax.plot(x_obs, data_obs, color='k', linewidth=2)
-            nc_obs.close()            
-            
+            nc_obs.close()
+
         if x_bounds:
             ax.set_xlim(x_bounds[0], x_bounds[-1])
         else:
@@ -314,10 +312,10 @@ for in_varname in variables:
         # ordered_labels.insert(0, labels[0])
         if legend != 'none':
             lg = ax.legend(labels,
-                                   loc="upper left",
-                                   shadow=True, numpoints=numpoints,
-                                   bbox_to_anchor=(0, 0, 1, 1),
-                                   bbox_transform=plt.gcf().transFigure)
+                           loc="upper left",
+                           shadow=True, numpoints=numpoints,
+                           bbox_to_anchor=(0, 0, 1, 1),
+                           bbox_transform=plt.gcf().transFigure)
 
         for out_format in out_formats:
 

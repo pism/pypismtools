@@ -143,7 +143,7 @@ for in_varname in variables:
         v = nc.variables[name]
         if getattr(v, "standard_name", "") == in_varname:
             print(("variabe {0} found by its standard_name {1}".format(name,
-                                                                      in_varname)))
+                                                                       in_varname)))
             varname = name
         else:
             varname = in_varname

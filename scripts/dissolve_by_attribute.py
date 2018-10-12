@@ -36,9 +36,9 @@ logger.addHandler(fh)
 
 
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
-    description='''A script to extract interfaces (calving front, ice-ocean, or groundling line) from a PISM netCDF file, and save it as a shapefile (polygon).''')
+                        description='''A script to extract interfaces (calving front, ice-ocean, or groundling line) from a PISM netCDF file, and save it as a shapefile (polygon).''')
 parser.add_argument("FILE", nargs=1)
-parser.add_argument("-a", "--attribute_field" , dest="field",
+parser.add_argument("-a", "--attribute_field", dest="field",
                     help="Attribute field to group by", default='timestep')
 parser.add_argument("-o", "--output_filename", dest="out_file",
                     help="Name of the output shape file", default='dissolved.shp')
@@ -55,8 +55,8 @@ with fiona.open(ifile) as input:
     with fiona.open(ofile, 'w', **meta) as output:
         # groupby clusters consecutive elements of an iterable which have the same key so you must first sort the features by the 'STATEFP' field
         e = sorted(input, key=lambda k: k['properties'][field])
-        # group by the attribute field 
-        for key, group in itertools.groupby(e, key=lambda x:x['properties'][field]):
+        # group by the attribute field
+        for key, group in itertools.groupby(e, key=lambda x: x['properties'][field]):
             properties, geom = list(zip(*[(feature['properties'], shape(feature['geometry'])) for feature in group]))
             # write the feature, computing the unary_union of the elements in the group with the properties of the first element in the group
             output.write({'geometry': mapping(unary_union(geom)), 'properties': properties[0]})
@@ -66,7 +66,7 @@ with fiona.open(ifile) as input:
 shp_driver = ogr.GetDriverByName('ESRI Shapefile')
 ds = shp_driver.Open(ofile, 1)
 
-nl =  ds.GetLayerCount()
+nl = ds.GetLayerCount()
 for k in range(nl):
     layer = ds.GetLayer(k)
     for feature in layer:
@@ -74,4 +74,3 @@ for k in range(nl):
         area = geom.GetArea()
         feature.SetField("area", int(area))
         layer.SetFeature(feature)
-

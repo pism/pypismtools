@@ -73,16 +73,18 @@ def validateShapeData(shapeData):
         raise ShapeDataError('The shapefile must have exactly one layer')
 
 # Error
+
+
 class ShapeDataError(Exception):
     pass
 
 
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
-    description='''A script to extract contours from netCDF file, and save it as a shapefile.''')
+                        description='''A script to extract contours from netCDF file, and save it as a shapefile.''')
 parser.add_argument("FILE", nargs=1)
-parser.add_argument("-e", "--epsg" , dest="epsg", type=int,
+parser.add_argument("-e", "--epsg", dest="epsg", type=int,
                     help="Sets EPSG code", default=None)
-parser.add_argument("-l", "--levels" , dest="levels",
+parser.add_argument("-l", "--levels", dest="levels",
                     help="Which contour levels to extract. Comma-separated list", default='0')
 parser.add_argument("-o", "--output_filename", dest="out_file",
                     help="Name of the output shape file", default='interface.shp')
@@ -144,7 +146,7 @@ interface_layer.CreateField(fd)
 
 time_step = 0
 for k in np.arange(0, src_ds.RasterCount):
-    
+
     if tdim is None:
         timestamp = '0-0-0'
     else:
@@ -169,9 +171,9 @@ for k in np.arange(0, src_ds.RasterCount):
         i = outFeature.GetFieldIndex(ts_fieldname)
         outFeature.SetField(i, str(timestamp))
         geom = feature.GetGeometryRef()
-        area = geom.GetArea() 
+        area = geom.GetArea()
         interface_layer.CreateFeature(outFeature)
-            
+
     time_step += 1
 
 # Clean-up

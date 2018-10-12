@@ -37,7 +37,7 @@ layer = data_source.GetLayer(0)
 srs = layer.GetSpatialRef()
 if not srs.IsGeographic():
     print(('''Spatial Reference System in % s is not latlon. Converting.'''
-          % filename))
+           % filename))
     # Create spatialReference, EPSG 4326 (lonlat)
     srs_geo = osr.SpatialReference()
     srs_geo.ImportFromEPSG(4326)

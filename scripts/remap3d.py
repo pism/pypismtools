@@ -146,7 +146,7 @@ if __name__ == '__main__':
         subprocess.call(["ncks", "-O", from_file_name, to_file_name])
         if copy_thickness:
             print(("copy ice thickness from %s to %s." %
-                  (thk_file_name, to_file_name)))
+                   (thk_file_name, to_file_name)))
             subprocess.call(["ncks", "-A -v thk", thk_file_name, to_file_name])
 
         # open file in append mode

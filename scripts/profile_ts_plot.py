@@ -153,10 +153,10 @@ for k, profile in enumerate(nc.variables['profile_name']):
         out_units = "km3"
         var_unit_str = ("10$^{%i}$ km$^{3}$" % scale_exponent)
     elif plot_var in ("imass", "mass", "ocean_kill_flux_cumulative",
-                 "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
-                 "climatic_mass_balance_cumulative",
-                 "effective_climatic_mass_balance_cumulative",
-                 "effective_ice_discharge_cumulative"):
+                      "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
+                      "climatic_mass_balance_cumulative",
+                      "effective_climatic_mass_balance_cumulative",
+                      "effective_ice_discharge_cumulative"):
         out_units = "Gt"
         var_unit_str = "Gt"
         ylabel = ("mass change [%s]" % var_unit_str)
@@ -185,11 +185,10 @@ for k, profile in enumerate(nc.variables['profile_name']):
     var_ylabels.append(ylabel)
 
     var_vals = unit_converter(np.squeeze(nc.variables[plot_var]), var_units, out_units)
-                              
+
     if normalize:
         var_vals -= var_vals[0]
 
-    
     fig = plt.figure()
     ax = fig.add_subplot(111)
 

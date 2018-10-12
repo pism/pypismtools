@@ -78,13 +78,13 @@ class ShapeDataError(Exception):
 
 
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
-    description='''A script to extract interfaces (calving front, ice-ocean, or groundling line) from a PISM netCDF file, and save it as a shapefile (polygon).''')
+                        description='''A script to extract interfaces (calving front, ice-ocean, or groundling line) from a PISM netCDF file, and save it as a shapefile (polygon).''')
 parser.add_argument("FILE", nargs=1)
-parser.add_argument("-a", "--area_threshold" , dest="area_threshold",
+parser.add_argument("-a", "--area_threshold", dest="area_threshold",
                     help="Only save features with an area > area_threshold", default=200)
-parser.add_argument("-e", "--epsg" , dest="epsg", type=int,
+parser.add_argument("-e", "--epsg", dest="epsg", type=int,
                     help="Sets EPSG code", default=None)
-parser.add_argument("-l", "--level" , dest="level", type=float,
+parser.add_argument("-l", "--level", dest="level", type=float,
                     help="Which contour level to extract. Used in combination with 'contour'", default=1000)
 parser.add_argument("-o", "--output_filename", dest="out_file",
                     help="Name of the output shape file", default='interface.shp')
@@ -92,7 +92,7 @@ parser.add_argument("-m", "--mask_variable", dest="dst_fieldname",
                     help="Name of variable to use", default='mask')
 parser.add_argument("-s", "--step", dest="step", type=int,
                     help="Only extract every step value", default=1)
-parser.add_argument("-t", "--type" , dest="extract_type",
+parser.add_argument("-t", "--type", dest="extract_type",
                     choices=['calving_front',
                              'grounded_floating',
                              'ice_noice', 'ice_ocean',
@@ -188,7 +188,7 @@ else:
 
 time_step = 0
 for k in np.arange(0, src_ds.RasterCount, step):
-    
+
     if tdim is None:
         timestamp = '0-0-0'
     else:
@@ -215,9 +215,11 @@ for k in np.arange(0, src_ds.RasterCount, step):
         a_layer.CreateFeature(outFeature)
 
     if extract_type in ['grounding_line']:
-        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}  OR {dn} = {val3}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1], val3=b_value[2]))
+        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}  OR {dn} = {val3}".format(
+            dn=dst_fieldname, val1=b_value[0], val2=b_value[1], val3=b_value[2]))
     elif extract_type in ['ice_ocean']:
-        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1]))
+        poly_layer.SetAttributeFilter("{dn} = {val1} OR {dn} = {val2}".format(
+            dn=dst_fieldname, val1=b_value[0], val2=b_value[1]))
     elif extract_type in ['ela', 'contour']:
         poly_layer.SetAttributeFilter("{} < {}".format(dst_fieldname, b_value))
     else:
@@ -252,13 +254,13 @@ for k in np.arange(0, src_ds.RasterCount, step):
         i = outFeature.GetFieldIndex(ts_fieldname)
         outFeature.SetField(i, str(timestamp))
         geom = feature.GetGeometryRef()
-        area = geom.GetArea() 
+        area = geom.GetArea()
         i = outFeature.GetFieldIndex('area')
         outFeature.SetField(i, int(area))
         # add the feature to the output layer
         if area >= area_threshold:
             interface_layer.CreateFeature(outFeature)
-            
+
     time_step += 1
 
 # Clean-up

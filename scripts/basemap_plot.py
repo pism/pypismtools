@@ -66,6 +66,7 @@ class Variable(object):
         if 'colorbar_label' in kwargsdict:
             self.colorbar_label = kwargsdict['colorbar_label']
 
+
 # Set up the option parser
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 parser.description = "A script to plot a variable in a netCDF file over a GeoTiff. Uses GDAL python bindings, Proj4, and Basemap. Script is fine-tuned for whole Greenland plots, but can be adapted for other needs."
@@ -575,7 +576,7 @@ if obs_file is not None:
         v = nc.variables[name]
         if getattr(v, "standard_name", "") == varname:
             print(("variabe {0} found by its standard_name {1}".format(name,
-                                                                      varname)))
+                                                                       varname)))
             myvar = name
     print(("    - reading variable %s from file %s" % (myvar, obs_file)))
     try:
@@ -656,7 +657,7 @@ for k in range(0, nt):
         v = nc.variables[name]
         if getattr(v, "standard_name", "") == varname:
             print(("variabe {0} found by its standard_name {1}".format(name,
-                                                                      varname)))
+                                                                       varname)))
             myvar = name
             pass
     print(("    - reading variable %s from file %s" % (myvar, filename)))

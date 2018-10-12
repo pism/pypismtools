@@ -119,18 +119,18 @@ shadow_color = '0.25'
 numpoints = 1
 
 my_colors = colorList()
-my_colors = [ '#998ec3',
-              '#fdb863',
-              '#018571',
-              '#d8daeb',
-              '#e66101',
-              '#542788',
-              '#998ec3',
-              '#fdb863',
-              '#018571',
-              '#d8daeb',
-              '#e66101',
-              '#542788']
+my_colors = ['#998ec3',
+             '#fdb863',
+             '#018571',
+             '#d8daeb',
+             '#e66101',
+             '#542788',
+             '#998ec3',
+             '#fdb863',
+             '#018571',
+             '#d8daeb',
+             '#e66101',
+             '#542788']
 
 
 # set the print mode
@@ -138,6 +138,7 @@ lw, pad_inches = set_mode(print_mode, aspect_ratio=aspect_ratio)
 
 plt.rcParams['legend.fancybox'] = True
 no_colors = len(my_colors)
+
 
 def compute_indices(filename, lon, lat):
 
@@ -147,13 +148,13 @@ def compute_indices(filename, lon, lat):
     except:
         print(("file %s not found ... ending ..." % filename))
         exit(2)
-        
+
     try:
         p = Proj(nc.proj4)
     except:
         print('Projection not found, assuming EPSG:3413')
         p = Proj("+init=epsg:3413")
-    x0, y0 = p(lon,lat)
+    x0, y0 = p(lon, lat)
 
     # find the corresponding i and j in the dataset
     try:
@@ -166,9 +167,9 @@ def compute_indices(filename, lon, lat):
     i = np.arange(len(x))
     j = np.arange(len(y))
     i0, j0 = (np.max(i * (x < x0)), np.max(j * (y < y0)))
-    print(("i = %d, j = %d" %  (i0, j0)))
+    print(("i = %d, j = %d" % (i0, j0)))
     nc.close()
-    
+
     return (i0, j0)
 
 
@@ -224,7 +225,7 @@ for var in variables:
             time_axis_label = 'yr'
             date = np.arange(start_year + step,
                              start_year + (len(t[:]) + 1) * step,
-                             step) 
+                             step)
         else:
             cdftime = utime(units, calendar)
             date = cdftime.num2date(t[:])
@@ -241,7 +242,7 @@ for var in variables:
             out_units = "kg m-2 year-1"
             var_unit_str = "kg/m2/yr"
             ylabel = ("mass flux (%s)" % var_unit_str)
-            sle_label = "(mm SLE/yr)"            
+            sle_label = "(mm SLE/yr)"
         elif var in ("mass_glacierized", "mass_nonglacierized", "limnsw", "imass", "mass", "ocean_kill_flux_cumulative",
                      "grounded_basal_ice_flux_cumulative", "sub_shelf_ice_flux_cumulative", "effective_discharge_flux_cumulative",
                      "surface_ice_flux_cumulative", "nonneg_flux_cumulative",
@@ -335,23 +336,22 @@ for var in variables:
     var_dates.append(dates)
     var_values.append(values)
 
-    
+
 for l in range(len(variables)):
     fig = plt.figure()
     offset = transforms.ScaledTranslation(dx, dy, fig.dpi_scale_trans)
     ax = fig.add_subplot(111, axisbg=axisbg)
-
 
     if usedates:
 
         for k in range(len(var_dates[l])):
             n = k % no_colors
             colorVal = scalarMap.to_rgba(k)
-            vd =  var_dates[l][k][:]
-            vv =  var_values[l][k][:]
+            vd = var_dates[l][k][:]
+            vv = var_values[l][k][:]
             if switch_sign:
                 vv = -vv
-                
+
             if nt > len(my_colors):
                 if var in ("ivol"):
                     line, = ax.plot_date(vd, vv / scale, color=colorVal)
@@ -387,7 +387,7 @@ for l in range(len(variables)):
 
         if labels != None:
             legend = ax.legend(lines, labels, bbox_to_anchor=(1., 1.),
-                      shadow=False, numpoints=numpoints)
+                               shadow=False, numpoints=numpoints)
 
         if twinx:
             axSLE = ax.twinx()
@@ -415,8 +415,8 @@ for l in range(len(variables)):
         for k in range(len(var_dates[l])):
             n = k % no_colors
             colorVal = scalarMap.to_rgba(k)
-            vd =  var_dates[l][k][:]
-            vv =  var_values[l][k][:]
+            vd = var_dates[l][k][:]
+            vv = var_values[l][k][:]
             if switch_sign:
                 vv = -vv
 
@@ -495,7 +495,7 @@ for l in range(len(variables)):
             tick.set_rotation(0)
     if title is not None:
         plt.title(title)
-        
+
     for out_format in out_formats:
         out_file = outfile + '_' + variables[l] + '.' + out_format
         print("  - writing image %s ..." % out_file)
