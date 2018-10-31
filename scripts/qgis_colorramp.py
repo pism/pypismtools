@@ -69,6 +69,7 @@ parser.add_argument(
         "log_speed_4",
         "gris_bath_topo",
         "gris_bath_topo_2",
+        "gris_bath_topo_3",
         "gris_topo",
         "log_speed_m_day",
     ],
@@ -215,6 +216,17 @@ elif colorbar_type in ("gris_bath_topo_2"):
         colorbar_label = "m a.s.l."
     format = "%i"
     ticks = [vmin, -750, 0, 1000, 2000, vmax]
+elif colorbar_type in ("gris_bath_topo_3"):
+    vmin = -2000
+    vmax = 2000
+    data_values = np.linspace(vmin, vmax, N)
+    N = len(data_values)
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+    cb_extend = "both"
+    if colorbar_label is None:
+        colorbar_label = "m a.s.l."
+    format = "%i"
+    ticks = [vmin, -1000, 0, 1000, 2000, vmax]
 elif colorbar_type in ("gris_topo"):
     vmin = 0
     vmax = 2000
