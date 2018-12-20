@@ -1005,16 +1005,32 @@ def define_profile_variables(nc, special_vars=False):
                 "nx",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "x-component of the right-hand-pointing normal vector"},
+                {
+                    "long_name": "x-component of the right-hand-pointing normal vector",
+                    "fill_value": 9.969209968386869e36,
+                },
             ),
             (
                 "ny",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "y-component of the right-hand-pointing normal vector"},
+                {
+                    "long_name": "y-component of the right-hand-pointing normal vector",
+                    "fill_value": 9.969209968386869e36,
+                },
             ),
-            ("tx", "f", (stationdim, profiledim), {"long_name": "x-component of the unit tangential vector"}),
-            ("ty", "f", (stationdim, profiledim), {"long_name": "y-component of the tangential vector"}),
+            (
+                "tx",
+                "f",
+                (stationdim, profiledim),
+                {"long_name": "x-component of the unit tangential vector", "fill_value": 9.969209968386869e36},
+            ),
+            (
+                "ty",
+                "f",
+                (stationdim, profiledim),
+                {"long_name": "y-component of the tangential vector", "fill_value": 9.969209968386869e36},
+            ),
         ]
     else:
         variables = [
@@ -1037,16 +1053,32 @@ def define_profile_variables(nc, special_vars=False):
                 "nx",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "x-component of the right-hand-pointing normal vector"},
+                {
+                    "long_name": "x-component of the right-hand-pointing normal vector",
+                    "fill_value": 9.969209968386869e36,
+                },
             ),
             (
                 "ny",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "y-component of the right-hand-pointing normal vector"},
+                {
+                    "long_name": "y-component of the right-hand-pointing normal vector",
+                    "fill_value": 9.969209968386869e36,
+                },
             ),
-            ("tx", "f", (stationdim, profiledim), {"long_name": "x-component of the unit tangential vector"}),
-            ("ty", "f", (stationdim, profiledim), {"long_name": "y-component of the tangential vector"}),
+            (
+                "tx",
+                "f",
+                (stationdim, profiledim),
+                {"long_name": "x-component of the unit tangential vector", "fill_value": 9.969209968386869e36},
+            ),
+            (
+                "ty",
+                "f",
+                (stationdim, profiledim),
+                {"long_name": "y-component of the tangential vector", "fill_value": 9.969209968386869e36},
+            ),
         ]
 
     print("Defining profile variables...")
@@ -1295,9 +1327,19 @@ def write_profile(out_file, index, profile, special_vars=None):
     if special_vars:
         out_file.variables["clat"][index] = profile.center_lat
         out_file.variables["clon"][index] = profile.center_lon
-        out_file.variables["flightline"][index] = profile.flightline
-        out_file.variables["glaciertype"][index] = profile.glaciertype
-        out_file.variables["flowtype"][index] = profile.flowtype
+        try:
+            out_file.variables["flightline"][index] = profile.flightline
+        except:
+            out_file.variables["flightline"][index] = -1
+        except:
+        try:
+            out_file.variables["glaciertype"][index] = profile.glaciertype
+        except:
+            out_file.variables["glaciertype"][index] = -1
+        try:
+            out_file.variables["flowtype"][index] = profile.flowtype
+        except:
+            out_file.variables["flowtype"][index] = -1
 
 
 def timing(f):
