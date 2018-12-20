@@ -1519,7 +1519,10 @@ if __name__ == "__main__":
         if hasattr(var, "bounds"):
             bounds_var_name = var.bounds
             vars_not_copied.append(bounds_var_name)
-    vars_not_copied.remove(None)
+    try:
+        vars_not_copied.remove(None)
+    except:
+        pass
     vars_not_copied.sort()
     last = vars_not_copied[-1]
     for i in range(len(vars_not_copied) - 2, -1, -1):
