@@ -1331,7 +1331,6 @@ def write_profile(out_file, index, profile, special_vars=None):
             out_file.variables["flightline"][index] = profile.flightline
         except:
             out_file.variables["flightline"][index] = -1
-        except:
         try:
             out_file.variables["glaciertype"][index] = profile.glaciertype
         except:
