@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2015, 2016 Constantine Khroulev and Andy Aschwanden
+# Copyright (C) 2015, 2016, 2018 Constantine Khroulev and Andy Aschwanden
 #
 
 # nosetests --with-coverage --cover-branches --cover-html
@@ -488,7 +488,7 @@ def create_dummy_profile(input_filename):
     clon, clat = projection(x_center, y_center, inverse=True)
 
     flightline = 2
-    glaciertype = 5
+    glaciertype = 4
     flowtype = 2
 
     return Profile(0, "test profile", lat, lon, clat, clon, flightline, glaciertype, flowtype, projection)
@@ -713,7 +713,9 @@ def load_profiles(filename, projection, flip):
     """
     profiles = []
     for lat, lon, id, name, clat, clon, flightline, glaciertype, flowtype in read_shapefile(filename):
-        profiles.append(Profile(id, name, lat, lon, clat, clon, flightline, glaciertype, flowtype, projection, flip))
+        p = Profile(id, name, lat, lon, clat, clon, flightline, glaciertype, flowtype, projection, flip)
+        profiles.append(p)
+
     return profiles
 
 
@@ -785,7 +787,7 @@ def read_shapefile(filename):
             try:
                 glaciertype = feature.gtype
             except:
-                glaciertype = 5
+                glaciertype = 4
             try:
                 flowtype = feature.ftype
             except:
@@ -835,13 +837,19 @@ def read_shapefile(filename):
                 flightline = feature.flightline
             except:
                 flightline = 2
+            if flightline is None:
+                flightline = 2
             try:
                 glaciertype = feature.gtype
             except:
-                glaciertype = 5
+                glaciertype = 4
+            if glaciertype is None:
+                glaciertype = 4
             try:
                 flowtype = feature.ftype
             except:
+                flowtype = 2
+            if flowtype is None:
                 flowtype = 2
             geometry = feature.GetGeometryRef()
             # Transform to latlon if needed
@@ -849,23 +857,16 @@ def read_shapefile(filename):
                 geometry.TransformTo(srs_geo)
             lon = []
             lat = []
-
-            # for point in geometry.GetPoints():
-            #     lon.append(point[0])
-            #     lat.append(point[1])
-            # So here's a bug fix??
             for i in range(0, geometry.GetPointCount()):
                 # GetPoint returns a tuple not a Geometry
                 pt = geometry.GetPoint(i)
                 lon.append(pt[0])
                 lat.append(pt[1])
-
             # skip features with less than 2 points:
             if len(lat) > 1:
                 profiles.append([lat, lon, id, name, clat, clon, flightline, glaciertype, flowtype])
     else:
         raise NotImplementedError("Geometry type '{0}' is not supported".format(layer_type))
-
     return profiles
 
 
@@ -1005,31 +1006,25 @@ def define_profile_variables(nc, special_vars=False):
                 "nx",
                 "f",
                 (stationdim, profiledim),
-                {
-                    "long_name": "x-component of the right-hand-pointing normal vector",
-                    "fill_value": 9.969209968386869e36,
-                },
+                {"long_name": "x-component of the right-hand-pointing normal vector", "fill_value": -2.0e9},
             ),
             (
                 "ny",
                 "f",
                 (stationdim, profiledim),
-                {
-                    "long_name": "y-component of the right-hand-pointing normal vector",
-                    "fill_value": 9.969209968386869e36,
-                },
+                {"long_name": "y-component of the right-hand-pointing normal vector", "fill_value": -2.0e9},
             ),
             (
                 "tx",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "x-component of the unit tangential vector", "fill_value": 9.969209968386869e36},
+                {"long_name": "x-component of the unit tangential vector", "fill_value": -2.0e9},
             ),
             (
                 "ty",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "y-component of the tangential vector", "fill_value": 9.969209968386869e36},
+                {"long_name": "y-component of the tangential vector", "fill_value": -2.0e9},
             ),
         ]
     else:
@@ -1053,31 +1048,25 @@ def define_profile_variables(nc, special_vars=False):
                 "nx",
                 "f",
                 (stationdim, profiledim),
-                {
-                    "long_name": "x-component of the right-hand-pointing normal vector",
-                    "fill_value": 9.969209968386869e36,
-                },
+                {"long_name": "x-component of the right-hand-pointing normal vector", "fill_value": -2.0e9},
             ),
             (
                 "ny",
                 "f",
                 (stationdim, profiledim),
-                {
-                    "long_name": "y-component of the right-hand-pointing normal vector",
-                    "fill_value": 9.969209968386869e36,
-                },
+                {"long_name": "y-component of the right-hand-pointing normal vector", "fill_value": -2.0e9},
             ),
             (
                 "tx",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "x-component of the unit tangential vector", "fill_value": 9.969209968386869e36},
+                {"long_name": "x-component of the unit tangential vector", "fill_value": -2.0e9},
             ),
             (
                 "ty",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "y-component of the tangential vector", "fill_value": 9.969209968386869e36},
+                {"long_name": "y-component of the tangential vector", "fill_value": -2.0e9},
             ),
         ]
 
@@ -1304,7 +1293,7 @@ def write_station(out_file, index, profile):
     out_file.variables["station_name"][index] = profile.name
 
 
-def write_profile(out_file, index, profile, special_vars=None):
+def write_profile(out_file, index, profile, special_vars=False):
     """Write information about a profile (name, latitude, longitude,
     center latitude, center longitude, normal x, normal y, distance
     along profile) to an output file.
@@ -1327,18 +1316,9 @@ def write_profile(out_file, index, profile, special_vars=None):
     if special_vars:
         out_file.variables["clat"][index] = profile.center_lat
         out_file.variables["clon"][index] = profile.center_lon
-        try:
-            out_file.variables["flightline"][index] = profile.flightline
-        except:
-            out_file.variables["flightline"][index] = -1
-        try:
-            out_file.variables["glaciertype"][index] = profile.glaciertype
-        except:
-            out_file.variables["glaciertype"][index] = -1
-        try:
-            out_file.variables["flowtype"][index] = profile.flowtype
-        except:
-            out_file.variables["flowtype"][index] = -1
+        out_file.variables["flightline"][index] = profile.flightline
+        out_file.variables["glaciertype"][index] = profile.glaciertype
+        out_file.variables["flowtype"][index] = profile.flowtype
 
 
 def timing(f):
@@ -1501,7 +1481,7 @@ if __name__ == "__main__":
         define_profile_variables(nc_out, special_vars=special_vars)
         print("Writing profiles...")
         for k, profile in enumerate(profiles):
-            write_profile(nc_out, k, profile)
+            write_profile(nc_out, k, profile, special_vars=special_vars)
         print("done.")
 
     # re-create dimensions from an input file in an output file, but
