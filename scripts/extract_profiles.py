@@ -1394,14 +1394,6 @@ if __name__ == "__main__":
     parser.add_argument("INPUTFILE", nargs=1, help="input NetCDF file with gridded data")
     parser.add_argument("OUTPUTFILE", nargs=1, help="output NetCDF file name", default="profile.nc")
     parser.add_argument(
-        "-n",
-        "--n_cpus",
-        dest="n_cpus",
-        default=1,
-        type=int,
-        help="Number of workers to use. Requires the multiprocessing module.",
-    )
-    parser.add_argument(
         "-f",
         "--flip",
         dest="flip",
@@ -1430,14 +1422,14 @@ if __name__ == "__main__":
         variables = None
 
     print("-----------------------------------------------------------------")
-    print(("Running script %s ..." % __file__.split("/")[-1]))
+    print("Running script {} ...".format(__file__.split("/")[-1]))
     print("-----------------------------------------------------------------")
-    print(("Opening NetCDF file %s ..." % options.INPUTFILE[0]))
+    print("Opening NetCDF file {} ...".format(options.INPUTFILE[0]))
     try:
         # open netCDF file in 'read' mode
         nc_in = NC(options.INPUTFILE[0], "r")
     except:
-        print("ERROR:  file '%s' not found or not NetCDF format ... ending ..." % options.INPUTFILE[0])
+        print("ERROR:  file '{}' not found or not NetCDF format ... ending ...".format(options.INPUTFILE[0]))
         import sys
 
         sys.exit()
@@ -1457,7 +1449,7 @@ if __name__ == "__main__":
         projection = ppt.get_projection_from_file(nc_in)
 
     # Read in profile data
-    print(("  reading profile from %s" % options.SHAPEFILE[0]))
+    print("  reading profile from {}".format(options.SHAPEFILE[0]))
     profiles = load_profiles(options.SHAPEFILE[0], projection, options.flip)
 
     # switch to writing "station" information if all profiles have
@@ -1525,15 +1517,8 @@ if __name__ == "__main__":
     def extract(name):
         extract_variable(nc_in, nc_out, profiles, name, stations)
 
-    if options.n_cpus > 1:
-        print("Trying to use {} workers...".format(options.n_cpus))
-        from multiprocessing import Pool
-
-        p = Pool(options.n_cpus)
-        p.map(extract, vars_list)
-    else:
-        for var_name in vars_list:
-            extract(var_name)
+    for var_name in vars_list:
+        extract(var_name)
 
     if len(vars_not_found) > 0:
         print(("The following variables could not be found in {}:".format(options.INPUTFILE[0])))
@@ -1551,4 +1536,4 @@ if __name__ == "__main__":
 
     nc_in.close()
     nc_out.close()
-    print(("Extracted profiles to file %s" % options.OUTPUTFILE[0]))
+    print("Extracted profiles to file {}".format(options.OUTPUTFILE[0]))
