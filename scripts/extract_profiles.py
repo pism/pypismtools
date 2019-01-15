@@ -943,7 +943,7 @@ def define_profile_variables(nc, special_vars=False):
         variables = [
             ("profile_id", "i", (stationdim), {"long_name": "profile id"}),
             ("profile_name", str, (stationdim), {"cf_role": "timeseries_id", "long_name": "profile name"}),
-            ("profile", "f", (stationdim, profiledim), {"long_name": "distance along profile", "units": "m"}),
+            ("profile_axis", "f", (stationdim, profiledim), {"long_name": "distance along profile", "units": "m"}),
             (
                 "clon",
                 "f",
@@ -974,9 +974,9 @@ def define_profile_variables(nc, special_vars=False):
                 (stationdim),
                 {
                     "long_name": "flightline (true/false/undetermined) integer mask",
-                    "flag_values": [0, 1, 2],
+                    "flag_values": np.array([0, 1, 2], dtype=np.byte),
                     "flag_meanings": "true false undetermined",
-                    "valid_range": [0, 2],
+                    "valid_range": np.array([0, 2], dtype=np.byte),
                 },
             ),
             (
@@ -985,9 +985,9 @@ def define_profile_variables(nc, special_vars=False):
                 (stationdim),
                 {
                     "long_name": "fast-flow type (isbrae/ice-stream) integer mask after Truffer and Echelmeyer (2003)",
-                    "flag_values": [0, 1, 2],
+                    "flag_values": np.array([0, 1, 2], dtype=np.byte),
                     "flag_meanings": "isbrae ice_stream undetermined",
-                    "valid_range": [0, 2],
+                    "valid_range": np.array([0, 2], dtype=np.byte),
                 },
             ),
             (
@@ -997,9 +997,9 @@ def define_profile_variables(nc, special_vars=False):
                 {
                     "long_name": "glacier-type integer mask",
                     "comment": "glacier-type categorization after Moon et al. (2012), Science, 10.1126/science.1219985",
-                    "flag_values": [0, 1, 2, 3, 4],
+                    "flag_values": np.array([0, 1, 2, 3, 4], dtype=np.byte),
                     "flag_meanings": "fast_flowing_marine_terminating low_velocity_marine_terminating ice_shelf_terminating land_terminating undetermined",
-                    "valid_range": [0, 4],
+                    "valid_range": np.array([0, 4], dtype=np.byte),
                 },
             ),
             (
@@ -1031,7 +1031,7 @@ def define_profile_variables(nc, special_vars=False):
         variables = [
             ("profile_id", "i", (stationdim), {"long_name": "profile id"}),
             ("profile_name", str, (stationdim), {"cf_role": "timeseries_id", "long_name": "profile name"}),
-            ("profile", "f", (stationdim, profiledim), {"long_name": "distance along profile", "units": "m"}),
+            ("profile_axis", "f", (stationdim, profiledim), {"long_name": "distance along profile", "units": "m"}),
             (
                 "lon",
                 "f",
@@ -1077,24 +1077,25 @@ def define_profile_variables(nc, special_vars=False):
     print("done.")
 
 
-def copy_attributes(var_in, var_out):
+def copy_attributes(var_in, var_out, attributes_not_copied=None):
     """Copy attributes from var_in to var_out. Give special treatment to
     _FillValue and coordinates.
 
     """
     _, _, _, tdim = get_dims_from_variable(var_in.dimensions)
     for att in var_in.ncattrs():
-        if att == "_FillValue":
-            continue
-        elif att == "coordinates":
-            if tdim:
-                coords = "{0} lat lon".format(tdim)
-            else:
-                coords = "lat lon"
-            setattr(var_out, "coordinates", coords)
+        if att not in attributes_not_copied:
+            if att == "_FillValue":
+                continue
+            elif att == "coordinates":
+                if tdim:
+                    coords = "{0} lat lon".format(tdim)
+                else:
+                    coords = "lat lon"
+                setattr(var_out, "coordinates", coords)
 
-        else:
-            setattr(var_out, att, getattr(var_in, att))
+            else:
+                setattr(var_out, att, getattr(var_in, att))
 
 
 def copy_global_attributes(in_file, out_file):
@@ -1261,7 +1262,7 @@ def create_variable_like(in_file, var_name, out_file, dimensions=None, fill_valu
     dtype = var_in.dtype
 
     var_out = out_file.createVariable(var_name, dtype, dimensions=dimensions, fill_value=fill_value)
-    copy_attributes(var_in, var_out)
+    copy_attributes(var_in, var_out, attributes_not_copied=attributes_not_copied)
     return var_out
 
 
@@ -1304,7 +1305,7 @@ def write_profile(out_file, index, profile, special_vars=False):
     # or netcdf4python will bail. See
     # https://code.google.com/p/netcdf4-python/issues/detail?id=76
     pl = len(profile.distance_from_start)
-    out_file.variables["profile"][index, 0:pl] = np.squeeze(profile.distance_from_start)
+    out_file.variables["profile_axis"][index, 0:pl] = np.squeeze(profile.distance_from_start)
     out_file.variables["nx"][index, 0:pl] = np.squeeze(profile.nx)
     out_file.variables["ny"][index, 0:pl] = np.squeeze(profile.ny)
     out_file.variables["tx"][index, 0:pl] = np.squeeze(profile.tx)
@@ -1379,7 +1380,7 @@ def extract_variable(nc_in, nc_out, profiles, var_name, stations):
         except IndexError:
             print("Failed to copy {}. Ignoring it...".format(var_name))
 
-    copy_attributes(var_in, var_out)
+    copy_attributes(var_in, var_out, attributes_not_copied=attributes_not_copied)
     print(("  - done with %s" % var_name))
 
 
@@ -1483,14 +1484,17 @@ if __name__ == "__main__":
     # figure out which variables do not need to be copied to the new file.
     # mapplane coordinate variables
     vars_not_copied = ["lat", "lat_bnds", "lat_bounds", "lon", "lon_bnds", "lon_bounds", xdim, ydim, tdim]
+    attributes_not_copied = []
     for var_name in nc_in.variables:
         var = nc_in.variables[var_name]
         if hasattr(var, "grid_mapping"):
             mapping_var_name = var.grid_mapping
             vars_not_copied.append(mapping_var_name)
+            attributes_not_copied.append("grid_mapping")
         if hasattr(var, "bounds"):
             bounds_var_name = var.bounds
             vars_not_copied.append(bounds_var_name)
+            attributes_not_copied.append("bounds")
     try:
         vars_not_copied.remove(None)
     except:

@@ -45,7 +45,7 @@ def cmap_map(function, cmap):
         colorvector = sorted([x + (x[1],) for x in list(this_cdict.items())])
         cdict[key] = colorvector
 
-    return mpl.colors.LinearSegmentedColormap("colormap", cdict, 1024)
+    return mpl.colors.LinearSegmentedColormap("colormap")
 
 
 # Set up the option parser
@@ -54,7 +54,12 @@ parser.description = """
 A script to convert a GMT (*.cpt) colormap or matplotlib colormap into QGIS-readable color ramp.
 """
 parser.add_argument("FILE", nargs=1)
-parser.add_argument("--tick_format", dest="tick_format", help="Overwrite ormat of the tick marks.", default=None)
+parser.add_argument(
+    "--tick_format",
+    dest="tick_format",
+    help="Overwrite ormat of the tick marks.",
+    default=None,
+)
 parser.add_argument("--font_size", dest="font_size", help="Font size", default=12)
 parser.add_argument(
     "--type",
@@ -76,7 +81,9 @@ parser.add_argument(
     help="Type of colorbar",
     default="linear",
 )
-parser.add_argument("--ticks", dest="fticks", nargs="*", type=float, help="tick marks", default=None)
+parser.add_argument(
+    "--ticks", dest="fticks", nargs="*", type=float, help="tick marks", default=None
+)
 parser.add_argument(
     "--colorbar_extend",
     dest="cb_extend",
@@ -84,7 +91,12 @@ parser.add_argument(
     help="""Extend of colorbar. Default='both'.""",
     default="both",
 )
-parser.add_argument("--colorbar_label", dest="colorbar_label", help="""Label for colorbar.""", default=None)
+parser.add_argument(
+    "--colorbar_label",
+    dest="colorbar_label",
+    help="""Label for colorbar.""",
+    default=None,
+)
 parser.add_argument(
     "--vmin",
     dest="vmin",
@@ -118,7 +130,14 @@ parser.add_argument(
                   a * logspace(vmin, vmax, N""",
     default=1022,
 )
-parser.add_argument("-r", "--reverse", dest="reverse", action="store_true", help="reverse color scale", default=False)
+parser.add_argument(
+    "-r",
+    "--reverse",
+    dest="reverse",
+    action="store_true",
+    help="reverse color scale",
+    default=False,
+)
 parser.add_argument(
     "--orientation",
     dest="orientation",
@@ -155,7 +174,7 @@ except:
     cdict = gmtColormap(cmap_file, log_color=log_color, reverse=reverse)
     prefix = ".".join(cmap_file.split(".")[0:-1])
     suffix = cmap_file.split(".")[-1]
-    cmap = mpl.colors.LinearSegmentedColormap("my_colormap", cdict, N)
+    cmap = mpl.colors.LinearSegmentedColormap("my_colormap", cdict)
 
 
 class nlcmap(object):

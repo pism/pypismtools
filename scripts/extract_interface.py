@@ -27,7 +27,7 @@ fh.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 # create formatter
-formatter = logging.Formatter("%(module)s:%(lineno)d - %(message)s")
+formatter = logging.Formatter("%(message)s")
 
 # add formatter to ch and fh
 ch.setFormatter(formatter)
@@ -89,7 +89,9 @@ parser.add_argument(
     help="Only save features with an area > area_threshold",
     default=200,
 )
-parser.add_argument("-e", "--epsg", dest="epsg", type=int, help="Sets EPSG code", default=None)
+parser.add_argument(
+    "-e", "--epsg", dest="epsg", type=int, help="Sets EPSG code", default=None
+)
 parser.add_argument(
     "-l",
     "--level",
@@ -99,15 +101,40 @@ parser.add_argument(
     default=1000,
 )
 parser.add_argument(
-    "-o", "--output_filename", dest="out_file", help="Name of the output shape file", default="interface.shp"
+    "-o",
+    "--output_filename",
+    dest="out_file",
+    help="Name of the output shape file",
+    default="interface.shp",
 )
-parser.add_argument("-m", "--mask_variable", dest="dst_fieldname", help="Name of variable to use", default="mask")
-parser.add_argument("-s", "--step", dest="step", type=int, help="Only extract every step value", default=1)
+parser.add_argument(
+    "-m",
+    "--mask_variable",
+    dest="dst_fieldname",
+    help="Name of variable to use",
+    default="mask",
+)
+parser.add_argument(
+    "-s",
+    "--step",
+    dest="step",
+    type=int,
+    help="Only extract every step value",
+    default=1,
+)
 parser.add_argument(
     "-t",
     "--type",
     dest="extract_type",
-    choices=["calving_front", "grounded_floating", "ice_noice", "ice_ocean", "grounding_line", "ela", "contour"],
+    choices=[
+        "calving_front",
+        "grounded_floating",
+        "ice_noice",
+        "ice_ocean",
+        "grounding_line",
+        "ela",
+        "contour",
+    ],
     help="Interface to extract.",
     default="ice_ocean",
 )
@@ -206,10 +233,12 @@ for k in np.arange(0, src_ds.RasterCount, step):
     else:
         timestamp = timestamps[k]
     logger.info("Processing {}".format(timestamp))
-    srcband = src_ds.GetRasterBand(k + 1)
+    srcband = src_ds.GetRasterBand(int(k + 1))
     poly_layer, dst_field = create_memory_layer(dst_fieldname)
     logger.debug("Running gdal.Polygonize()")
-    result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [], callback=gdal.TermProgress)
+    result = gdal.Polygonize(
+        srcband, None, poly_layer, dst_field, [], callback=gdal.TermProgress
+    )
     if extract_type in ["ela", "contour"]:
         poly_layer.SetAttributeFilter("{} > {}".format(dst_fieldname, b_value))
     else:
@@ -233,7 +262,9 @@ for k in np.arange(0, src_ds.RasterCount, step):
         )
     elif extract_type in ["ice_ocean"]:
         poly_layer.SetAttributeFilter(
-            "{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1])
+            "{dn} = {val1} OR {dn} = {val2}".format(
+                dn=dst_fieldname, val1=b_value[0], val2=b_value[1]
+            )
         )
     elif extract_type in ["ela", "contour"]:
         poly_layer.SetAttributeFilter("{} < {}".format(dst_fieldname, b_value))
