@@ -4,12 +4,13 @@
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import gdal
 import fiona
-import numpy as np
 from fiona.crs import from_epsg
-from shapely.geometry import LineString, mapping
-import sys
+import numpy as np
 from netCDF4 import Dataset as NC
 from netcdftime import utime
+import re
+from shapely.geometry import LineString, mapping
+import sys
 
 import logging
 import logging.handlers
@@ -167,25 +168,12 @@ parser.add_argument(
     help="Magnitude values smaller or equal than threshold will be masked. Default=None",
     default=0.0,
 )
+
+
 args = parser.parse_args()
 prune_factor = args.prune_factor
 scale_factor = args.scale_factor
 threshold = args.threshold
-
-nc_file_u = args.Udata.split(":")[1]
-nc = NC(nc_file_u, "r")
-xdim, ydim, zdim, tdim = get_dims(nc)
-
-if tdim:
-    time = nc.variables[tdim]
-    time_units = time.units
-    time_calendar = time.calendar
-    cdftime = utime(time_units, time_calendar)
-    timestamps = cdftime.num2date(time[:])
-    has_time = True
-else:
-    tdim = None
-nc.close()
 
 URasterInfo = GeoImgInfo(args.Udata)
 VRasterInfo = GeoImgInfo(args.Vdata)
@@ -198,10 +186,34 @@ RasterInfo = URasterInfo
 Ufill_value = URasterInfo.nodatavalue
 Vfill_value = VRasterInfo.nodatavalue
 
+gdi = gdal.Info(args.Udata)
+driver = re.search("Driver:[ \t]*([^\n\r]*)", gdi).group(1)
+
+# It would be nice to only use gdal and not netcdf4python
+tdim = None
+if driver == "netCDF/Network Common Data Format":
+
+    nc_file_u = args.Udata.split(":")[1]
+    nc = NC(nc_file_u, "r")
+    xdim, ydim, zdim, tdim = get_dims(nc)
+
+    if tdim:
+        time = nc.variables[tdim]
+        time_units = time.units
+        time_calendar = time.calendar
+        cdftime = utime(time_units, time_calendar)
+        timestamps = cdftime.num2date(time[:])
+        has_time = True
+    else:
+        tdim = None
+    nc.close()
+
+
+
 if args.epsg is None:
-    epsg = int(RasterInfo.proj.split(",")[-1].translate(None, '[]"' ""))
+    crs = RasterInfo.proj
 else:
-    epsg = args.epsg
+    crs = from_epsg(args.epsg)
 
 x = np.linspace(RasterInfo.xmin, RasterInfo.xmax, RasterInfo.npix_x)
 y = np.linspace(RasterInfo.ymin, RasterInfo.ymax, RasterInfo.npix_y)
@@ -219,6 +231,8 @@ schema = {
         ("ux", "float"),
         ("uy", "float"),
         ("speed", "float"),
+        ("ex", "float"),
+        ("ey", "float"),
         ("timestamp", "str"),
     ],
     "geometry": "LineString",
@@ -228,7 +242,7 @@ schema = {
 # open the shapefile
 logger.info("Processing")
 with fiona.open(
-    args.FILE[0], "w", crs=from_epsg(epsg), driver="ESRI Shapefile", schema=schema
+    args.FILE[0], "w", crs=crs, driver="ESRI Shapefile", schema=schema
 ) as output:
     for k in range(RasterCount):
         if tdim is None:
@@ -258,15 +272,19 @@ with fiona.open(
                 ::prune_factor, ::prune_factor
             ]
             schema["properties"].append(("ex", "float"))
-            prop_dict["ex"] = ex
+            prop_dict["ex"] = Ex
+        else:
+            prop_dict["ex"] = 0 * Ux
         # Read and add error of V component
         if args.Verror is not None:
             Ey = getRasterBandArray(args.Verror, BandNo=k + 1)[
                 ::prune_factor, ::prune_factor
             ]
             schema["properties"].append(("ey", "float"))
-            prop_dict["ey"] = ey
-
+            prop_dict["ey"] = Ey
+        else:
+            prop_dict["ey"] = 0 * Uy
+            
         # create features for each x,y pair, and give them the right properties
         m = 0
         for i in range(nx):
