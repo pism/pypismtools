@@ -1484,6 +1484,7 @@ if __name__ == "__main__":
     # figure out which variables do not need to be copied to the new file.
     # mapplane coordinate variables
     vars_not_copied = ["lat", "lat_bnds", "lat_bounds", "lon", "lon_bnds", "lon_bounds", xdim, ydim, tdim]
+    vars_not_copied = list(dict.fromkeys(vars_not_copied))
     attributes_not_copied = []
     for var_name in nc_in.variables:
         var = nc_in.variables[var_name]
