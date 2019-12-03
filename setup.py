@@ -6,7 +6,7 @@ PKG_NAME = "pypismtools"
 print(("\nInstalling %s" % PKG_NAME))
 print("----------------------------")
 
-packages = ("numpy", "osgeo", "netCDF4", "pyproj", "cf_units")
+packages = ("numpy", "osgeo", "netCDF4", "pyproj")
 print("\nChecking dependencies:")
 not_installed = []
 for package in packages:
