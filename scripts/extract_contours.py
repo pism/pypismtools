@@ -118,8 +118,7 @@ if tdim:
     time = nc.variables[tdim]
     time_units = time.units
     time_calendar = time.calendar
-    cdftime = utime(time_units, time_calendar)
-    timestamps = cdftime.num2date(time[:])
+    timestamps = cftime.num2date(time[:], time_units, time_calendar)
     has_time = True
 else:
     tdim = None
