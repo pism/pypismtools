@@ -86,6 +86,7 @@ parser.add_argument(
     "-a",
     "--area_threshold",
     dest="area_threshold",
+    type=float,
     help="Only save features with an area > area_threshold",
     default=200,
 )

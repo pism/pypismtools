@@ -85,6 +85,14 @@ parser = ArgumentParser(
     description="""A script to extract contours from netCDF file, and save it as a shapefile.""",
 )
 parser.add_argument("FILE", nargs=1)
+parser.add_argument(
+    "-a",
+    "--area_threshold",
+    dest="area_threshold",
+    type=float,
+    help="Only save features with an area > area_threshold",
+    default=200,
+)
 parser.add_argument("-e", "--epsg", dest="epsg", type=int, help="Sets EPSG code", default=None)
 parser.add_argument(
     "-l", "--levels", dest="levels", help="Which contour levels to extract. Comma-separated list", default="0"
@@ -96,6 +104,7 @@ parser.add_argument("-v", "--variable", dest="dst_fieldname", help="Name of vari
 
 options = parser.parse_args()
 filename = options.FILE[0]
+area_threshold = options.area_threshold
 epsg = options.epsg
 levels = np.array(options.levels.split(","), dtype=float)
 shp_filename = options.out_file
@@ -140,6 +149,8 @@ if epsg is not None:
 
 
 interface_layer = dst_ds.CreateLayer("interface", srs)
+fd = ogr.FieldDefn("area", ogr.OFTInteger)
+interface_layer.CreateField(fd)
 fd = ogr.FieldDefn("level", ogr.OFTReal)
 interface_layer.CreateField(fd)
 fd = ogr.FieldDefn(ts_fieldname, ogr.OFTString)
@@ -155,7 +166,7 @@ for k in np.arange(0, src_ds.RasterCount):
     else:
         timestamp = timestamps[k]
     logger.info("Processing {}".format(timestamp))
-    srcband = src_ds.GetRasterBand(k + 1)
+    srcband = src_ds.GetRasterBand(int(k + 1))
     logger.debug("Running gdal.ContourGenerate()")
     tmp_layer = create_memory_layer(dst_fieldname)
     result = gdal.ContourGenerate(srcband, 0, 0, levels, 0, 0, tmp_layer, 0, 1, callback=gdal.TermProgress)
@@ -175,8 +186,12 @@ for k in np.arange(0, src_ds.RasterCount):
         outFeature.SetField(i, str(timestamp))
         geom = feature.GetGeometryRef()
         area = geom.GetArea()
-        interface_layer.CreateFeature(outFeature)
-
+        i = outFeature.GetFieldIndex("area")
+        outFeature.SetField(i, int(area))
+        # add the feature to the output layer
+        if area >= area_threshold:
+            interface_layer.CreateFeature(outFeature)
+            print(area)
     time_step += 1
 
 # Clean-up
