@@ -579,7 +579,7 @@ def create_dummy_input_file(filename, F):
     for name, data in [["x", x], ["y", y], ["z", z], ["time", time]]:
         nc.variables[name][:] = data
 
-    nc.proj4 = "+init=epsg:3413"
+    nc.proj4 = "epsg:3413"
 
     xx, yy = np.meshgrid(x, y)
 
@@ -1112,6 +1112,9 @@ def file_handling_test():
     in_filename = "metadata_test_file_1.nc"
     out_filename = "metadata_test_file_2.nc"
 
+    global attributes_not_copied
+    attributes_not_copied = []
+    
     create_dummy_input_file(in_filename, lambda x, y, z: 0)
 
     try:
@@ -1225,6 +1228,7 @@ def extract_profile(variable, profile):
             result[:, k] = A.apply_to_subset(read_subset(z=k))
     else:
         dim_names = ["profile"]
+        print(A.apply_to_subset(read_subset()))
         result = A.apply_to_subset(read_subset())
 
     return result, dim_names
@@ -1410,7 +1414,7 @@ if __name__ == "__main__":
         help="""Add special vars (glaciertype,flowtype, etc), Default=False""",
         default=False,
     )
-    parser.add_argument("--srs", dest="srs", help="Projection of netCDF files as a proj4 string", default=None)
+    parser.add_argument("--srs", dest="srs", help="Projection of netCDF files as a string", default=None)
     parser.add_argument("-v", "--variable", dest="variables", help="comma-separated list with variables", default=None)
 
     options = parser.parse_args()
@@ -1440,7 +1444,7 @@ if __name__ == "__main__":
     # read projection information
     if srs is not None:
         try:
-            projection = Proj("+init=epsg:{}".format(srs))
+            projection = Proj("{}".format(srs))
         except:
             try:
                 projection = Proj(srs)

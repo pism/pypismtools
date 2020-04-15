@@ -75,7 +75,7 @@ if __name__ == "__main__":
     ee, nn = np.meshgrid(easting, northing)
 
     # Set up EPSG 3413 (NSIDC north polar stereo) projection
-    projection = "+init=epsg:3413"
+    projection = "epsg:3413"
     proj = Proj(projection)
 
     lon, lat = proj(ee, nn, inverse=True)

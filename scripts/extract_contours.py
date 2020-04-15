@@ -118,7 +118,8 @@ if tdim:
     time = nc.variables[tdim]
     time_units = time.units
     time_calendar = time.calendar
-    timestamps = cftime.num2date(time[:], time_units, time_calendar)
+    cdftime = utime(time_units, time_calendar)
+    timestamps = cdftime.num2date(time[:])
     has_time = True
 else:
     tdim = None
@@ -176,9 +177,6 @@ for k in np.arange(0, src_ds.RasterCount):
         # create a new feature
         outFeature = ogr.Feature(featureDefn)
         outFeature.SetGeometry(feature.GetGeometryRef())
-        i = outFeature.GetFieldIndex("level")
-        ik = feature.GetFieldIndex("level")
-        outFeature.SetField(i, feature.GetField(ik))
         i = outFeature.GetFieldIndex("timestep")
         outFeature.SetField(i, int(time_step))
         i = outFeature.GetFieldIndex(ts_fieldname)
@@ -190,7 +188,7 @@ for k in np.arange(0, src_ds.RasterCount):
         # add the feature to the output layer
         if area >= area_threshold:
             interface_layer.CreateFeature(outFeature)
-            print(area)
+
     time_step += 1
 
 # Clean-up
