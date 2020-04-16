@@ -761,9 +761,9 @@ def read_shapefile(filename):
     srs = layer.GetSpatialRef()
     if not srs.IsGeographic():
         print(("""Spatial Reference System in % s is not latlon. Converting.""" % filename))
-        # Create spatialReference, EPSG 4326 (lonlat)
+        # Create spatialReference (lonlat)
         srs_geo = osr.SpatialReference()
-        srs_geo.ImportFromEPSG(4326)
+        srs_geo.ImportFromProj4("+proj=latlon")
     cnt = layer.GetFeatureCount()
     profiles = []
     if layer_type == "Point":
@@ -810,7 +810,7 @@ def read_shapefile(filename):
             except:
                 clat = point[1]
 
-            profiles.append([point[1], point[0], id, name, clat, clon, flightline, glaciertype, flowtype])
+            profiles.append([lat, lon, id, name, clat, clon, flightline, glaciertype, flowtype])
 
     elif layer_type in ("Line String", "Multi Line String"):
         for pt in range(0, cnt):
@@ -1228,7 +1228,6 @@ def extract_profile(variable, profile):
             result[:, k] = A.apply_to_subset(read_subset(z=k))
     else:
         dim_names = ["profile"]
-        print(A.apply_to_subset(read_subset()))
         result = A.apply_to_subset(read_subset())
 
     return result, dim_names

@@ -60,6 +60,7 @@ setup(
         "scripts/scalar_within_poly.py",
         "scripts/remap3d.py",
         "scripts/vraster2lineshapefile.py",
+        "scripts/point2line.py",
     ],
     packages=[PKG_NAME],
     package_dir={PKG_NAME: "."},
