@@ -777,7 +777,10 @@ def read_shapefile(filename):
             except:
                 id = str(pt)
             try:
-                name = feature.name
+                try:
+                    name = feature.name
+                except:
+                    name = feature.Name
             except:
                 name = str(pt)
             try:
@@ -821,10 +824,13 @@ def read_shapefile(filename):
                 id = str(pt)
             if id is None:
                 id = str(pt)
-            try:
-                name = feature.name
-            except:
-                name = str(pt)
+            if feature.name is None:
+                name = "unnamed"
+            else:
+                try:
+                    name = feature.name
+                except:
+                    name = "unnamed"
             try:
                 clon = feature.clon
             except:
