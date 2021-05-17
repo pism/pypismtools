@@ -19,7 +19,7 @@ for package in packages:
 if not_installed:
     print("Installation of the following packages is optional but recommended:")
     for package in not_installed:
-        if package is "osgeo":
+        if package == "osgeo":
             print(" - GDAL python bindings")
         else:
             print(("  - %s" % package))

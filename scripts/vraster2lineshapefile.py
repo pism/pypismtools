@@ -7,7 +7,7 @@ import fiona
 from fiona.crs import from_epsg
 import numpy as np
 from netCDF4 import Dataset as NC
-from netcdftime import utime
+from cftime import utime
 import re
 from shapely.geometry import LineString, mapping
 import sys
@@ -26,9 +26,7 @@ fh.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.ERROR)
 # create formatter
-formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(lineno)d - %(message)s"
-)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(lineno)d - %(message)s")
 
 # add formatter to ch and fh
 ch.setFormatter(formatter)
@@ -120,37 +118,19 @@ parser = ArgumentParser(
     description="Convert rasters containing (U,V) components of velocity field to vector line data.",
 )
 parser.add_argument("FILE", nargs=1)
+parser.add_argument("-U", "--Udata", dest="Udata", help="Raster containing x components of velocity")
+parser.add_argument("-V", "--Vdata", dest="Vdata", help="Raster containing y components of velocity")
 parser.add_argument(
-    "-U", "--Udata", dest="Udata", help="Raster containing x components of velocity"
+    "--Uerror", dest="Uerror", help="Raster containing x components of error", default=None,
 )
 parser.add_argument(
-    "-V", "--Vdata", dest="Vdata", help="Raster containing y components of velocity"
+    "--Verror", dest="Verror", help="Raster containing y components of error", default=None,
 )
 parser.add_argument(
-    "--Uerror",
-    dest="Uerror",
-    help="Raster containing x components of error",
-    default=None,
+    "--epsg", dest="epsg", help="EPSG code of project. Overrides input projection", default=None,
 )
 parser.add_argument(
-    "--Verror",
-    dest="Verror",
-    help="Raster containing y components of error",
-    default=None,
-)
-parser.add_argument(
-    "--epsg",
-    dest="epsg",
-    help="EPSG code of project. Overrides input projection",
-    default=None,
-)
-parser.add_argument(
-    "-s",
-    "--scale_factor",
-    type=float,
-    dest="scale_factor",
-    help="Scales length of line. Default=1.",
-    default=1.0,
+    "-s", "--scale_factor", type=float, dest="scale_factor", help="Scales length of line. Default=1.", default=1.0,
 )
 parser.add_argument(
     "-p",
@@ -209,7 +189,6 @@ if driver == "netCDF/Network Common Data Format":
     nc.close()
 
 
-
 if args.epsg is None:
     crs = RasterInfo.proj
 else:
@@ -241,9 +220,7 @@ schema = {
 
 # open the shapefile
 logger.info("Processing")
-with fiona.open(
-    args.FILE[0], "w", crs=crs, driver="ESRI Shapefile", schema=schema
-) as output:
+with fiona.open(args.FILE[0], "w", crs=crs, driver="ESRI Shapefile", schema=schema) as output:
     for k in range(RasterCount):
         if tdim is None:
             timestamp = "0-0-0"
@@ -252,12 +229,8 @@ with fiona.open(
         logger.info("Processing {}".format(timestamp))
         print(("Processing {}".format(timestamp)))
 
-        Ux = getRasterBandArray(args.Udata, BandNo=k + 1)[
-            ::prune_factor, ::prune_factor
-        ]
-        Uy = getRasterBandArray(args.Vdata, BandNo=k + 1)[
-            ::prune_factor, ::prune_factor
-        ]
+        Ux = getRasterBandArray(args.Udata, BandNo=k + 1)[::prune_factor, ::prune_factor]
+        Uy = getRasterBandArray(args.Vdata, BandNo=k + 1)[::prune_factor, ::prune_factor]
 
         Speed = np.sqrt(Ux ** 2 + Uy ** 2)
 
@@ -268,32 +241,24 @@ with fiona.open(
 
         # Read and add error of U component
         if args.Uerror is not None:
-            Ex = getRasterBandArray(args.Uerror, BandNo=k + 1)[
-                ::prune_factor, ::prune_factor
-            ]
+            Ex = getRasterBandArray(args.Uerror, BandNo=k + 1)[::prune_factor, ::prune_factor]
             schema["properties"].append(("ex", "float"))
             prop_dict["ex"] = Ex
         else:
             prop_dict["ex"] = 0 * Ux
         # Read and add error of V component
         if args.Verror is not None:
-            Ey = getRasterBandArray(args.Verror, BandNo=k + 1)[
-                ::prune_factor, ::prune_factor
-            ]
+            Ey = getRasterBandArray(args.Verror, BandNo=k + 1)[::prune_factor, ::prune_factor]
             schema["properties"].append(("ey", "float"))
             prop_dict["ey"] = Ey
         else:
             prop_dict["ey"] = 0 * Uy
-            
+
         # create features for each x,y pair, and give them the right properties
         m = 0
         for i in range(nx):
             for j in range(ny):
-                if (
-                    (Ux[i, j] != Ufill_value)
-                    & (Uy[i, j] != Vfill_value)
-                    & (Speed[i, j] > threshold)
-                ):
+                if (Ux[i, j] != Ufill_value) & (Uy[i, j] != Vfill_value) & (Speed[i, j] > threshold):
                     m += 1
                     sys.stdout.write("\r")
                     # Center cooridinates
@@ -310,9 +275,7 @@ with fiona.open(
                     )
                     # Create LineString
                     line = LineString([[x_a, y_a], [x_c, y_c], [x_e, y_e]])
-                    line_dict = dict(
-                        [(k, float(v[i, j])) for (k, v) in prop_dict.items()]
-                    )
+                    line_dict = dict([(k, float(v[i, j])) for (k, v) in prop_dict.items()])
                     line_dict["timestamp"] = str(timestamp)
                     output.write({"properties": line_dict, "geometry": mapping(line)})
 

@@ -751,8 +751,8 @@ def read_shapefile(filename):
     lat, lon: array_like coordinates
 
     """
-    import ogr
-    import osr
+    from osgeo import ogr
+    from osgeo import osr
 
     driver = ogr.GetDriverByName("ESRI Shapefile")
     data_source = driver.Open(filename, 0)
@@ -1120,7 +1120,7 @@ def file_handling_test():
 
     global attributes_not_copied
     attributes_not_copied = []
-    
+
     create_dummy_input_file(in_filename, lambda x, y, z: 0)
 
     try:

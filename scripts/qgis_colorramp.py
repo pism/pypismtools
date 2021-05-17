@@ -81,9 +81,7 @@ parser.add_argument(
     help="Type of colorbar",
     default="linear",
 )
-parser.add_argument(
-    "--ticks", dest="fticks", nargs="*", type=float, help="tick marks", default=None
-)
+parser.add_argument("--ticks", dest="fticks", nargs="*", type=float, help="tick marks", default=None)
 parser.add_argument(
     "--colorbar_extend",
     dest="cb_extend",

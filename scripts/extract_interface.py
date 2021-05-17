@@ -108,7 +108,16 @@ parser.add_argument(
     "-t",
     "--type",
     dest="extract_type",
-    choices=["calving_front", "grounded_floating", "ice_noice", "ice_ocean", "grounding_line", "ela", "contour"],
+    choices=[
+        "calving_front",
+        "grounded_floating",
+        "ice_noice",
+        "ice_ocean",
+        "grounding_line",
+        "ela",
+        "contour",
+        "sftgif",
+    ],
     help="Interface to extract.",
     default="ice_ocean",
 )
@@ -180,7 +189,7 @@ elif extract_type in ("grounded_floating"):
 elif extract_type in ("ice_ocean"):
     a_value = 4
     b_value = [2, 3]
-elif extract_type in ("ice_noice"):
+elif extract_type in ("ice_noice", "sftgif"):
     a_value = 1
     b_value = 0
 elif extract_type in ("grounding_line"):
