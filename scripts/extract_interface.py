@@ -49,7 +49,7 @@ def create_memory_layer(dst_fieldname):
         srs = osr.SpatialReference()
         srs.ImportFromWkt(src_ds.GetProjection())
 
-    layer = mem_ds.CreateLayer("poly", srs, ogr.wkbPolygon)
+    layer = mem_ds.CreateLayer("poly", srs, ogr.wkbMultiPolygon)
 
     fd = ogr.FieldDefn(dst_fieldname, ogr.OFTInteger)
     layer.CreateField(fd)
