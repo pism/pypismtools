@@ -38,6 +38,14 @@ fh.setFormatter(formatter)
 logger.addHandler(ch)
 logger.addHandler(fh)
 
+dtype_dict = {
+    np.dtype("O"): ogr.OFTString,
+    np.dtype("float64"): ogr.OFTReal,
+    np.dtype("int64"): ogr.OFTInteger,
+    np.dtype("bool"): ogr.OFTBinary,
+    str: ogr.OFTString,
+}
+
 
 def create_memory_layer(dst_fieldname):
     """
@@ -168,12 +176,12 @@ if __name__ == "__main__":
     interface_layer.CreateField(fd)
     fd = ogr.FieldDefn("area", ogr.OFTInteger)
     interface_layer.CreateField(fd)
-    fd = ogr.FieldDefn("timestep", ogr.OFTInteger)
+    fd = ogr.FieldDefn("timestep", ogr.OFTDateTime)
     interface_layer.CreateField(fd)
     if ensemble_file:
         print("Creating additional fields")
         for field in e_df.keys():
-            fd = ogr.FieldDefn(field, ogr.OFTString)
+            fd = ogr.FieldDefn(field, dtype_dict[e_df[field].dtype])
             interface_layer.CreateField(fd)
 
     interface_dst_field = 0
@@ -275,7 +283,7 @@ if __name__ == "__main__":
             i = outFeature.GetFieldIndex("timestep")
             outFeature.SetField(i, int(time_step))
             i = outFeature.GetFieldIndex(ts_fieldname)
-            outFeature.SetField(i, str(timestamp))
+            outFeature.SetField(i, timestamp.strftime())
             geom = feature.GetGeometryRef()
             area = geom.GetArea()
             i = outFeature.GetFieldIndex("area")
