@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2015, 2016, 2018 Constantine Khroulev and Andy Aschwanden
+# Copyright (C) 2015, 2016, 2018, 2021 Constantine Khroulev and Andy Aschwanden
 #
 
 # nosetests --with-coverage --cover-branches --cover-html
@@ -74,7 +74,18 @@ class Profile(object):
     """
 
     def __init__(
-        self, id, name, lat, lon, center_lat, center_lon, flightline, glaciertype, flowtype, projection, flip=False
+        self,
+        id,
+        name,
+        lat,
+        lon,
+        center_lat,
+        center_lon,
+        flightline,
+        glaciertype,
+        flowtype,
+        projection,
+        flip=False,
     ):
         self.id = id
         self.name = name
@@ -413,7 +424,9 @@ def interpolation_test():
 
     try:
         A = ProfileInterpolationMatrix(x, y, px, py, bilinear=False)
-        raise RuntimeError("Update this test if you implemented nearest neighbor interpolation.")  # pragma: nocover
+        raise RuntimeError(
+            "Update this test if you implemented nearest neighbor interpolation."
+        )  # pragma: nocover
     except NotImplementedError:
         pass
 
@@ -491,7 +504,18 @@ def create_dummy_profile(input_filename):
     glaciertype = 4
     flowtype = 2
 
-    return Profile(0, "test profile", lat, lon, clat, clon, flightline, glaciertype, flowtype, projection)
+    return Profile(
+        0,
+        "test profile",
+        lat,
+        lon,
+        clat,
+        clon,
+        flightline,
+        glaciertype,
+        flowtype,
+        projection,
+    )
 
 
 def profile_extraction_test():
@@ -653,7 +677,16 @@ def profile_test():
     flowtype = None
 
     profile = Profile(
-        0, "test_profile", lat, lon, center_lat, center_lon, flightline, glaciertype, flowtype, projection
+        0,
+        "test_profile",
+        lat,
+        lon,
+        center_lat,
+        center_lon,
+        flightline,
+        glaciertype,
+        flowtype,
+        projection,
     )
 
     assert profile.nx[0] == -1.0 / np.sqrt(2.0)
@@ -686,7 +719,16 @@ def profile_test():
     lon, lat = projection(x, y, inverse=True)
 
     profile = Profile(
-        0, "test_profile", lat, lon, center_lat, center_lon, flightline, glaciertype, flowtype, projection
+        0,
+        "test_profile",
+        lat,
+        lon,
+        center_lat,
+        center_lon,
+        flightline,
+        glaciertype,
+        flowtype,
+        projection,
     )
 
     assert profile.nx[0] == 0.0
@@ -712,8 +754,30 @@ def load_profiles(filename, projection, flip):
     list of profiles with
     """
     profiles = []
-    for lat, lon, id, name, clat, clon, flightline, glaciertype, flowtype in read_shapefile(filename):
-        p = Profile(id, name, lat, lon, clat, clon, flightline, glaciertype, flowtype, projection, flip)
+    for (
+        lat,
+        lon,
+        id,
+        name,
+        clat,
+        clon,
+        flightline,
+        glaciertype,
+        flowtype,
+    ) in read_shapefile(filename):
+        p = Profile(
+            id,
+            name,
+            lat,
+            lon,
+            clat,
+            clon,
+            flightline,
+            glaciertype,
+            flowtype,
+            projection,
+            flip,
+        )
         profiles.append(p)
 
     return profiles
@@ -722,6 +786,7 @@ def load_profiles(filename, projection, flip):
 def output_dimensions(input_dimensions, profile=True):
     """Build a list of dimension names used to define a variable in the
     output file."""
+
     _, _, zdim, tdim = get_dims_from_variable(input_dimensions)
 
     if tdim:
@@ -753,14 +818,19 @@ def read_shapefile(filename):
     """
     from osgeo import ogr
     from osgeo import osr
+    from osgeo import gdal
 
-    driver = ogr.GetDriverByName("ESRI Shapefile")
-    data_source = driver.Open(filename, 0)
-    layer = data_source.GetLayer(0)
+    ds = gdal.OpenEx(filename, 0)
+    layer = ds.GetLayer(0)
     layer_type = ogr.GeometryTypeToName(layer.GetGeomType())
     srs = layer.GetSpatialRef()
     if not srs.IsGeographic():
-        print(("""Spatial Reference System in % s is not latlon. Converting.""" % filename))
+        print(
+            (
+                """Spatial Reference System in % s is not latlon. Converting."""
+                % filename
+            )
+        )
         # Create spatialReference (lonlat)
         srs_geo = osr.SpatialReference()
         srs_geo.ImportFromProj4("+proj=latlon")
@@ -813,7 +883,9 @@ def read_shapefile(filename):
             except:
                 clat = point[1]
 
-            profiles.append([lat, lon, id, name, clat, clon, flightline, glaciertype, flowtype])
+            profiles.append(
+                [lat, lon, id, name, clat, clon, flightline, glaciertype, flowtype]
+            )
 
     elif layer_type in ("Line String", "Multi Line String"):
         for pt in range(0, cnt):
@@ -870,9 +942,13 @@ def read_shapefile(filename):
                 lat.append(pt[1])
             # skip features with less than 2 points:
             if len(lat) > 1:
-                profiles.append([lat, lon, id, name, clat, clon, flightline, glaciertype, flowtype])
+                profiles.append(
+                    [lat, lon, id, name, clat, clon, flightline, glaciertype, flowtype]
+                )
     else:
-        raise NotImplementedError("Geometry type '{0}' is not supported".format(layer_type))
+        raise NotImplementedError(
+            "Geometry type '{0}' is not supported".format(layer_type)
+        )
     return profiles
 
 
@@ -917,18 +993,31 @@ def define_station_variables(nc):
     nc.createDimension(stationdim)
 
     variables = [
-        ("station_name", str, (stationdim,), {"cf_role": "timeseries_id", "long_name": "station name"}),
+        (
+            "station_name",
+            str,
+            (stationdim,),
+            {"cf_role": "timeseries_id", "long_name": "station name"},
+        ),
         (
             "lon",
             "f",
             (stationdim,),
-            {"units": "degrees_east", "valid_range": [-180.0, 180.0], "standard_name": "longitude"},
+            {
+                "units": "degrees_east",
+                "valid_range": [-180.0, 180.0],
+                "standard_name": "longitude",
+            },
         ),
         (
             "lat",
             "f",
             (stationdim,),
-            {"units": "degrees_north", "valid_range": [-90.0, 90.0], "standard_name": "latitude"},
+            {
+                "units": "degrees_north",
+                "valid_range": [-90.0, 90.0],
+                "standard_name": "latitude",
+            },
         ),
     ]
 
@@ -948,31 +1037,57 @@ def define_profile_variables(nc, special_vars=False):
     if special_vars:
         variables = [
             ("profile_id", "i", (stationdim), {"long_name": "profile id"}),
-            ("profile_name", str, (stationdim), {"cf_role": "timeseries_id", "long_name": "profile name"}),
-            ("profile_axis", "f", (stationdim, profiledim), {"long_name": "distance along profile", "units": "m"}),
+            (
+                "profile_name",
+                str,
+                (stationdim),
+                {"cf_role": "timeseries_id", "long_name": "profile name"},
+            ),
+            (
+                "profile_axis",
+                "f",
+                (stationdim, profiledim),
+                {"long_name": "distance along profile", "units": "m"},
+            ),
             (
                 "clon",
                 "f",
                 (stationdim),
-                {"long_name": "center longitude of profile", "units": "degrees_east", "valid_range": [-180.0, 180.0]},
+                {
+                    "long_name": "center longitude of profile",
+                    "units": "degrees_east",
+                    "valid_range": [-180.0, 180.0],
+                },
             ),
             (
                 "clat",
                 "f",
                 (stationdim),
-                {"long_name": "center latitude of profile", "units": "degrees_north", "valid_range": [-90.0, 90.0]},
+                {
+                    "long_name": "center latitude of profile",
+                    "units": "degrees_north",
+                    "valid_range": [-90.0, 90.0],
+                },
             ),
             (
                 "lon",
                 "f",
                 (stationdim, profiledim),
-                {"units": "degrees_east", "valid_range": [-180.0, 180.0], "standard_name": "longitude"},
+                {
+                    "units": "degrees_east",
+                    "valid_range": [-180.0, 180.0],
+                    "standard_name": "longitude",
+                },
             ),
             (
                 "lat",
                 "f",
                 (stationdim, profiledim),
-                {"units": "degrees_north", "valid_range": [-90.0, 90.0], "standard_name": "latitude"},
+                {
+                    "units": "degrees_north",
+                    "valid_range": [-90.0, 90.0],
+                    "standard_name": "latitude",
+                },
             ),
             (
                 "flightline",
@@ -1012,67 +1127,109 @@ def define_profile_variables(nc, special_vars=False):
                 "nx",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "x-component of the right-hand-pointing normal vector", "fill_value": -2.0e9},
+                {
+                    "long_name": "x-component of the right-hand-pointing normal vector",
+                    "fill_value": -2.0e9,
+                },
             ),
             (
                 "ny",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "y-component of the right-hand-pointing normal vector", "fill_value": -2.0e9},
+                {
+                    "long_name": "y-component of the right-hand-pointing normal vector",
+                    "fill_value": -2.0e9,
+                },
             ),
             (
                 "tx",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "x-component of the unit tangential vector", "fill_value": -2.0e9},
+                {
+                    "long_name": "x-component of the unit tangential vector",
+                    "fill_value": -2.0e9,
+                },
             ),
             (
                 "ty",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "y-component of the tangential vector", "fill_value": -2.0e9},
+                {
+                    "long_name": "y-component of the tangential vector",
+                    "fill_value": -2.0e9,
+                },
             ),
         ]
     else:
         variables = [
             ("profile_id", "i", (stationdim), {"long_name": "profile id"}),
-            ("profile_name", str, (stationdim), {"cf_role": "timeseries_id", "long_name": "profile name"}),
-            ("profile_axis", "f", (stationdim, profiledim), {"long_name": "distance along profile", "units": "m"}),
+            (
+                "profile_name",
+                str,
+                (stationdim),
+                {"cf_role": "timeseries_id", "long_name": "profile name"},
+            ),
+            (
+                "profile_axis",
+                "f",
+                (stationdim, profiledim),
+                {"long_name": "distance along profile", "units": "m"},
+            ),
             (
                 "lon",
                 "f",
                 (stationdim, profiledim),
-                {"units": "degrees_east", "valid_range": [-180.0, 180.0], "standard_name": "longitude"},
+                {
+                    "units": "degrees_east",
+                    "valid_range": [-180.0, 180.0],
+                    "standard_name": "longitude",
+                },
             ),
             (
                 "lat",
                 "f",
                 (stationdim, profiledim),
-                {"units": "degrees_north", "valid_range": [-90.0, 90.0], "standard_name": "latitude"},
+                {
+                    "units": "degrees_north",
+                    "valid_range": [-90.0, 90.0],
+                    "standard_name": "latitude",
+                },
             ),
             (
                 "nx",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "x-component of the right-hand-pointing normal vector", "fill_value": -2.0e9},
+                {
+                    "long_name": "x-component of the right-hand-pointing normal vector",
+                    "fill_value": -2.0e9,
+                },
             ),
             (
                 "ny",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "y-component of the right-hand-pointing normal vector", "fill_value": -2.0e9},
+                {
+                    "long_name": "y-component of the right-hand-pointing normal vector",
+                    "fill_value": -2.0e9,
+                },
             ),
             (
                 "tx",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "x-component of the unit tangential vector", "fill_value": -2.0e9},
+                {
+                    "long_name": "x-component of the unit tangential vector",
+                    "fill_value": -2.0e9,
+                },
             ),
             (
                 "ty",
                 "f",
                 (stationdim, profiledim),
-                {"long_name": "y-component of the tangential vector", "fill_value": -2.0e9},
+                {
+                    "long_name": "y-component of the tangential vector",
+                    "fill_value": -2.0e9,
+                },
             ),
         ]
 
@@ -1144,7 +1301,10 @@ def file_handling_test():
         create_variable_like(input_file, "test_3D_x_y_z_time", output_file)
 
         create_variable_like(
-            input_file, "test_2D_y_x", output_file, output_dimensions(input_file.variables["test_2D_y_x"].dimensions)
+            input_file,
+            "test_2D_y_x",
+            output_file,
+            output_dimensions(input_file.variables["test_2D_y_x"].dimensions),
         )
 
         print(output_dimensions(("x", "y")))
@@ -1164,7 +1324,7 @@ def file_handling_test():
 
 
 def extract_profile(variable, profile):
-    """Extract values of a variable along a profile.  """
+    """Extract values of a variable along a profile."""
     xdim, ydim, zdim, tdim = get_dims_from_variable(variable.dimensions)
 
     group = variable.group()
@@ -1270,7 +1430,9 @@ def create_variable_like(in_file, var_name, out_file, dimensions=None, fill_valu
 
     dtype = var_in.dtype
 
-    var_out = out_file.createVariable(var_name, dtype, dimensions=dimensions, fill_value=fill_value)
+    var_out = out_file.createVariable(
+        var_name, dtype, dimensions=dimensions, fill_value=fill_value
+    )
     copy_attributes(var_in, var_out, attributes_not_copied=attributes_not_copied)
     return var_out
 
@@ -1314,7 +1476,9 @@ def write_profile(out_file, index, profile, special_vars=False):
     # or netcdf4python will bail. See
     # https://code.google.com/p/netcdf4-python/issues/detail?id=76
     pl = len(profile.distance_from_start)
-    out_file.variables["profile_axis"][index, 0:pl] = np.squeeze(profile.distance_from_start)
+    out_file.variables["profile_axis"][index, 0:pl] = np.squeeze(
+        profile.distance_from_start
+    )
     out_file.variables["nx"][index, 0:pl] = np.squeeze(profile.nx)
     out_file.variables["ny"][index, 0:pl] = np.squeeze(profile.ny)
     out_file.variables["tx"][index, 0:pl] = np.squeeze(profile.tx)
@@ -1400,9 +1564,15 @@ if __name__ == "__main__":
     The profile must be given as a ESRI shape file."""
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.description = description
-    parser.add_argument("SHAPEFILE", nargs=1, help="input shapefile defining profiles to extract")
-    parser.add_argument("INPUTFILE", nargs=1, help="input NetCDF file with gridded data")
-    parser.add_argument("OUTPUTFILE", nargs=1, help="output NetCDF file name", default="profile.nc")
+    parser.add_argument(
+        "SHAPEFILE", nargs=1, help="input shapefile defining profiles to extract"
+    )
+    parser.add_argument(
+        "INPUTFILE", nargs=1, help="input NetCDF file with gridded data"
+    )
+    parser.add_argument(
+        "OUTPUTFILE", nargs=1, help="output NetCDF file name", default="profile.nc"
+    )
     parser.add_argument(
         "-f",
         "--flip",
@@ -1419,8 +1589,16 @@ if __name__ == "__main__":
         help="""Add special vars (glaciertype,flowtype, etc), Default=False""",
         default=False,
     )
-    parser.add_argument("--srs", dest="srs", help="Projection of netCDF files as a string", default=None)
-    parser.add_argument("-v", "--variable", dest="variables", help="comma-separated list with variables", default=None)
+    parser.add_argument(
+        "--srs", dest="srs", help="Projection of netCDF files as a string", default=None
+    )
+    parser.add_argument(
+        "-v",
+        "--variable",
+        dest="variables",
+        help="comma-separated list with variables",
+        default=None,
+    )
 
     options = parser.parse_args()
     fill_value = -2e9
@@ -1439,7 +1617,11 @@ if __name__ == "__main__":
         # open netCDF file in 'read' mode
         nc_in = NC(options.INPUTFILE[0], "r")
     except:
-        print("ERROR:  file '{}' not found or not NetCDF format ... ending ...".format(options.INPUTFILE[0]))
+        print(
+            "ERROR:  file '{}' not found or not NetCDF format ... ending ...".format(
+                options.INPUTFILE[0]
+            )
+        )
         import sys
 
         sys.exit()
@@ -1492,7 +1674,17 @@ if __name__ == "__main__":
 
     # figure out which variables do not need to be copied to the new file.
     # mapplane coordinate variables
-    vars_not_copied = ["lat", "lat_bnds", "lat_bounds", "lon", "lon_bnds", "lon_bounds", xdim, ydim, tdim]
+    vars_not_copied = [
+        "lat",
+        "lat_bnds",
+        "lat_bounds",
+        "lon",
+        "lon_bnds",
+        "lon_bounds",
+        xdim,
+        ydim,
+        tdim,
+    ]
     vars_not_copied = list(dict.fromkeys(vars_not_copied))
     attributes_not_copied = []
     for var_name in nc_in.variables:
@@ -1535,13 +1727,26 @@ if __name__ == "__main__":
         extract(var_name)
 
     if len(vars_not_found) > 0:
-        print(("The following variables could not be found in {}:".format(options.INPUTFILE[0])))
+        print(
+            (
+                "The following variables could not be found in {}:".format(
+                    options.INPUTFILE[0]
+                )
+            )
+        )
         print(vars_not_found)
 
     # writing global attributes
     import sys
 
-    script_command = " ".join([time.ctime(), ":", __file__.split("/")[-1], " ".join([str(l) for l in sys.argv[1:]])])
+    script_command = " ".join(
+        [
+            time.ctime(),
+            ":",
+            __file__.split("/")[-1],
+            " ".join([str(l) for l in sys.argv[1:]]),
+        ]
+    )
     if hasattr(nc_in, "history"):
         history = nc_in.history
         nc_out.history = script_command + "\n " + history
