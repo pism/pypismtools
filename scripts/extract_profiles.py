@@ -834,12 +834,11 @@ def read_shapefile(filename):
         # Create spatialReference (lonlat)
         srs_geo = osr.SpatialReference()
         srs_geo.ImportFromProj4("+proj=latlon")
-    cnt = layer.GetFeatureCount()
     profiles = []
     if layer_type == "Point":
         lon = []
         lat = []
-        for pt in range(0, cnt):
+        for pt, feature in enumerate(layer):
             feature = layer.GetFeature(pt)
 
             try:
@@ -888,8 +887,7 @@ def read_shapefile(filename):
             )
 
     elif layer_type in ("Line String", "Multi Line String"):
-        for pt in range(0, cnt):
-            feature = layer.GetFeature(pt)
+        for pt, feature in enumerate(layer):
             try:
                 id = feature.id
             except:
