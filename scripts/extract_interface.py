@@ -12,11 +12,6 @@ import logging
 import logging.handlers
 import pandas as pd
 
-try:
-    import pypismtools.pypismtools as ppt
-except:
-    import pypismtools as ppt
-
 # create logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -81,7 +76,9 @@ if __name__ == "__main__":
         help="Only save features with an area > area_threshold",
         default=200,
     )
-    parser.add_argument("-e", "--epsg", dest="epsg", type=int, help="Sets EPSG code", default=None)
+    parser.add_argument(
+        "-e", "--epsg", dest="epsg", type=int, help="Sets EPSG code", default=None
+    )
     parser.add_argument(
         "-l",
         "--level",
@@ -91,7 +88,11 @@ if __name__ == "__main__":
         default=1000,
     )
     parser.add_argument(
-        "-o", "--output_filename", dest="out_file", help="Name of the output shape file", default="interface.shp"
+        "-o",
+        "--output_filename",
+        dest="out_file",
+        help="Name of the output shape file",
+        default="interface.shp",
     )
     parser.add_argument(
         "--ensemble_file",
@@ -99,8 +100,21 @@ if __name__ == "__main__":
         help="CSV file. If given, add parameter values as attributes",
         default=None,
     )
-    parser.add_argument("-m", "--mask_variable", dest="dst_fieldname", help="Name of variable to use", default="mask")
-    parser.add_argument("-s", "--step", dest="step", type=int, help="Only extract every step value", default=1)
+    parser.add_argument(
+        "-m",
+        "--mask_variable",
+        dest="dst_fieldname",
+        help="Name of variable to use",
+        default="mask",
+    )
+    parser.add_argument(
+        "-s",
+        "--step",
+        dest="step",
+        type=int,
+        help="Only extract every step value",
+        default=1,
+    )
     parser.add_argument(
         "-t",
         "--type",
@@ -135,7 +149,10 @@ if __name__ == "__main__":
         e_df = pd.read_csv(ensemble_file)
 
     nc = NC(filename, "r")
-    xdim, ydim, zdim, tdim = ppt.get_dims(nc)
+    xdim = "x"
+    ydim = "y"
+    zdim = "z"
+    tdim = "time"
 
     if tdim:
         time = nc.variables[tdim]
@@ -225,7 +242,9 @@ if __name__ == "__main__":
         srcband = src_ds.GetRasterBand(int(k + 1))
         poly_layer, dst_field = create_memory_layer(dst_fieldname)
         logger.debug("Running gdal.Polygonize()")
-        result = gdal.Polygonize(srcband, None, poly_layer, dst_field, [], callback=gdal.TermProgress)
+        result = gdal.Polygonize(
+            srcband, None, poly_layer, dst_field, [], callback=gdal.TermProgress
+        )
         if extract_type in ["ela", "contour"]:
             poly_layer.SetAttributeFilter("{} > {}".format(dst_fieldname, b_value))
         else:
@@ -249,7 +268,9 @@ if __name__ == "__main__":
             )
         elif extract_type in ["ice_ocean"]:
             poly_layer.SetAttributeFilter(
-                "{dn} = {val1} OR {dn} = {val2}".format(dn=dst_fieldname, val1=b_value[0], val2=b_value[1])
+                "{dn} = {val1} OR {dn} = {val2}".format(
+                    dn=dst_fieldname, val1=b_value[0], val2=b_value[1]
+                )
             )
         elif extract_type in ["ela", "contour"]:
             poly_layer.SetAttributeFilter("{} < {}".format(dst_fieldname, b_value))

@@ -1588,7 +1588,10 @@ if __name__ == "__main__":
         default=False,
     )
     parser.add_argument(
-        "--srs", dest="srs", help="Projection of netCDF files as a string", default=None
+        "--srs",
+        dest="srs",
+        help="Projection of netCDF files as a string, e.g. 'epsg:3413'",
+        default=None,
     )
     parser.add_argument(
         "-v",
